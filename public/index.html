@@ -319,10 +319,17 @@
 
         socket.on('callHistory', (history) => {
             calls = history;
+            console.log('Received call history:', calls.length, 'calls');
+            if (calls.length > 0) {
+                console.log('First call:', calls[0]);
+                console.log('First call transcript:', calls[0].transcript ? calls[0].transcript.length + ' chars' : 'none');
+            }
             renderCallHistory();
         });
 
         socket.on('newCall', (callData) => {
+            console.log('New call received:', callData);
+            console.log('New call transcript:', callData.transcript ? callData.transcript.length + ' chars' : 'none');
             calls.unshift(callData);
             renderCallHistory();
             showNotification();
