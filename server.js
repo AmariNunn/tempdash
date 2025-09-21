@@ -107,6 +107,11 @@ app.post('/webhook', (req, res) => {
 
 // API endpoint to get call history
 app.get('/api/calls', (req, res) => {
+    // Log what we're sending to help debug
+    console.log('API call - sending', callHistory.length, 'calls');
+    if (callHistory.length > 0) {
+        console.log('First call transcript length:', callHistory[0].transcript ? callHistory[0].transcript.length : 0);
+    }
     res.json({ calls: callHistory });
 });
 
