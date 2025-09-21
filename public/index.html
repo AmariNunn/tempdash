@@ -329,6 +329,16 @@
             updateStats();
         });
 
+        socket.on('updateCall', (callData) => {
+            // Find and update existing call
+            const index = calls.findIndex(call => call.id === callData.id);
+            if (index >= 0) {
+                calls[index] = callData;
+                renderCallHistory();
+                updateStats();
+            }
+        });
+
         function renderCallHistory() {
             if (calls.length === 0) {
                 callHistory.innerHTML = `
