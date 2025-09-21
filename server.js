@@ -3,6 +3,7 @@ const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const { Pool } = require('pg');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,8 +14,36 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' })); // Increase payload limit for ElevenLabs webhooks
 app.use(express.static('public')); // Serve static files from public folder
 
-// In-memory storage for call history (use a database in production)
-let callHistory = [];
+// Database setup
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/elevenlabs_calls',
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Initialize database table
+async function initializeDatabase() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS calls (
+                id VARCHAR(255) PRIMARY KEY,
+                timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                caller_number VARCHAR(50),
+                called_number VARCHAR(50),
+                duration INTEGER DEFAULT 0,
+                status VARCHAR(50) DEFAULT 'completed',
+                call_type VARCHAR(50) DEFAULT 'phone',
+                transcript TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+        `);
+        console.log('Database table initialized successfully');
+    } catch (error) {
+        console.error('Database initialization error:', error);
+    }
+}
+
+// Call database initialization
+initializeDatabase();
 
 // Serve the main HTML page
 app.get('/', (req, res) => {
@@ -22,7 +51,7 @@ app.get('/', (req, res) => {
 });
 
 // Webhook endpoint - ElevenLabs will POST here
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
     console.log('Webhook received from ElevenLabs');
     
     const webhookData = req.body;
@@ -63,42 +92,48 @@ app.post('/webhook', (req, res) => {
         transcript_preview: transcript.substring(0, 100) + (transcript.length > 100 ? '...' : '')
     });
     
-    // Check if we already have this call (by conversation ID)
-    const existingIndex = callHistory.findIndex(call => call.id === callData.id);
-    
-    if (existingIndex >= 0) {
-        // Update existing call if this one has more/better data
-        const existing = callHistory[existingIndex];
-        if (callData.caller_number !== 'Unknown' || callData.duration > 0 || callData.transcript) {
-            console.log('Updating existing call with better data');
-            callHistory[existingIndex] = {
-                ...existing,
-                ...callData,
-                // Keep the original timestamp if it exists
-                timestamp: existing.timestamp
-            };
-            // Broadcast updated call
-            io.emit('updateCall', callHistory[existingIndex]);
-        } else {
-            console.log('Ignoring duplicate webhook with less data');
-        }
-    } else {
-        // Only add if we have useful data (phone numbers, duration, or transcript)
-        if (callData.caller_number !== 'Unknown' || callData.duration > 0 || callData.transcript) {
-            console.log('Adding new call to history');
-            // Add to call history
-            callHistory.unshift(callData);
-            
-            // Keep only last 50 calls to prevent memory issues
-            if (callHistory.length > 50) {
-                callHistory = callHistory.slice(0, 50);
+    try {
+        // Check if call already exists in database
+        const existingCall = await pool.query('SELECT id FROM calls WHERE id = $1', [callData.id]);
+        
+        if (existingCall.rows.length > 0) {
+            // Update existing call if this one has more/better data
+            if (callData.caller_number !== 'Unknown' || callData.duration > 0 || callData.transcript) {
+                console.log('Updating existing call with better data');
+                await pool.query(`
+                    UPDATE calls 
+                    SET caller_number = COALESCE(NULLIF($2, 'Unknown'), caller_number),
+                        called_number = COALESCE(NULLIF($3, 'Unknown'), called_number),
+                        duration = GREATEST($4, duration),
+                        transcript = CASE WHEN LENGTH($5) > LENGTH(COALESCE(transcript, '')) THEN $5 ELSE transcript END
+                    WHERE id = $1
+                `, [callData.id, callData.caller_number, callData.called_number, callData.duration, callData.transcript]);
+                
+                // Get updated call and broadcast
+                const updatedCall = await pool.query('SELECT * FROM calls WHERE id = $1', [callData.id]);
+                io.emit('updateCall', updatedCall.rows[0]);
+            } else {
+                console.log('Ignoring duplicate webhook with less data');
             }
-            
-            // Broadcast to all connected clients
-            io.emit('newCall', callData);
         } else {
-            console.log('Ignoring webhook with no useful data');
+            // Only add if we have useful data (phone numbers, duration, or transcript)
+            if (callData.caller_number !== 'Unknown' || callData.duration > 0 || callData.transcript) {
+                console.log('Adding new call to database');
+                
+                await pool.query(`
+                    INSERT INTO calls (id, timestamp, caller_number, called_number, duration, status, call_type, transcript)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                `, [callData.id, callData.timestamp, callData.caller_number, callData.called_number, 
+                    callData.duration, callData.status, callData.call_type, callData.transcript]);
+                
+                // Broadcast to all connected clients
+                io.emit('newCall', callData);
+            } else {
+                console.log('Ignoring webhook with no useful data');
+            }
         }
+    } catch (error) {
+        console.error('Database error:', error);
     }
     
     // Respond to webhook
@@ -106,31 +141,50 @@ app.post('/webhook', (req, res) => {
 });
 
 // API endpoint to get call history
-app.get('/api/calls', (req, res) => {
-    // Log what we're sending to help debug
-    console.log('API call - sending', callHistory.length, 'calls');
-    if (callHistory.length > 0) {
-        console.log('First call transcript length:', callHistory[0].transcript ? callHistory[0].transcript.length : 0);
+app.get('/api/calls', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
+        console.log('API call - sending', result.rows.length, 'calls');
+        if (result.rows.length > 0) {
+            console.log('First call transcript length:', result.rows[0].transcript ? result.rows[0].transcript.length : 0);
+        }
+        res.json({ calls: result.rows });
+    } catch (error) {
+        console.error('Database query error:', error);
+        res.status(500).json({ error: 'Database error' });
     }
-    res.json({ calls: callHistory });
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
-        uptime: process.uptime(),
-        callCount: callHistory.length,
-        timestamp: new Date().toISOString()
-    });
+app.get('/health', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT COUNT(*) FROM calls');
+        res.json({ 
+            status: 'healthy', 
+            uptime: process.uptime(),
+            callCount: result.rows[0].count,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            status: 'unhealthy', 
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // Socket.io connection handling
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('Client connected');
     
-    // Send current call history to new client
-    socket.emit('callHistory', callHistory);
+    try {
+        // Send current call history to new client from database
+        const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
+        socket.emit('callHistory', result.rows);
+    } catch (error) {
+        console.error('Error sending call history:', error);
+    }
     
     socket.on('disconnect', () => {
         console.log('Client disconnected');
@@ -146,4 +200,5 @@ server.listen(PORT, () => {
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
+    console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
 });
