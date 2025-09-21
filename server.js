@@ -48,16 +48,43 @@ app.post('/webhook', (req, res) => {
     
     console.log('Processed call data:', callData);
     
-    // Add to call history
-    callHistory.unshift(callData);
+    // Check if we already have this call (by conversation ID)
+    const existingIndex = callHistory.findIndex(call => call.id === callData.id);
     
-    // Keep only last 50 calls to prevent memory issues
-    if (callHistory.length > 50) {
-        callHistory = callHistory.slice(0, 50);
+    if (existingIndex >= 0) {
+        // Update existing call if this one has more/better data
+        const existing = callHistory[existingIndex];
+        if (callData.caller_number !== 'Unknown' || callData.duration > 0) {
+            console.log('Updating existing call with better data');
+            callHistory[existingIndex] = {
+                ...existing,
+                ...callData,
+                // Keep the original timestamp if it exists
+                timestamp: existing.timestamp
+            };
+            // Broadcast updated call
+            io.emit('updateCall', callHistory[existingIndex]);
+        } else {
+            console.log('Ignoring duplicate webhook with less data');
+        }
+    } else {
+        // Only add if we have useful data (phone numbers or duration)
+        if (callData.caller_number !== 'Unknown' || callData.duration > 0) {
+            console.log('Adding new call to history');
+            // Add to call history
+            callHistory.unshift(callData);
+            
+            // Keep only last 50 calls to prevent memory issues
+            if (callHistory.length > 50) {
+                callHistory = callHistory.slice(0, 50);
+            }
+            
+            // Broadcast to all connected clients
+            io.emit('newCall', callData);
+        } else {
+            console.log('Ignoring webhook with no useful data');
+        }
     }
-    
-    // Broadcast to all connected clients
-    io.emit('newCall', callData);
     
     // Respond to webhook
     res.status(200).json({ success: true, message: 'Webhook received' });
