@@ -23,36 +23,37 @@ app.get('/', (req, res) => {
 
 // Webhook endpoint - ElevenLabs will POST here
 app.post('/webhook', (req, res) => {
-    console.log('Webhook received:', JSON.stringify(req.body, null, 2));
+    console.log('Webhook received from ElevenLabs');
     
     const webhookData = req.body;
     
-    // Extract call data from ElevenLabs webhook payload
+    // Extract only essential call data - simplified
     const callData = {
         id: webhookData.data?.conversation_id || Date.now().toString(),
         timestamp: new Date().toISOString(),
-        caller_number: webhookData.data?.metadata?.phone_call?.caller_number || 'Unknown',
-        called_number: webhookData.data?.metadata?.phone_call?.called_number || 'Unknown',
-        status: mapElevenLabsStatus(webhookData.data?.status, webhookData.type),
-        agent_id: webhookData.data?.agent_id || 'Unknown',
-        call_type: webhookData.data?.metadata?.conversation_initiation_source || 'unknown',
-        duration: webhookData.data?.metadata?.call_duration_secs || 0,
-        cost: webhookData.data?.metadata?.cost || 0,
-        transcript_summary: webhookData.analysis?.transcript_summary || '',
-        call_summary_title: webhookData.analysis?.call_summary_title || '',
-        termination_reason: webhookData.data?.metadata?.termination_reason || '',
-        main_language: webhookData.data?.metadata?.main_language || '',
-        webhook_type: webhookData.type,
-        // Store full data for debugging
-        raw_data: webhookData
+        // Extract phone numbers from the correct path
+        caller_number: webhookData.data?.metadata?.phone_call?.external_number || 
+                      webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__caller_id || 
+                      'Unknown',
+        called_number: webhookData.data?.metadata?.phone_call?.agent_number || 
+                      webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__called_number || 
+                      'Unknown',
+        // Call duration in seconds
+        duration: webhookData.data?.metadata?.call_duration_secs || 
+                 webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__call_duration_secs || 
+                 0,
+        status: 'completed', // Simple status for now
+        call_type: 'phone'   // Simple type for now
     };
     
-    // Add to call history
-    callHistory.unshift(callData); // Add to beginning
+    console.log('Processed call data:', callData);
     
-    // Keep only last 100 calls to prevent memory issues
-    if (callHistory.length > 100) {
-        callHistory = callHistory.slice(0, 100);
+    // Add to call history
+    callHistory.unshift(callData);
+    
+    // Keep only last 50 calls to prevent memory issues
+    if (callHistory.length > 50) {
+        callHistory = callHistory.slice(0, 50);
     }
     
     // Broadcast to all connected clients
@@ -61,15 +62,6 @@ app.post('/webhook', (req, res) => {
     // Respond to webhook
     res.status(200).json({ success: true, message: 'Webhook received' });
 });
-
-// Helper function to map ElevenLabs status to our status
-function mapElevenLabsStatus(status, webhookType) {
-    if (webhookType === 'post_call_transcription') return 'completed';
-    if (status === 'done') return 'completed';
-    if (status === 'in_progress') return 'in_progress';
-    if (status === 'failed') return 'failed';
-    return status || 'unknown';
-}
 
 // API endpoint to get call history
 app.get('/api/calls', (req, res) => {
