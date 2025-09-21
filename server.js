@@ -55,9 +55,12 @@ app.post('/webhook', (req, res) => {
         transcript: transcript || ''
     };
     
+    // Log the actual transcript for debugging
     console.log('Processed call data:', {
-        ...callData,
-        transcript: transcript ? 'Transcript available' : 'No transcript'
+        id: callData.id,
+        duration: callData.duration,
+        transcript_length: transcript.length,
+        transcript_preview: transcript.substring(0, 100) + (transcript.length > 100 ? '...' : '')
     });
     
     // Check if we already have this call (by conversation ID)
