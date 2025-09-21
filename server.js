@@ -27,6 +27,14 @@ app.post('/webhook', (req, res) => {
     
     const webhookData = req.body;
     
+    // Extract transcript from the webhook
+    let transcript = '';
+    if (webhookData.data?.transcript && Array.isArray(webhookData.data.transcript)) {
+        transcript = webhookData.data.transcript
+            .map(turn => `${turn.role === 'agent' ? 'Agent' : 'Caller'}: ${turn.message}`)
+            .join('\n');
+    }
+    
     // Extract only essential call data - simplified
     const callData = {
         id: webhookData.data?.conversation_id || Date.now().toString(),
@@ -42,11 +50,15 @@ app.post('/webhook', (req, res) => {
         duration: webhookData.data?.metadata?.call_duration_secs || 
                  webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__call_duration_secs || 
                  0,
-        status: 'completed', // Simple status for now
-        call_type: 'phone'   // Simple type for now
+        status: 'completed',
+        call_type: 'phone',
+        transcript: transcript || ''
     };
     
-    console.log('Processed call data:', callData);
+    console.log('Processed call data:', {
+        ...callData,
+        transcript: transcript ? 'Transcript available' : 'No transcript'
+    });
     
     // Check if we already have this call (by conversation ID)
     const existingIndex = callHistory.findIndex(call => call.id === callData.id);
@@ -54,7 +66,7 @@ app.post('/webhook', (req, res) => {
     if (existingIndex >= 0) {
         // Update existing call if this one has more/better data
         const existing = callHistory[existingIndex];
-        if (callData.caller_number !== 'Unknown' || callData.duration > 0) {
+        if (callData.caller_number !== 'Unknown' || callData.duration > 0 || callData.transcript) {
             console.log('Updating existing call with better data');
             callHistory[existingIndex] = {
                 ...existing,
@@ -68,8 +80,8 @@ app.post('/webhook', (req, res) => {
             console.log('Ignoring duplicate webhook with less data');
         }
     } else {
-        // Only add if we have useful data (phone numbers or duration)
-        if (callData.caller_number !== 'Unknown' || callData.duration > 0) {
+        // Only add if we have useful data (phone numbers, duration, or transcript)
+        if (callData.caller_number !== 'Unknown' || callData.duration > 0 || callData.transcript) {
             console.log('Adding new call to history');
             // Add to call history
             callHistory.unshift(callData);
