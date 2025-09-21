@@ -359,7 +359,7 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Agent:</span>
-                            <span>${call.agent_id}</span>
+                            <span>${call.agent_id?.substring(0, 20) || 'Unknown'}...</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Duration:</span>
@@ -373,6 +373,30 @@
                             <span class="detail-label">Type:</span>
                             <span>${call.call_type}</span>
                         </div>
+                        ${call.cost ? `
+                        <div class="detail-item">
+                            <span class="detail-label">Cost:</span>
+                            <span>${(call.cost / 100).toFixed(2)}</span>
+                        </div>
+                        ` : ''}
+                        ${call.call_summary_title ? `
+                        <div class="detail-item" style="grid-column: 1/-1;">
+                            <span class="detail-label">Summary:</span>
+                            <span><strong>${call.call_summary_title}</strong></span>
+                        </div>
+                        ` : ''}
+                        ${call.transcript_summary ? `
+                        <div class="detail-item" style="grid-column: 1/-1;">
+                            <span class="detail-label">Transcript:</span>
+                            <span style="font-size: 12px; color: #666;">${call.transcript_summary}</span>
+                        </div>
+                        ` : ''}
+                        ${call.termination_reason ? `
+                        <div class="detail-item" style="grid-column: 1/-1;">
+                            <span class="detail-label">End Reason:</span>
+                            <span style="font-size: 12px;">${call.termination_reason}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
