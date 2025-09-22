@@ -16,6 +16,8 @@
             background: #f8fafc;
             color: #1e293b;
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .main-content {
@@ -25,36 +27,38 @@
         .header {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-bottom: 1px solid #e2e8f0;
-            padding: 20px 40px;
+            padding: 16px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
-            position: relative;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         
         .header-center {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 16px;
         }
         
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
         
         .logo-icon {
-            width: 44px;
-            height: 44px;
+            width: 36px;
+            height: 36px;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%234f46e5;stop-opacity:1" /><stop offset="100%" style="stop-color:%2306b6d4;stop-opacity:1" /></linearGradient></defs><path d="M20 25 Q20 15 30 15 L70 15 Q80 15 80 25 L80 45 Q80 55 70 55 L55 55 L50 65 L45 55 L30 55 Q20 55 20 45 Z" fill="url(%23grad1)" stroke="white" stroke-width="2"/><path d="M30 70 Q30 60 40 60 L75 60 Q85 60 85 70 L85 85 Q85 95 75 95 L40 95 Q30 95 30 85 Z" fill="url(%23grad1)" opacity="0.7"/><path d="M35 25 L75 25 M35 35 L65 35 M35 45 L70 45" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>') center/contain no-repeat;
-            border-radius: 12px;
+            border-radius: 10px;
             filter: drop-shadow(0 2px 4px rgba(79, 70, 229, 0.2));
         }
         
         .logo-text {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 800;
             background: linear-gradient(135deg, #4f46e5, #06b6d4);
             background-clip: text;
@@ -63,14 +67,14 @@
         }
         
         .header-divider {
-            width: 2px;
-            height: 32px;
+            width: 1px;
+            height: 24px;
             background: linear-gradient(to bottom, transparent, #e2e8f0, transparent);
-            margin: 0 8px;
+            margin: 0 4px;
         }
         
         .header-title {
-            font-size: 1.5rem;
+            font-size: 1.125rem;
             font-weight: 600;
             color: #1e293b;
             letter-spacing: -0.025em;
@@ -87,15 +91,15 @@
         
         .user-profile {
             position: absolute;
-            right: 40px;
+            right: 16px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
         
         .profile-avatar {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             display: flex;
@@ -103,12 +107,12 @@
             justify-content: center;
             color: white;
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
         }
         
         .content-area {
-            padding: 32px;
+            padding: 16px;
             max-width: 1400px;
         }
         
@@ -116,13 +120,14 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
+            padding: 10px 16px;
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
             border-radius: 20px;
-            margin-bottom: 32px;
+            margin-bottom: 20px;
             color: #15803d;
             font-size: 0.875rem;
+            font-weight: 500;
         }
         
         .status-dot {
@@ -140,20 +145,21 @@
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
         }
         
         .stat-card {
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
-            padding: 28px;
+            padding: 20px;
             border-radius: 16px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            text-align: center;
         }
         
         .stat-card::before {
@@ -166,9 +172,8 @@
             background: linear-gradient(90deg, #4f46e5, #06b6d4);
         }
         
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        .stat-card:active {
+            transform: scale(0.98);
         }
         
         .stat-value {
@@ -192,9 +197,9 @@
         
         .controls {
             display: flex;
-            gap: 12px;
-            justify-content: flex-start;
-            margin-bottom: 32px;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
         
@@ -202,18 +207,22 @@
             background: #4f46e5;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 16px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
             font-size: 0.875rem;
             transition: all 0.2s ease;
             border: 1px solid transparent;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+            min-width: 44px;
         }
         
-        .btn:hover {
+        .btn:active {
+            transform: scale(0.95);
             background: #4338ca;
-            transform: translateY(-1px);
         }
         
         .btn.secondary {
@@ -244,60 +253,69 @@
         }
         
         .section-header {
-            padding: 28px 32px;
+            padding: 20px 16px;
             border-bottom: 1px solid #e2e8f0;
             background: linear-gradient(135deg, #fafbff 0%, #f1f5f9 100%);
         }
         
         .section-title {
-            font-size: 1.375rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             color: #1e293b;
             letter-spacing: -0.025em;
         }
         
         .section-subtitle {
             color: #64748b;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             font-weight: 500;
+        }
+        
+        .call-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .call-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 600px;
         }
         
         .call-table th {
             background: #f8fafc;
-            padding: 12px 24px;
+            padding: 12px 8px;
             text-align: left;
-            font-weight: 500;
-            font-size: 0.875rem;
+            font-weight: 600;
+            font-size: 0.75rem;
             color: #475569;
             border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
         }
         
         .call-table td {
-            padding: 16px 24px;
+            padding: 12px 8px;
             border-bottom: 1px solid #f1f5f9;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
         }
         
-        .call-table tr:hover {
+        .call-table tr:active {
             background: #f8fafc;
         }
         
         .phone-number {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             color: #4f46e5;
+            font-size: 0.7rem;
         }
         
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.625rem;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -388,23 +406,24 @@
         
         .modal-content {
             background: white;
-            border-radius: 12px;
-            padding: 32px;
-            max-width: 600px;
+            border-radius: 16px;
+            padding: 24px 16px;
+            max-width: calc(100vw - 32px);
             width: 100%;
             max-height: 80vh;
             overflow-y: auto;
+            margin: 16px;
         }
         
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         
         .modal-title {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 600;
             color: #1e293b;
         }
@@ -415,48 +434,86 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: #64748b;
-            padding: 4px;
+            padding: 8px;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .close-btn:active {
+            background: #f1f5f9;
         }
         
         .transcript-content {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 16px;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-family: system-ui, -apple-system, sans-serif;
             font-size: 0.875rem;
             line-height: 1.6;
             white-space: pre-wrap;
             color: #475569;
-            max-height: 400px;
+            max-height: 50vh;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
-        @media (max-width: 640px) {
+        @media (min-width: 768px) {
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
             }
             
-            .controls {
-                flex-direction: column;
-            }
-            
-            .call-table {
-                font-size: 0.75rem;
-            }
-            
-            .call-table th,
-            .call-table td {
-                padding: 8px 12px;
+            .content-area {
+                padding: 24px;
             }
             
             .header {
-                padding: 16px 20px;
+                padding: 20px 32px;
             }
             
             .header-center {
+                gap: 20px;
+            }
+            
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+            }
+            
+            .logo-text {
+                font-size: 1.75rem;
+            }
+            
+            .header-title {
+                font-size: 1.5rem;
+            }
+            
+            .user-profile {
+                right: 32px;
+            }
+            
+            .profile-avatar {
+                width: 36px;
+                height: 36px;
+                font-size: 0.875rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px 16px;
+            }
+            
+            .header-center {
+                gap: 8px;
                 flex-direction: column;
-                gap: 12px;
                 text-align: center;
             }
             
@@ -466,7 +523,25 @@
             
             .user-profile {
                 position: static;
-                margin-top: 12px;
+                margin-top: 8px;
+            }
+            
+            .logo-text {
+                font-size: 1.25rem;
+            }
+            
+            .header-title {
+                font-size: 1rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .btn {
+                width: 100%;
+                padding: 14px 16px;
             }
         }
     </style>
@@ -617,21 +692,42 @@
             }
 
             const tableHTML = `
-                <table class="call-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Phone Number</th>
-                            <th>Duration</th>
-                            <th>Status</th>
-                            <th>Transcript</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${calls.slice(0, 10).map(call => `
+                <div class="call-table-container">
+                    <table class="call-table">
+                        <thead>
                             <tr>
-                                <td>${formatDate(call.timestamp).split(' ')[0]}</td>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Phone</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Transcript</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${calls.slice(0, 10).map(call => `
+                                <tr>
+                                    <td>${formatDate(call.timestamp).split(' ')[0]}</td>
+                                    <td>${formatTime(call.timestamp)}</td>
+                                    <td class="phone-number">${call.caller_number}</td>
+                                    <td>${formatDuration(call.duration)}</td>
+                                    <td>
+                                        <span class="status-badge status-${call.status}">
+                                            ${call.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        ${call.transcript ? 
+                                            `<button class="btn secondary" style="padding: 6px 12px; font-size: 0.625rem; min-height: 32px;" onclick="showTranscript('${call.id}')">View</button>` : 
+                                            '<span style="color: #94a3b8;">—</span>'
+                                        }
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
                                 <td>${formatTime(call.timestamp)}</td>
                                 <td class="phone-number">${call.caller_number}</td>
                                 <td>${formatDuration(call.duration)}</td>
