@@ -29,24 +29,29 @@
             border-bottom: 1px solid #e2e8f0;
             padding: 16px 20px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
             position: sticky;
             top: 0;
             z-index: 100;
+            flex-wrap: wrap;
+            gap: 12px;
         }
         
-        .header-center {
+        .header-left {
             display: flex;
             align-items: center;
             gap: 16px;
+            flex: 1;
+            min-width: 0;
         }
         
         .logo {
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-shrink: 0;
         }
         
         .logo-icon {
@@ -66,35 +71,21 @@
             -webkit-text-fill-color: transparent;
         }
         
-        .header-divider {
-            width: 1px;
-            height: 24px;
-            background: linear-gradient(to bottom, transparent, #e2e8f0, transparent);
-            margin: 0 4px;
-        }
-        
         .header-title {
             font-size: 1.125rem;
             font-weight: 600;
             color: #1e293b;
             letter-spacing: -0.025em;
-        }
-        
-        .header-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .user-profile {
-            position: absolute;
-            right: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-shrink: 0;
         }
         
         .profile-avatar {
@@ -114,6 +105,7 @@
         .content-area {
             padding: 16px;
             max-width: 1400px;
+            margin: 0 auto;
         }
         
         .connection-status {
@@ -145,7 +137,7 @@
         
         .stats-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -217,7 +209,7 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             min-height: 44px;
-            min-width: 44px;
+            min-width: 100px;
         }
         
         .btn:active {
@@ -231,7 +223,7 @@
             border: 1px solid #e2e8f0;
         }
         
-        .btn.secondary:hover {
+        .btn.secondary:active {
             background: #f8fafc;
             color: #334155;
         }
@@ -240,7 +232,7 @@
             background: #dc2626;
         }
         
-        .btn.danger:hover {
+        .btn.danger:active {
             background: #b91c1c;
         }
         
@@ -272,49 +264,78 @@
             font-weight: 500;
         }
         
-        .call-table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+        /* Mobile-First Call Cards */
+        .call-cards {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         
-        .call-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 600px;
+        .call-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
-        .call-table th {
-            background: #f8fafc;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.75rem;
-            color: #475569;
-            border-bottom: 1px solid #e2e8f0;
-            white-space: nowrap;
+        .call-card:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
         
-        .call-table td {
-            padding: 12px 8px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.75rem;
-            white-space: nowrap;
+        .call-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 12px;
         }
         
-        .call-table tr:active {
-            background: #f8fafc;
-        }
-        
-        .phone-number {
+        .call-phone {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
             color: #4f46e5;
-            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+        
+        .call-datetime {
+            text-align: right;
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        
+        .call-date {
+            font-weight: 600;
+        }
+        
+        .call-time {
+            color: #94a3b8;
+        }
+        
+        .call-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .call-duration {
+            font-size: 0.875rem;
+            color: #475569;
+            font-weight: 500;
         }
         
         .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.625rem;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -333,6 +354,80 @@
         .status-missed {
             background: #fef3c7;
             color: #d97706;
+        }
+        
+        .status-in-progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .call-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .transcript-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            color: #4f46e5;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 36px;
+        }
+        
+        .transcript-btn:active {
+            background: #f8fafc;
+            border-color: #4f46e5;
+        }
+        
+        .transcript-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Desktop Table (hidden on mobile) */
+        .call-table-container {
+            display: none;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .call-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        
+        .call-table th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        
+        .call-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        
+        .call-table tr:active {
+            background: #f8fafc;
+        }
+        
+        .phone-number {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            color: #4f46e5;
+            font-weight: 600;
         }
         
         .empty-state {
@@ -367,7 +462,7 @@
             font-size: 0.75rem;
             color: #4f46e5;
             word-break: break-all;
-            max-width: 400px;
+            max-width: 100%;
             margin: 0 auto;
         }
         
@@ -401,18 +496,18 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 16px;
         }
         
         .modal-content {
             background: white;
             border-radius: 16px;
-            padding: 24px 16px;
+            padding: 20px;
             max-width: calc(100vw - 32px);
             width: 100%;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
-            margin: 16px;
+            -webkit-overflow-scrolling: touch;
         }
         
         .modal-header {
@@ -420,12 +515,14 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            gap: 16px;
         }
         
         .modal-title {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             font-weight: 600;
             color: #1e293b;
+            flex: 1;
         }
         
         .close-btn {
@@ -443,6 +540,7 @@
             border-radius: 8px;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            flex-shrink: 0;
         }
         
         .close-btn:active {
@@ -453,17 +551,45 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 16px;
+            padding: 20px;
             font-family: system-ui, -apple-system, sans-serif;
             font-size: 0.875rem;
             line-height: 1.6;
             white-space: pre-wrap;
             color: #475569;
-            max-height: 50vh;
+            max-height: 60vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
         
+        .view-toggle {
+            display: none;
+            gap: 4px;
+            margin-bottom: 16px;
+            justify-content: center;
+        }
+        
+        .toggle-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        
+        .toggle-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Media Queries */
         @media (min-width: 768px) {
             .stats-grid {
                 grid-template-columns: repeat(3, 1fr);
@@ -476,10 +602,6 @@
             
             .header {
                 padding: 20px 32px;
-            }
-            
-            .header-center {
-                gap: 20px;
             }
             
             .logo-icon {
@@ -495,35 +617,39 @@
                 font-size: 1.5rem;
             }
             
-            .user-profile {
-                right: 32px;
-            }
-            
             .profile-avatar {
                 width: 36px;
                 height: 36px;
                 font-size: 0.875rem;
             }
+            
+            .view-toggle {
+                display: flex;
+            }
+            
+            .call-cards {
+                display: none;
+            }
+            
+            .call-table-container {
+                display: block;
+            }
         }
         
         @media (max-width: 480px) {
             .header {
-                padding: 12px 16px;
-            }
-            
-            .header-center {
-                gap: 8px;
                 flex-direction: column;
-                text-align: center;
+                align-items: stretch;
+                gap: 16px;
+                padding: 16px;
             }
             
-            .header-divider {
-                display: none;
+            .header-left {
+                justify-content: center;
             }
             
             .user-profile {
-                position: static;
-                margin-top: 8px;
+                justify-content: center;
             }
             
             .logo-text {
@@ -532,34 +658,56 @@
             
             .header-title {
                 font-size: 1rem;
+                text-align: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
             
             .controls {
                 flex-direction: column;
-                gap: 12px;
             }
             
             .btn {
                 width: 100%;
                 padding: 14px 16px;
             }
+            
+            .call-card-header {
+                flex-direction: column;
+                gap: 8px;
+                text-align: left;
+            }
+            
+            .call-datetime {
+                text-align: left;
+            }
+            
+            .modal-content {
+                padding: 16px;
+                margin: 8px;
+                border-radius: 12px;
+            }
+            
+            .modal-title {
+                font-size: 1.125rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Main Content -->
     <div class="main-content">
         <div class="header">
-            <div class="header-center">
+            <div class="header-left">
                 <div class="logo">
                     <div class="logo-icon"></div>
-                    <div class="logo-text">SkyIQ</div>
+                    <div class="logo-text" id="appName">SkyIQ</div>
                 </div>
-                <div class="header-divider"></div>
-                <div class="header-title">Rhow Properties Dashboard</div>
+                <div class="header-title" id="companyName">Dashboard</div>
             </div>
             <div class="user-profile">
-                <div class="profile-avatar">RP</div>
+                <div class="profile-avatar" id="userInitials">--</div>
             </div>
         </div>
 
@@ -596,6 +744,11 @@
                     <div class="section-subtitle">Recent conversation monitoring and analysis</div>
                 </div>
                 
+                <div class="view-toggle">
+                    <button class="toggle-btn" onclick="switchView('cards')">Cards</button>
+                    <button class="toggle-btn active" onclick="switchView('table')">Table</button>
+                </div>
+                
                 <div id="callHistory">
                     <div class="empty-state">
                         <div class="empty-icon">📞</div>
@@ -608,11 +761,10 @@
         </div>
     </div>
 
-    <!-- Transcript Modal -->
     <div id="transcriptModal" class="transcript-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">Call Transcript</div>
+                <div class="modal-title" id="modalTitle">Call Transcript</div>
                 <button class="close-btn" onclick="closeTranscriptModal()">&times;</button>
             </div>
             <div class="transcript-content" id="modalTranscript">
@@ -625,10 +777,68 @@
         New call received
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        // Configuration object - easy to modify
+        const config = {
+            appName: 'SkyIQ',
+            companyName: 'Dashboard',
+            userInitials: 'RP',
+            maxCallsToShow: 20,
+            autoRefreshInterval: 30000, // 30 seconds
+            socketEnabled: true
+        };
+
+        // Initialize app with config
+        function initializeApp() {
+            document.getElementById('appName').textContent = config.appName;
+            document.getElementById('companyName').textContent = config.companyName;
+            document.getElementById('userInitials').textContent = config.userInitials;
+            
+            const webhookUrl = document.getElementById('webhookUrl');
+            webhookUrl.textContent = `${window.location.origin}/webhook`;
+            
+            updateStats();
+        }
+
+        // Socket connection (if enabled)
+        let socket;
+        if (config.socketEnabled && typeof io !== 'undefined') {
+            socket = io();
+            
+            socket.on('connect', () => {
+                updateConnectionStatus('Connected', '#22c55e');
+            });
+
+            socket.on('disconnect', () => {
+                updateConnectionStatus('Disconnected', '#dc2626');
+            });
+
+            socket.on('callHistory', (history) => {
+                calls = history;
+                console.log('Received call history:', calls.length, 'calls');
+                renderCallHistory();
+            });
+
+            socket.on('newCall', (callData) => {
+                console.log('New call received:', callData);
+                calls.unshift(callData);
+                renderCallHistory();
+                showNotification('New call received');
+                updateStats();
+            });
+
+            socket.on('updateCall', (callData) => {
+                const index = calls.findIndex(call => call.id === callData.id);
+                if (index >= 0) {
+                    calls[index] = callData;
+                    renderCallHistory();
+                    updateStats();
+                }
+            });
+        }
+
         let calls = [];
+        let currentView = 'table';
 
         // DOM elements
         const callHistory = document.getElementById('callHistory');
@@ -637,46 +847,23 @@
         const lastUpdate = document.getElementById('lastUpdate');
         const connectionStatus = document.getElementById('connectionStatus');
         const notification = document.getElementById('notification');
-        const webhookUrl = document.getElementById('webhookUrl');
         const transcriptModal = document.getElementById('transcriptModal');
         const modalTranscript = document.getElementById('modalTranscript');
+        const modalTitle = document.getElementById('modalTitle');
 
-        // Set webhook URL
-        webhookUrl.textContent = `${window.location.origin}/webhook`;
+        function updateConnectionStatus(status, color) {
+            connectionStatus.textContent = status;
+            connectionStatus.style.color = color;
+        }
 
-        // Socket event listeners
-        socket.on('connect', () => {
-            connectionStatus.textContent = 'Connected';
-            connectionStatus.style.color = '#22c55e';
-        });
-
-        socket.on('disconnect', () => {
-            connectionStatus.textContent = 'Disconnected';
-            connectionStatus.style.color = '#dc2626';
-        });
-
-        socket.on('callHistory', (history) => {
-            calls = history;
-            console.log('Received call history:', calls.length, 'calls');
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
             renderCallHistory();
-        });
-
-        socket.on('newCall', (callData) => {
-            console.log('New call received:', callData);
-            calls.unshift(callData);
-            renderCallHistory();
-            showNotification();
-            updateStats();
-        });
-
-        socket.on('updateCall', (callData) => {
-            const index = calls.findIndex(call => call.id === callData.id);
-            if (index >= 0) {
-                calls[index] = callData;
-                renderCallHistory();
-                updateStats();
-            }
-        });
+        }
 
         function renderCallHistory() {
             if (calls.length === 0) {
@@ -691,6 +878,49 @@
                 return;
             }
 
+            const callsToShow = calls.slice(0, config.maxCallsToShow);
+
+            if (currentView === 'cards' || window.innerWidth < 768) {
+                renderCardView(callsToShow);
+            } else {
+                renderTableView(callsToShow);
+            }
+
+            updateStats();
+        }
+
+        function renderCardView(callsToShow) {
+            const cardsHTML = `
+                <div class="call-cards">
+                    ${callsToShow.map(call => `
+                        <div class="call-card">
+                            <div class="call-card-header">
+                                <div class="call-phone">${formatPhoneNumber(call.caller_number || call.phone || 'Unknown')}</div>
+                                <div class="call-datetime">
+                                    <div class="call-date">${formatDate(call.timestamp)}</div>
+                                    <div class="call-time">${formatTime(call.timestamp)}</div>
+                                </div>
+                            </div>
+                            <div class="call-details">
+                                <div class="call-duration">Duration: ${formatDuration(call.duration)}</div>
+                                <span class="status-badge status-${getStatusClass(call.status)}">
+                                    ${call.status || 'Unknown'}
+                                </span>
+                            </div>
+                            <div class="call-actions">
+                                ${call.transcript ? 
+                                    `<button class="transcript-btn" onclick="showTranscript('${call.id}')">View Transcript</button>` : 
+                                    `<button class="transcript-btn" disabled>No Transcript</button>`
+                                }
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            callHistory.innerHTML = cardsHTML;
+        }
+
+        function renderTableView(callsToShow) {
             const tableHTML = `
                 <div class="call-table-container">
                     <table class="call-table">
@@ -698,27 +928,27 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Time</th>
-                                <th>Phone</th>
+                                <th>Phone Number</th>
                                 <th>Duration</th>
                                 <th>Status</th>
                                 <th>Transcript</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${calls.slice(0, 10).map(call => `
+                            ${callsToShow.map(call => `
                                 <tr>
-                                    <td>${formatDate(call.timestamp).split(' ')[0]}</td>
+                                    <td>${formatDate(call.timestamp)}</td>
                                     <td>${formatTime(call.timestamp)}</td>
-                                    <td class="phone-number">${call.caller_number}</td>
+                                    <td class="phone-number">${formatPhoneNumber(call.caller_number || call.phone || 'Unknown')}</td>
                                     <td>${formatDuration(call.duration)}</td>
                                     <td>
-                                        <span class="status-badge status-${call.status}">
-                                            ${call.status}
+                                        <span class="status-badge status-${getStatusClass(call.status)}">
+                                            ${call.status || 'Unknown'}
                                         </span>
                                     </td>
                                     <td>
                                         ${call.transcript ? 
-                                            `<button class="btn secondary" style="padding: 6px 12px; font-size: 0.625rem; min-height: 32px;" onclick="showTranscript('${call.id}')">View</button>` : 
+                                            `<button class="btn secondary" style="padding: 6px 12px; font-size: 0.75rem; min-height: 32px;" onclick="showTranscript('${call.id}')">View</button>` : 
                                             '<span style="color: #94a3b8;">—</span>'
                                         }
                                     </td>
@@ -728,55 +958,87 @@
                     </table>
                 </div>
             `;
-                                <td>${formatTime(call.timestamp)}</td>
-                                <td class="phone-number">${call.caller_number}</td>
-                                <td>${formatDuration(call.duration)}</td>
-                                <td>
-                                    <span class="status-badge status-${call.status}">
-                                        ${call.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    ${call.transcript ? 
-                                        `<button class="btn secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="showTranscript('${call.id}')">View</button>` : 
-                                        '<span style="color: #94a3b8;">No transcript</span>'
-                                    }
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
             callHistory.innerHTML = tableHTML;
-            updateStats();
+        }
+
+        function getStatusClass(status) {
+            if (!status) return 'unknown';
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('complete') || statusLower === 'answered') return 'completed';
+            if (statusLower.includes('fail') || statusLower === 'busy') return 'failed';
+            if (statusLower.includes('miss') || statusLower === 'no-answer') return 'missed';
+            if (statusLower.includes('progress') || statusLower === 'ringing') return 'in-progress';
+            return statusLower.replace(/[^a-z0-9]/g, '-');
+        }
+
+        function formatPhoneNumber(phone) {
+            if (!phone || phone === 'Unknown') return phone;
+            
+            // Remove all non-digit characters
+            const cleaned = phone.replace(/\D/g, '');
+            
+            // Format US phone numbers
+            if (cleaned.length === 10) {
+                return `(${cleaned.substr(0, 3)}) ${cleaned.substr(3, 3)}-${cleaned.substr(6, 4)}`;
+            } else if (cleaned.length === 11 && cleaned.charAt(0) === '1') {
+                return `+1 (${cleaned.substr(1, 3)}) ${cleaned.substr(4, 3)}-${cleaned.substr(7, 4)}`;
+            }
+            
+            // Return original if can't format
+            return phone;
         }
 
         function updateStats() {
             totalCalls.textContent = calls.length;
             
-            const callsWithTranscripts = calls.filter(call => call.transcript && call.transcript.length > 0).length;
+            const callsWithTranscripts = calls.filter(call => 
+                call.transcript && call.transcript.length > 0
+            ).length;
             transcriptCount.textContent = callsWithTranscripts;
             
             lastUpdate.textContent = new Date().toLocaleTimeString();
         }
 
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString();
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday';
+            } else {
+                return date.toLocaleDateString();
+            }
         }
 
         function formatTime(dateString) {
-            return new Date(dateString).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            if (!dateString) return 'Unknown';
+            return new Date(dateString).toLocaleTimeString([], {
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true
+            });
         }
 
         function formatDuration(seconds) {
             if (!seconds || seconds === 0) return '0m 0s';
-            const mins = Math.floor(seconds / 60);
+            const hours = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            return `${mins}m ${secs}s`;
+            
+            if (hours > 0) {
+                return `${hours}h ${mins}m ${secs}s`;
+            } else {
+                return `${mins}m ${secs}s`;
+            }
         }
 
-        function showNotification() {
+        function showNotification(message = 'New call received') {
+            notification.textContent = message;
             notification.classList.add('show');
             setTimeout(() => {
                 notification.classList.remove('show');
@@ -786,8 +1048,25 @@
         function showTranscript(callId) {
             const call = calls.find(c => c.id === callId);
             if (call && call.transcript) {
+                const phoneNumber = formatPhoneNumber(call.caller_number || call.phone || 'Unknown');
+                const callDate = formatDate(call.timestamp);
+                const callTime = formatTime(call.timestamp);
+                
+                modalTitle.textContent = `Transcript - ${phoneNumber}`;
                 modalTranscript.textContent = call.transcript;
                 transcriptModal.style.display = 'flex';
+                
+                // Add call details to transcript
+                const transcriptWithHeader = `Call Details:
+Phone: ${phoneNumber}
+Date: ${callDate} at ${callTime}
+Duration: ${formatDuration(call.duration)}
+Status: ${call.status || 'Unknown'}
+
+Transcript:
+${call.transcript}`;
+                
+                modalTranscript.textContent = transcriptWithHeader;
             }
         }
 
@@ -796,30 +1075,56 @@
         }
 
         function viewAllCalls() {
-            // Show all calls instead of just first 10
+            config.maxCallsToShow = calls.length;
             renderCallHistory();
+            
+            const viewBtn = document.querySelector('button[onclick="viewAllCalls()"]');
+            if (viewBtn) {
+                const originalText = viewBtn.textContent;
+                viewBtn.textContent = `✅ Showing All ${calls.length}`;
+                setTimeout(() => {
+                    viewBtn.textContent = originalText;
+                    config.maxCallsToShow = 20; // Reset to default
+                }, 2000);
+            }
         }
 
         async function refreshData() {
             try {
                 console.log('Manual refresh - fetching data...');
-                const response = await fetch('/api/calls');
-                const data = await response.json();
-                calls = data.calls;
-                console.log('Fetched', calls.length, 'calls from API');
-                renderCallHistory();
-                updateStats();
                 
+                // Show loading state
                 const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
                 if (refreshBtn) {
-                    const originalText = refreshBtn.textContent;
-                    refreshBtn.textContent = '✅ Refreshed';
-                    setTimeout(() => {
-                        refreshBtn.textContent = originalText;
-                    }, 1000);
+                    refreshBtn.textContent = '🔄 Refreshing...';
+                    refreshBtn.disabled = true;
+                }
+                
+                const response = await fetch('/api/calls');
+                if (response.ok) {
+                    const data = await response.json();
+                    calls = data.calls || [];
+                    console.log('Fetched', calls.length, 'calls from API');
+                    renderCallHistory();
+                    updateStats();
+                    showNotification('Data refreshed successfully');
+                } else {
+                    console.error('Failed to fetch calls:', response.statusText);
+                    showNotification('Failed to refresh data');
                 }
             } catch (error) {
                 console.error('Error refreshing data:', error);
+                showNotification('Error refreshing data');
+                
+                // Fallback: generate sample data for demo
+                generateSampleData();
+            } finally {
+                // Reset button
+                const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
+                if (refreshBtn) {
+                    refreshBtn.textContent = 'Refresh Data';
+                    refreshBtn.disabled = false;
+                }
             }
         }
 
@@ -828,8 +1133,80 @@
                 calls = [];
                 renderCallHistory();
                 updateStats();
+                showNotification('Call history cleared');
             }
         }
+
+        // Generate sample data for demonstration
+        function generateSampleData() {
+            const sampleCalls = [
+                {
+                    id: '1',
+                    caller_number: '+1-555-0123',
+                    timestamp: new Date().toISOString(),
+                    duration: 180,
+                    status: 'completed',
+                    transcript: 'Hello, I\'m calling about the property listing on Oak Street. Is it still available? I\'d like to schedule a viewing if possible.'
+                },
+                {
+                    id: '2',
+                    caller_number: '(555) 456-7890',
+                    timestamp: new Date(Date.now() - 3600000).toISOString(),
+                    duration: 45,
+                    status: 'missed',
+                    transcript: null
+                },
+                {
+                    id: '3',
+                    caller_number: '555.789.0123',
+                    timestamp: new Date(Date.now() - 7200000).toISOString(),
+                    duration: 320,
+                    status: 'completed',
+                    transcript: 'Hi, I saw your property advertisement online. Can you tell me more about the neighborhood? What are the schools like in the area?'
+                },
+                {
+                    id: '4',
+                    caller_number: '15551234567',
+                    timestamp: new Date(Date.now() - 86400000).toISOString(),
+                    duration: 0,
+                    status: 'failed',
+                    transcript: null
+                }
+            ];
+            
+            calls = sampleCalls;
+            renderCallHistory();
+            updateStats();
+            console.log('Generated sample data for demonstration');
+        }
+
+        // Auto-refresh functionality
+        let autoRefreshTimer;
+        
+        function startAutoRefresh() {
+            if (config.autoRefreshInterval > 0) {
+                autoRefreshTimer = setInterval(() => {
+                    if (!document.hidden) { // Only refresh if page is visible
+                        refreshData();
+                    }
+                }, config.autoRefreshInterval);
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
+        }
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
 
         // Close modal when clicking outside
         transcriptModal.addEventListener('click', (e) => {
@@ -838,8 +1215,38 @@
             }
         });
 
-        // Initialize
-        updateStats();
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            renderCallHistory();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && transcriptModal.style.display === 'flex') {
+                closeTranscriptModal();
+            }
+            if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                refreshData();
+            }
+        });
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
+            refreshData();
+            startAutoRefresh();
+        });
+
+        // Export configuration for easy modification
+        window.dashboardConfig = config;
+        
+        // Utility function to update configuration
+        window.updateConfig = function(newConfig) {
+            Object.assign(config, newConfig);
+            initializeApp();
+            renderCallHistory();
+        };
     </script>
 </body>
 </html>
