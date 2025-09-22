@@ -141,6 +141,7 @@ async function sendCallNotification(callData) {
 // Initialize database table
 async function initializeDatabase() {
     try {
+        // First, create the table if it doesn't exist
         await pool.query(`
             CREATE TABLE IF NOT EXISTS calls (
                 id VARCHAR(255) PRIMARY KEY,
@@ -151,10 +152,26 @@ async function initializeDatabase() {
                 status VARCHAR(50) DEFAULT 'completed',
                 call_type VARCHAR(50) DEFAULT 'inbound',
                 transcript TEXT,
-                conversation_id VARCHAR(255),
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         `);
+
+        // Check if conversation_id column exists and add it if missing
+        const checkColumn = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'calls' AND column_name = 'conversation_id'
+        `);
+
+        if (checkColumn.rows.length === 0) {
+            console.log('🔧 Adding missing conversation_id column...');
+            await pool.query(`
+                ALTER TABLE calls 
+                ADD COLUMN conversation_id VARCHAR(255)
+            `);
+            console.log('✅ conversation_id column added successfully');
+        }
+
         console.log('Database table initialized successfully');
     } catch (error) {
         console.error('Database initialization error:', error);
