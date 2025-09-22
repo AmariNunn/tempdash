@@ -134,6 +134,42 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
         }
+
+        .calling-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            background: #4f46e5;
+            color: white;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
         
         .outbound-call-section {
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
@@ -195,6 +231,64 @@
             border-color: #4f46e5;
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
+
+        .csv-upload-area {
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8fafc;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .csv-upload-area:hover {
+            border-color: #4f46e5;
+            background: #fafbff;
+        }
+
+        .csv-upload-area.dragover {
+            border-color: #4f46e5;
+            background: #f0f4ff;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #64748b;
+        }
+
+        .upload-text {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .upload-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .batch-name-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            margin-bottom: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .batch-name-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
         
         .call-btn {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
@@ -212,6 +306,8 @@
             min-height: 48px;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            width: 100%;
+            justify-content: center;
         }
         
         .call-btn:hover {
@@ -228,6 +324,34 @@
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+        }
+
+        .batch-status {
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .batch-status.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #06b6d4);
+            width: 0%;
+            transition: width 0.3s ease;
         }
         
         .call-status {
@@ -353,14 +477,6 @@
             color: #334155;
         }
         
-        .btn.danger {
-            background: #dc2626;
-        }
-        
-        .btn.danger:active {
-            background: #b91c1c;
-        }
-        
         .calls-section {
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
             border-radius: 16px;
@@ -389,7 +505,6 @@
             font-weight: 500;
         }
         
-        /* Mobile-First Call Cards */
         .call-cards {
             padding: 16px;
             display: flex;
@@ -495,16 +610,6 @@
             color: #dc2626;
         }
         
-        .status-missed {
-            background: #fef3c7;
-            color: #d97706;
-        }
-        
-        .status-in-progress {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-        
         .status-initiated {
             background: #e0f2fe;
             color: #0369a1;
@@ -536,47 +641,6 @@
         .transcript-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-        
-        /* Desktop Table (hidden on mobile) */
-        .call-table-container {
-            display: none;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .call-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-        
-        .call-table th {
-            background: #f8fafc;
-            padding: 12px 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: #475569;
-            border-bottom: 1px solid #e2e8f0;
-            white-space: nowrap;
-        }
-        
-        .call-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.875rem;
-            white-space: nowrap;
-        }
-        
-        .call-table tr:active {
-            background: #f8fafc;
-        }
-        
-        .phone-number {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            color: #4f46e5;
-            font-weight: 600;
         }
         
         .empty-state {
@@ -716,33 +780,6 @@
             -webkit-overflow-scrolling: touch;
         }
         
-        .view-toggle {
-            display: none;
-            gap: 4px;
-            margin-bottom: 16px;
-            justify-content: center;
-        }
-        
-        .toggle-btn {
-            padding: 8px 16px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .toggle-btn.active {
-            background: #4f46e5;
-            color: white;
-            border-color: #4f46e5;
-        }
-        
-        .toggle-btn:active {
-            transform: scale(0.95);
-        }
-        
         /* Media Queries */
         @media (min-width: 768px) {
             .stats-grid {
@@ -775,18 +812,6 @@
                 width: 36px;
                 height: 36px;
                 font-size: 0.875rem;
-            }
-            
-            .view-toggle {
-                display: flex;
-            }
-            
-            .call-cards {
-                display: none;
-            }
-            
-            .call-table-container {
-                display: block;
             }
             
             .phone-input-group {
@@ -832,32 +857,16 @@
                 padding: 14px 16px;
             }
             
-            .call-card-header {
-                flex-direction: column;
-                gap: 8px;
-                text-align: left;
-            }
-            
-            .call-datetime {
-                text-align: left;
-            }
-            
-            .modal-content {
-                padding: 16px;
-                margin: 8px;
-                border-radius: 12px;
-            }
-            
-            .modal-title {
-                font-size: 1.125rem;
-            }
-            
             .phone-input-group {
                 flex-direction: column;
             }
             
             .phone-input {
                 min-width: 100%;
+            }
+            
+            .calling-tabs {
+                flex-direction: column;
             }
         }
     </style>
@@ -870,7 +879,7 @@
                     <div class="logo-icon"></div>
                     <div class="logo-text" id="appName">SkyIQ</div>
                 </div>
-                <div class="header-title" id="companyName">Dashboard</div>
+                <div class="header-title" id="companyName">Sales Dashboard</div>
             </div>
             <div class="user-profile">
                 <div class="profile-avatar" id="userInitials">--</div>
@@ -883,28 +892,85 @@
                 <span id="connectionStatus">Connected</span>
             </div>
 
-            <!-- Outbound Calling Section -->
-            <div class="outbound-call-section">
-                <div class="outbound-header">
-                    <div class="outbound-title">
-                        📤 Initiate Outbound Call
+            <!-- Calling Tabs -->
+            <div class="calling-tabs">
+                <button class="tab-btn active" onclick="switchTab('single')">📞 Single Call</button>
+                <button class="tab-btn" onclick="switchTab('batch')">📁 Batch Calls</button>
+            </div>
+
+            <!-- Single Call Tab -->
+            <div id="singleTab" class="tab-content active">
+                <div class="outbound-call-section">
+                    <div class="outbound-header">
+                        <div class="outbound-title">
+                            📞 Single Outbound Call
+                        </div>
+                        <div class="outbound-subtitle">Make individual calls directly from your dashboard</div>
                     </div>
-                    <div class="outbound-subtitle">Make calls directly from your dashboard using AI voice agents</div>
+                    <div class="outbound-form">
+                        <div class="phone-input-group">
+                            <input 
+                                type="tel" 
+                                id="phoneInput" 
+                                class="phone-input" 
+                                placeholder="Enter phone number (e.g., +1-555-123-4567)"
+                                maxlength="20"
+                            >
+                            <button id="callButton" class="call-btn" onclick="initiateCall()">
+                                📞 Start Call
+                            </button>
+                        </div>
+                        <div id="callStatus" class="call-status"></div>
+                    </div>
                 </div>
-                <div class="outbound-form">
-                    <div class="phone-input-group">
-                        <input 
-                            type="tel" 
-                            id="phoneInput" 
-                            class="phone-input" 
-                            placeholder="Enter phone number (e.g., +1-555-123-4567)"
-                            maxlength="20"
-                        >
-                        <button id="callButton" class="call-btn" onclick="initiateCall()">
-                            📞 Start Call
-                        </button>
+            </div>
+
+            <!-- Batch Call Tab -->
+            <div id="batchTab" class="tab-content">
+                <div class="outbound-call-section">
+                    <div class="outbound-header">
+                        <div class="outbound-title">
+                            📁 Batch Outbound Calls
+                        </div>
+                        <div class="outbound-subtitle">Upload CSV file and call multiple numbers sequentially</div>
                     </div>
-                    <div id="callStatus" class="call-status"></div>
+                    <div class="outbound-form">
+                        <input 
+                            type="text" 
+                            id="batchNameInput" 
+                            class="batch-name-input" 
+                            placeholder="Campaign name (e.g., 'Q4 Sales Outreach')"
+                        >
+                        
+                        <div class="csv-upload-area" id="csvUploadArea" onclick="document.getElementById('csvFileInput').click()">
+                            <div class="upload-icon">📄</div>
+                            <div class="upload-text">Click to upload CSV file</div>
+                            <div class="upload-subtitle">or drag and drop your file here</div>
+                            <div class="upload-subtitle" style="margin-top: 8px; font-size: 0.75rem;">
+                                Format: One phone number per line or use header "phone_number"
+                            </div>
+                        </div>
+                        
+                        <input 
+                            type="file" 
+                            id="csvFileInput" 
+                            class="file-input" 
+                            accept=".csv,.txt"
+                            onchange="handleFileSelect(this.files[0])"
+                        >
+                        
+                        <button id="batchCallButton" class="call-btn" onclick="startBatch()" disabled>
+                            📁 Start Batch Calling
+                        </button>
+                        
+                        <div id="batchStatus" class="batch-status">
+                            <div id="batchProgress"></div>
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <div id="batchStats"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -938,11 +1004,6 @@
                     <div class="section-subtitle">Recent conversation monitoring and analysis</div>
                 </div>
                 
-                <div class="view-toggle">
-                    <button class="toggle-btn" onclick="switchView('cards')">Cards</button>
-                    <button class="toggle-btn active" onclick="switchView('table')">Table</button>
-                </div>
-                
                 <div id="callHistory">
                     <div class="empty-state">
                         <div class="empty-icon">📞</div>
@@ -973,29 +1034,23 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Configuration object - easy to modify
+        // Configuration object
         const config = {
             appName: 'SkyIQ',
-            companyName: 'Dashboard',
+            companyName: 'Sales Dashboard',
             userInitials: 'RP',
             maxCallsToShow: 20,
-            autoRefreshInterval: 30000, // 30 seconds
+            autoRefreshInterval: 30000,
             socketEnabled: true
         };
 
-        // Initialize app with config
-        function initializeApp() {
-            document.getElementById('appName').textContent = config.appName;
-            document.getElementById('companyName').textContent = config.companyName;
-            document.getElementById('userInitials').textContent = config.userInitials;
-            
-            const webhookUrl = document.getElementById('webhookUrl');
-            webhookUrl.textContent = `${window.location.origin}/webhook`;
-            
-            updateStats();
-        }
+        // Global variables
+        let calls = [];
+        let batches = [];
+        let currentBatch = null;
+        let selectedFile = null;
 
-        // Socket connection (if enabled)
+        // Socket connection
         let socket;
         if (config.socketEnabled && typeof io !== 'undefined') {
             socket = io();
@@ -1010,12 +1065,14 @@
 
             socket.on('callHistory', (history) => {
                 calls = history;
-                console.log('Received call history:', calls.length, 'calls');
                 renderCallHistory();
             });
 
+            socket.on('batchHistory', (batchHistory) => {
+                batches = batchHistory;
+            });
+
             socket.on('newCall', (callData) => {
-                console.log('New call received:', callData);
                 calls.unshift(callData);
                 renderCallHistory();
                 showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
@@ -1030,10 +1087,15 @@
                     updateStats();
                 }
             });
-        }
 
-        let calls = [];
-        let currentView = 'table';
+            socket.on('batchProgress', (data) => {
+                updateBatchProgress(data);
+            });
+
+            socket.on('batchCompleted', (data) => {
+                completeBatch(data);
+            });
+        }
 
         // DOM elements
         const callHistory = document.getElementById('callHistory');
@@ -1050,7 +1112,37 @@
         const callButton = document.getElementById('callButton');
         const callStatus = document.getElementById('callStatus');
 
-        // Outbound calling functionality
+        // Batch calling elements
+        const csvUploadArea = document.getElementById('csvUploadArea');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const batchNameInput = document.getElementById('batchNameInput');
+        const batchCallButton = document.getElementById('batchCallButton');
+        const batchStatus = document.getElementById('batchStatus');
+
+        // Initialize app
+        function initializeApp() {
+            document.getElementById('appName').textContent = config.appName;
+            document.getElementById('companyName').textContent = config.companyName;
+            document.getElementById('userInitials').textContent = config.userInitials;
+            
+            const webhookUrl = document.getElementById('webhookUrl');
+            webhookUrl.textContent = `${window.location.origin}/webhook`;
+            
+            updateStats();
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Single call functionality
         async function initiateCall() {
             const phoneNumber = phoneInput.value.trim();
             
@@ -1059,7 +1151,6 @@
                 return;
             }
 
-            // Basic phone number validation
             const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)\.]{7,15}$/;
             if (!phoneRegex.test(phoneNumber)) {
                 showCallStatus('Please enter a valid phone number', 'error');
@@ -1086,7 +1177,6 @@
                     phoneInput.value = '';
                     showNotification('Outbound call initiated successfully');
                     
-                    // Refresh data to show the new call
                     setTimeout(() => {
                         refreshData();
                     }, 1000);
@@ -1100,20 +1190,146 @@
                 callButton.disabled = false;
                 callButton.textContent = '📞 Start Call';
                 
-                // Clear status after 5 seconds
                 setTimeout(() => {
                     hideCallStatus();
                 }, 5000);
             }
         }
 
-        function showCallStatus(message, type) {
-            callStatus.textContent = message;
-            callStatus.className = `call-status ${type}`;
+        // Batch calling functionality
+        function handleFileSelect(file) {
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.csv') && !file.name.toLowerCase().endsWith('.txt')) {
+                showNotification('Please select a CSV or TXT file', true);
+                return;
+            }
+
+            selectedFile = file;
+            csvUploadArea.innerHTML = `
+                <div class="upload-icon">✅</div>
+                <div class="upload-text">${file.name}</div>
+                <div class="upload-subtitle">Ready to upload ${Math.round(file.size / 1024)}KB</div>
+            `;
+
+            batchCallButton.disabled = false;
         }
 
-        function hideCallStatus() {
-            callStatus.className = 'call-status';
+        // Drag and drop functionality
+        csvUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            csvUploadArea.classList.add('dragover');
+        });
+
+        csvUploadArea.addEventListener('dragleave', () => {
+            csvUploadArea.classList.remove('dragover');
+        });
+
+        csvUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            csvUploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        async function startBatch() {
+            if (!selectedFile) {
+                showNotification('Please select a CSV file first', true);
+                return;
+            }
+
+            try {
+                batchCallButton.disabled = true;
+                batchCallButton.textContent = '📁 Uploading...';
+
+                const formData = new FormData();
+                formData.append('csvFile', selectedFile);
+                formData.append('batchName', batchNameInput.value || `Batch ${new Date().toLocaleDateString()}`);
+
+                const response = await fetch('/api/batch/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(`Batch created: ${result.totalCalls} numbers`);
+                    currentBatch = result.batchId;
+                    
+                    // Start the batch
+                    const startResponse = await fetch(`/api/batch/${result.batchId}/start`, {
+                        method: 'POST'
+                    });
+
+                    const startResult = await startResponse.json();
+                    
+                    if (startResult.success) {
+                        showNotification('Batch calling started!');
+                        batchStatus.classList.add('active');
+                        document.getElementById('batchProgress').textContent = 'Starting batch calls...';
+                        
+                        // Reset form
+                        selectedFile = null;
+                        batchNameInput.value = '';
+                        resetUploadArea();
+                    }
+                } else {
+                    showNotification(result.error || 'Failed to create batch', true);
+                }
+            } catch (error) {
+                console.error('Error starting batch:', error);
+                showNotification('Error starting batch calls', true);
+            } finally {
+                batchCallButton.disabled = false;
+                batchCallButton.textContent = '📁 Start Batch Calling';
+            }
+        }
+
+        function resetUploadArea() {
+            csvUploadArea.innerHTML = `
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Click to upload CSV file</div>
+                <div class="upload-subtitle">or drag and drop your file here</div>
+                <div class="upload-subtitle" style="margin-top: 8px; font-size: 0.75rem;">
+                    Format: One phone number per line or use header "phone_number"
+                </div>
+            `;
+            batchCallButton.disabled = true;
+        }
+
+        function updateBatchProgress(data) {
+            const progress = data.progress;
+            const percentage = Math.round((progress.completed_calls / progress.total_calls) * 100);
+            
+            document.getElementById('batchProgress').textContent = 
+                `Calling ${data.currentCall} (${progress.completed_calls}/${progress.total_calls})`;
+            
+            document.getElementById('progressFill').style.width = `${percentage}%`;
+            
+            document.getElementById('batchStats').innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.875rem;">
+                    <span>✅ Success: ${progress.successful_calls}</span>
+                    <span>❌ Failed: ${progress.failed_calls}</span>
+                    <span>📊 ${percentage}% Complete</span>
+                </div>
+            `;
+        }
+
+        function completeBatch(data) {
+            const progress = data.progress;
+            document.getElementById('batchProgress').textContent = 
+                `Batch completed! ${progress.successful_calls} successful, ${progress.failed_calls} failed`;
+            
+            showNotification(`Batch completed: ${progress.successful_calls}/${progress.total_calls} calls successful`);
+            
+            setTimeout(() => {
+                batchStatus.classList.remove('active');
+                refreshData();
+            }, 5000);
         }
 
         // Phone input formatting
@@ -1121,7 +1337,6 @@
             let value = e.target.value.replace(/\D/g, '');
             
             if (value.length >= 10) {
-                // Format as (XXX) XXX-XXXX
                 if (value.length === 10) {
                     value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
                 } else if (value.length === 11 && value.charAt(0) === '1') {
@@ -1132,25 +1347,25 @@
             e.target.value = value;
         });
 
-        // Enter key to initiate call
         phoneInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 initiateCall();
             }
         });
 
+        // Utility functions
+        function showCallStatus(message, type) {
+            callStatus.textContent = message;
+            callStatus.className = `call-status ${type}`;
+        }
+
+        function hideCallStatus() {
+            callStatus.className = 'call-status';
+        }
+
         function updateConnectionStatus(status, color) {
             connectionStatus.textContent = status;
             connectionStatus.style.color = color;
-        }
-
-        function switchView(view) {
-            currentView = view;
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            renderCallHistory();
         }
 
         function renderCallHistory() {
@@ -1167,13 +1382,7 @@
             }
 
             const callsToShow = calls.slice(0, config.maxCallsToShow);
-
-            if (currentView === 'cards' || window.innerWidth < 768) {
-                renderCardView(callsToShow);
-            } else {
-                renderTableView(callsToShow);
-            }
-
+            renderCardView(callsToShow);
             updateStats();
         }
 
@@ -1211,60 +1420,11 @@
             callHistory.innerHTML = cardsHTML;
         }
 
-        function renderTableView(callsToShow) {
-            const tableHTML = `
-                <div class="call-table-container">
-                    <table class="call-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Phone Number</th>
-                                <th>Type</th>
-                                <th>Duration</th>
-                                <th>Status</th>
-                                <th>Transcript</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${callsToShow.map(call => `
-                                <tr>
-                                    <td>${formatDate(call.timestamp)}</td>
-                                    <td>${formatTime(call.timestamp)}</td>
-                                    <td class="phone-number">${formatPhoneNumber(call.caller_number || call.phone || 'Unknown')}</td>
-                                    <td>
-                                        <span class="call-type-badge call-type-${call.call_type || 'inbound'}">
-                                            ${call.call_type === 'outbound' ? '📤' : '📥'}
-                                        </span>
-                                    </td>
-                                    <td>${formatDuration(call.duration)}</td>
-                                    <td>
-                                        <span class="status-badge status-${getStatusClass(call.status)}">
-                                            ${call.status || 'Unknown'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        ${call.transcript ? 
-                                            `<button class="btn secondary" style="padding: 6px 12px; font-size: 0.75rem; min-height: 32px;" onclick="showTranscript('${call.id}')">View</button>` : 
-                                            '<span style="color: #94a3b8;">—</span>'
-                                        }
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            callHistory.innerHTML = tableHTML;
-        }
-
         function getStatusClass(status) {
             if (!status) return 'unknown';
             const statusLower = status.toLowerCase();
             if (statusLower.includes('complete') || statusLower === 'answered') return 'completed';
             if (statusLower.includes('fail') || statusLower === 'busy') return 'failed';
-            if (statusLower.includes('miss') || statusLower === 'no-answer') return 'missed';
-            if (statusLower.includes('progress') || statusLower === 'ringing') return 'in-progress';
             if (statusLower.includes('initiat')) return 'initiated';
             return statusLower.replace(/[^a-z0-9]/g, '-');
         }
@@ -1272,17 +1432,14 @@
         function formatPhoneNumber(phone) {
             if (!phone || phone === 'Unknown') return phone;
             
-            // Remove all non-digit characters
             const cleaned = phone.replace(/\D/g, '');
             
-            // Format US phone numbers
             if (cleaned.length === 10) {
                 return `(${cleaned.substr(0, 3)}) ${cleaned.substr(3, 3)}-${cleaned.substr(6, 4)}`;
             } else if (cleaned.length === 11 && cleaned.charAt(0) === '1') {
                 return `+1 (${cleaned.substr(1, 3)}) ${cleaned.substr(4, 3)}-${cleaned.substr(7, 4)}`;
             }
             
-            // Return original if can't format
             return phone;
         }
 
@@ -1355,10 +1512,7 @@
                 const callTime = formatTime(call.timestamp);
                 
                 modalTitle.textContent = `Transcript - ${phoneNumber}`;
-                modalTranscript.textContent = call.transcript;
-                transcriptModal.style.display = 'flex';
                 
-                // Add call details to transcript
                 const transcriptWithHeader = `Call Details:
 Phone: ${phoneNumber}
 Type: ${call.call_type === 'outbound' ? 'Outbound Call' : 'Inbound Call'}
@@ -1370,6 +1524,7 @@ Transcript:
 ${call.transcript}`;
                 
                 modalTranscript.textContent = transcriptWithHeader;
+                transcriptModal.style.display = 'flex';
             }
         }
 
@@ -1387,16 +1542,13 @@ ${call.transcript}`;
                 viewBtn.textContent = `✅ Showing All ${calls.length}`;
                 setTimeout(() => {
                     viewBtn.textContent = originalText;
-                    config.maxCallsToShow = 20; // Reset to default
+                    config.maxCallsToShow = 20;
                 }, 2000);
             }
         }
 
         async function refreshData() {
             try {
-                console.log('Manual refresh - fetching data...');
-                
-                // Show loading state
                 const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
                 if (refreshBtn) {
                     refreshBtn.textContent = '🔄 Refreshing...';
@@ -1407,22 +1559,16 @@ ${call.transcript}`;
                 if (response.ok) {
                     const data = await response.json();
                     calls = data.calls || [];
-                    console.log('Fetched', calls.length, 'calls from API');
                     renderCallHistory();
                     updateStats();
                     showNotification('Data refreshed successfully');
                 } else {
-                    console.error('Failed to fetch calls:', response.statusText);
                     showNotification('Failed to refresh data', true);
                 }
             } catch (error) {
                 console.error('Error refreshing data:', error);
                 showNotification('Error refreshing data', true);
-                
-                // Fallback: generate sample data for demo
-                generateSampleData();
             } finally {
-                // Reset button
                 const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
                 if (refreshBtn) {
                     refreshBtn.textContent = 'Refresh Data';
@@ -1431,91 +1577,11 @@ ${call.transcript}`;
             }
         }
 
-        // Generate sample data for demonstration
-        function generateSampleData() {
-            const sampleCalls = [
-                {
-                    id: '1',
-                    caller_number: '+1-555-0123',
-                    timestamp: new Date().toISOString(),
-                    duration: 180,
-                    status: 'completed',
-                    call_type: 'outbound',
-                    transcript: 'Hello, this is a test outbound call from SkyIQ. How can I help you today?'
-                },
-                {
-                    id: '2',
-                    caller_number: '(555) 456-7890',
-                    timestamp: new Date(Date.now() - 3600000).toISOString(),
-                    duration: 45,
-                    status: 'missed',
-                    call_type: 'inbound',
-                    transcript: null
-                },
-                {
-                    id: '3',
-                    caller_number: '555.789.0123',
-                    timestamp: new Date(Date.now() - 7200000).toISOString(),
-                    duration: 320,
-                    status: 'completed',
-                    call_type: 'inbound',
-                    transcript: 'Hi, I saw your property advertisement online. Can you tell me more about the neighborhood?'
-                },
-                {
-                    id: '4',
-                    caller_number: '15551234567',
-                    timestamp: new Date(Date.now() - 86400000).toISOString(),
-                    duration: 120,
-                    status: 'completed',
-                    call_type: 'outbound',
-                    transcript: 'This is a follow-up call regarding your recent inquiry. Thank you for your interest in our services.'
-                }
-            ];
-            
-            calls = sampleCalls;
-            renderCallHistory();
-            updateStats();
-            console.log('Generated sample data for demonstration');
-        }
-
-        // Auto-refresh functionality
-        let autoRefreshTimer;
-        
-        function startAutoRefresh() {
-            if (config.autoRefreshInterval > 0) {
-                autoRefreshTimer = setInterval(() => {
-                    if (!document.hidden) { // Only refresh if page is visible
-                        refreshData();
-                    }
-                }, config.autoRefreshInterval);
-            }
-        }
-
-        function stopAutoRefresh() {
-            if (autoRefreshTimer) {
-                clearInterval(autoRefreshTimer);
-            }
-        }
-
-        // Handle page visibility changes
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                stopAutoRefresh();
-            } else {
-                startAutoRefresh();
-            }
-        });
-
         // Close modal when clicking outside
         transcriptModal.addEventListener('click', (e) => {
             if (e.target === transcriptModal) {
                 closeTranscriptModal();
             }
-        });
-
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            renderCallHistory();
         });
 
         // Keyboard shortcuts
@@ -1533,18 +1599,7 @@ ${call.transcript}`;
         document.addEventListener('DOMContentLoaded', () => {
             initializeApp();
             refreshData();
-            startAutoRefresh();
         });
-
-        // Export configuration for easy modification
-        window.dashboardConfig = config;
-        
-        // Utility function to update configuration
-        window.updateConfig = function(newConfig) {
-            Object.assign(config, newConfig);
-            initializeApp();
-            renderCallHistory();
-        };
     </script>
 </body>
 </html>
