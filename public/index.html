@@ -947,7 +947,8 @@
                             <div class="upload-text">Click to upload CSV file</div>
                             <div class="upload-subtitle">or drag and drop your file here</div>
                             <div class="upload-subtitle" style="margin-top: 8px; font-size: 0.75rem;">
-                                Format: One phone number per line or use header "phone_number"
+                                <strong>Enhanced Format:</strong> phone_number,first_name,last_name,company<br>
+                                <strong>Simple Format:</strong> One phone number per line
                             </div>
                         </div>
                         
@@ -1305,8 +1306,12 @@
             const progress = data.progress;
             const percentage = Math.round((progress.completed_calls / progress.total_calls) * 100);
             
+            const customerInfo = data.currentCustomer && data.currentCustomer !== data.currentCall 
+                ? `${data.currentCustomer} (${data.currentCall})`
+                : data.currentCall;
+            
             document.getElementById('batchProgress').textContent = 
-                `Calling ${data.currentCall} (${progress.completed_calls}/${progress.total_calls})`;
+                `Calling ${customerInfo} (${progress.completed_calls}/${progress.total_calls})`;
             
             document.getElementById('progressFill').style.width = `${percentage}%`;
             
