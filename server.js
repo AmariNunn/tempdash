@@ -13,7 +13,8 @@ const io = socketIo(server);
 // ElevenLabs API configuration
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID;
-const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/conversations/phone';
+const ELEVENLABS_PHONE_NUMBER_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID;
+const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/twilio/outbound-call';
 
 // MailerSend configuration
 const mailerSend = new MailerSend({
@@ -164,18 +165,21 @@ initializeDatabase();
 
 // Function to initiate outbound call via ElevenLabs API
 async function initiateOutboundCall(phoneNumber) {
-    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-        throw new Error('ElevenLabs API key and Agent ID are required. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
+        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables.');
     }
 
     try {
         console.log(`Making request to: ${ELEVENLABS_API_URL}`);
         console.log(`Phone number: ${phoneNumber}`);
         console.log(`Agent ID: ${ELEVENLABS_AGENT_ID}`);
+        console.log(`Phone Number ID: ${ELEVENLABS_PHONE_NUMBER_ID}`);
 
         const requestBody = {
             agent_id: ELEVENLABS_AGENT_ID,
-            customer_phone_number: phoneNumber
+            agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
+            to_number: phoneNumber,
+            conversation_initiation_client_data: {}
         };
 
         console.log('Request body:', JSON.stringify(requestBody, null, 2));
@@ -200,9 +204,11 @@ async function initiateOutboundCall(phoneNumber) {
             if (response.status === 401) {
                 throw new Error('Invalid API key. Please check your ELEVENLABS_API_KEY.');
             } else if (response.status === 404) {
-                throw new Error('Invalid Agent ID. Please check your ELEVENLABS_AGENT_ID.');
+                throw new Error('Invalid Agent ID or Phone Number ID. Please check your ELEVENLABS_AGENT_ID and ELEVENLABS_PHONE_NUMBER_ID.');
             } else if (response.status === 402) {
                 throw new Error('Insufficient credits. Please add credits to your ElevenLabs account.');
+            } else if (response.status === 400) {
+                throw new Error(`Bad request: ${errorData}. Please check your phone number format and configuration.`);
             } else {
                 throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
             }
@@ -213,8 +219,9 @@ async function initiateOutboundCall(phoneNumber) {
         
         return {
             conversation_id: data.conversation_id || data.id,
+            call_sid: data.callSid || data.call_sid,
             status: 'initiated',
-            message: 'Call initiated successfully'
+            message: data.message || 'Call initiated successfully'
         };
     } catch (error) {
         console.error('Error initiating outbound call:', error);
@@ -420,7 +427,7 @@ app.get('/health', async (req, res) => {
             uptime: process.uptime(),
             callCount: result.rows[0].count,
             emailNotifications: emailConfig.enabled,
-            elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID),
+            elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID),
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -440,7 +447,8 @@ app.get('/test-elevenlabs', async (req, res) => {
                 error: 'ELEVENLABS_API_KEY not configured',
                 configured: {
                     apiKey: false,
-                    agentId: !!ELEVENLABS_AGENT_ID
+                    agentId: !!ELEVENLABS_AGENT_ID,
+                    phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
                 }
             });
         }
@@ -460,7 +468,8 @@ app.get('/test-elevenlabs', async (req, res) => {
                 details: errorData,
                 configured: {
                     apiKey: !!ELEVENLABS_API_KEY,
-                    agentId: !!ELEVENLABS_AGENT_ID
+                    agentId: !!ELEVENLABS_AGENT_ID,
+                    phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
                 }
             });
         }
@@ -471,7 +480,8 @@ app.get('/test-elevenlabs', async (req, res) => {
             message: 'ElevenLabs API connection successful',
             configured: {
                 apiKey: true,
-                agentId: !!ELEVENLABS_AGENT_ID
+                agentId: !!ELEVENLABS_AGENT_ID,
+                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
             },
             availableModels: data.length || 0
         });
@@ -482,7 +492,8 @@ app.get('/test-elevenlabs', async (req, res) => {
             details: error.message,
             configured: {
                 apiKey: !!ELEVENLABS_API_KEY,
-                agentId: !!ELEVENLABS_AGENT_ID
+                agentId: !!ELEVENLABS_AGENT_ID,
+                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
             }
         });
     }
@@ -539,8 +550,8 @@ server.listen(PORT, () => {
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
     console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
     console.log(`📧 Email notifications: ${emailConfig.enabled ? 'Enabled' : 'Disabled'}`);
-    console.log(`🤖 ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID ? 'Configured' : 'Not configured'}`);
-    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-        console.log(`⚠️  Set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables to enable outbound calling`);
+    console.log(`🤖 ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
+        console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
 });
