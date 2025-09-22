@@ -135,6 +135,131 @@
             50% { opacity: 0.4; }
         }
         
+        .outbound-call-section {
+            background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .outbound-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #fafbff 0%, #f1f5f9 100%);
+        }
+        
+        .outbound-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #1e293b;
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .outbound-subtitle {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .outbound-form {
+            padding: 20px 16px;
+        }
+        
+        .phone-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .phone-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+        
+        .phone-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .call-btn {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 48px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        .call-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+        }
+        
+        .call-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .call-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .call-status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .call-status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            display: block;
+        }
+        
+        .call-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            display: block;
+        }
+        
+        .call-status.loading {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            display: block;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -332,6 +457,25 @@
             font-weight: 500;
         }
         
+        .call-type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .call-type-inbound {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .call-type-outbound {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+        
         .status-badge {
             padding: 6px 12px;
             border-radius: 16px;
@@ -359,6 +503,11 @@
         .status-in-progress {
             background: #dbeafe;
             color: #1d4ed8;
+        }
+        
+        .status-initiated {
+            background: #e0f2fe;
+            color: #0369a1;
         }
         
         .call-actions {
@@ -399,7 +548,7 @@
         .call-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 800px;
         }
         
         .call-table th {
@@ -483,6 +632,11 @@
         
         .notification.show {
             transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #dc2626;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
         }
         
         .transcript-modal {
@@ -592,7 +746,7 @@
         /* Media Queries */
         @media (min-width: 768px) {
             .stats-grid {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 gap: 20px;
             }
             
@@ -633,6 +787,10 @@
             
             .call-table-container {
                 display: block;
+            }
+            
+            .phone-input-group {
+                flex-wrap: nowrap;
             }
         }
         
@@ -693,6 +851,14 @@
             .modal-title {
                 font-size: 1.125rem;
             }
+            
+            .phone-input-group {
+                flex-direction: column;
+            }
+            
+            .phone-input {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
@@ -717,10 +883,39 @@
                 <span id="connectionStatus">Connected</span>
             </div>
 
+            <!-- Outbound Calling Section -->
+            <div class="outbound-call-section">
+                <div class="outbound-header">
+                    <div class="outbound-title">
+                        📤 Initiate Outbound Call
+                    </div>
+                    <div class="outbound-subtitle">Make calls directly from your dashboard using AI voice agents</div>
+                </div>
+                <div class="outbound-form">
+                    <div class="phone-input-group">
+                        <input 
+                            type="tel" 
+                            id="phoneInput" 
+                            class="phone-input" 
+                            placeholder="Enter phone number (e.g., +1-555-123-4567)"
+                            maxlength="20"
+                        >
+                        <button id="callButton" class="call-btn" onclick="initiateCall()">
+                            📞 Start Call
+                        </button>
+                    </div>
+                    <div id="callStatus" class="call-status"></div>
+                </div>
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-value" id="totalCalls">0</div>
                     <div class="stat-label">Total Calls</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="outboundCalls">0</div>
+                    <div class="stat-label">Outbound Calls</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="transcriptCount">0</div>
@@ -735,7 +930,6 @@
             <div class="controls">
                 <button class="btn" onclick="refreshData()">Refresh Data</button>
                 <button class="btn secondary" onclick="viewAllCalls()">View All Calls</button>
-                
             </div>
 
             <div class="calls-section">
@@ -777,6 +971,7 @@
         New call received
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         // Configuration object - easy to modify
         const config = {
@@ -823,7 +1018,7 @@
                 console.log('New call received:', callData);
                 calls.unshift(callData);
                 renderCallHistory();
-                showNotification('New call received');
+                showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
                 updateStats();
             });
 
@@ -843,6 +1038,7 @@
         // DOM elements
         const callHistory = document.getElementById('callHistory');
         const totalCalls = document.getElementById('totalCalls');
+        const outboundCalls = document.getElementById('outboundCalls');
         const transcriptCount = document.getElementById('transcriptCount');
         const lastUpdate = document.getElementById('lastUpdate');
         const connectionStatus = document.getElementById('connectionStatus');
@@ -850,6 +1046,98 @@
         const transcriptModal = document.getElementById('transcriptModal');
         const modalTranscript = document.getElementById('modalTranscript');
         const modalTitle = document.getElementById('modalTitle');
+        const phoneInput = document.getElementById('phoneInput');
+        const callButton = document.getElementById('callButton');
+        const callStatus = document.getElementById('callStatus');
+
+        // Outbound calling functionality
+        async function initiateCall() {
+            const phoneNumber = phoneInput.value.trim();
+            
+            if (!phoneNumber) {
+                showCallStatus('Please enter a phone number', 'error');
+                return;
+            }
+
+            // Basic phone number validation
+            const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)\.]{7,15}$/;
+            if (!phoneRegex.test(phoneNumber)) {
+                showCallStatus('Please enter a valid phone number', 'error');
+                return;
+            }
+
+            try {
+                callButton.disabled = true;
+                callButton.textContent = '📞 Initiating...';
+                showCallStatus('Initiating call...', 'loading');
+
+                const response = await fetch('/api/calls/initiate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phoneNumber })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showCallStatus(`Call initiated successfully to ${phoneNumber}`, 'success');
+                    phoneInput.value = '';
+                    showNotification('Outbound call initiated successfully');
+                    
+                    // Refresh data to show the new call
+                    setTimeout(() => {
+                        refreshData();
+                    }, 1000);
+                } else {
+                    showCallStatus(result.error || 'Failed to initiate call', 'error');
+                }
+            } catch (error) {
+                console.error('Error initiating call:', error);
+                showCallStatus('Error initiating call. Please try again.', 'error');
+            } finally {
+                callButton.disabled = false;
+                callButton.textContent = '📞 Start Call';
+                
+                // Clear status after 5 seconds
+                setTimeout(() => {
+                    hideCallStatus();
+                }, 5000);
+            }
+        }
+
+        function showCallStatus(message, type) {
+            callStatus.textContent = message;
+            callStatus.className = `call-status ${type}`;
+        }
+
+        function hideCallStatus() {
+            callStatus.className = 'call-status';
+        }
+
+        // Phone input formatting
+        phoneInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length >= 10) {
+                // Format as (XXX) XXX-XXXX
+                if (value.length === 10) {
+                    value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
+                } else if (value.length === 11 && value.charAt(0) === '1') {
+                    value = `+1 (${value.substr(1, 3)}) ${value.substr(4, 3)}-${value.substr(7, 4)}`;
+                }
+            }
+            
+            e.target.value = value;
+        });
+
+        // Enter key to initiate call
+        phoneInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                initiateCall();
+            }
+        });
 
         function updateConnectionStatus(status, color) {
             connectionStatus.textContent = status;
@@ -903,6 +1191,9 @@
                             </div>
                             <div class="call-details">
                                 <div class="call-duration">Duration: ${formatDuration(call.duration)}</div>
+                                <div class="call-type-badge call-type-${call.call_type || 'inbound'}">
+                                    ${call.call_type === 'outbound' ? '📤 Outbound' : '📥 Inbound'}
+                                </div>
                                 <span class="status-badge status-${getStatusClass(call.status)}">
                                     ${call.status || 'Unknown'}
                                 </span>
@@ -929,6 +1220,7 @@
                                 <th>Date</th>
                                 <th>Time</th>
                                 <th>Phone Number</th>
+                                <th>Type</th>
                                 <th>Duration</th>
                                 <th>Status</th>
                                 <th>Transcript</th>
@@ -940,6 +1232,11 @@
                                     <td>${formatDate(call.timestamp)}</td>
                                     <td>${formatTime(call.timestamp)}</td>
                                     <td class="phone-number">${formatPhoneNumber(call.caller_number || call.phone || 'Unknown')}</td>
+                                    <td>
+                                        <span class="call-type-badge call-type-${call.call_type || 'inbound'}">
+                                            ${call.call_type === 'outbound' ? '📤' : '📥'}
+                                        </span>
+                                    </td>
                                     <td>${formatDuration(call.duration)}</td>
                                     <td>
                                         <span class="status-badge status-${getStatusClass(call.status)}">
@@ -968,6 +1265,7 @@
             if (statusLower.includes('fail') || statusLower === 'busy') return 'failed';
             if (statusLower.includes('miss') || statusLower === 'no-answer') return 'missed';
             if (statusLower.includes('progress') || statusLower === 'ringing') return 'in-progress';
+            if (statusLower.includes('initiat')) return 'initiated';
             return statusLower.replace(/[^a-z0-9]/g, '-');
         }
 
@@ -990,6 +1288,9 @@
 
         function updateStats() {
             totalCalls.textContent = calls.length;
+            
+            const outboundCallCount = calls.filter(call => call.call_type === 'outbound').length;
+            outboundCalls.textContent = outboundCallCount;
             
             const callsWithTranscripts = calls.filter(call => 
                 call.transcript && call.transcript.length > 0
@@ -1037,12 +1338,13 @@
             }
         }
 
-        function showNotification(message = 'New call received') {
+        function showNotification(message = 'New call received', isError = false) {
             notification.textContent = message;
+            notification.className = `notification ${isError ? 'error' : ''}`;
             notification.classList.add('show');
             setTimeout(() => {
                 notification.classList.remove('show');
-            }, 3000);
+            }, 4000);
         }
 
         function showTranscript(callId) {
@@ -1059,6 +1361,7 @@
                 // Add call details to transcript
                 const transcriptWithHeader = `Call Details:
 Phone: ${phoneNumber}
+Type: ${call.call_type === 'outbound' ? 'Outbound Call' : 'Inbound Call'}
 Date: ${callDate} at ${callTime}
 Duration: ${formatDuration(call.duration)}
 Status: ${call.status || 'Unknown'}
@@ -1110,11 +1413,11 @@ ${call.transcript}`;
                     showNotification('Data refreshed successfully');
                 } else {
                     console.error('Failed to fetch calls:', response.statusText);
-                    showNotification('Failed to refresh data');
+                    showNotification('Failed to refresh data', true);
                 }
             } catch (error) {
                 console.error('Error refreshing data:', error);
-                showNotification('Error refreshing data');
+                showNotification('Error refreshing data', true);
                 
                 // Fallback: generate sample data for demo
                 generateSampleData();
@@ -1128,15 +1431,6 @@ ${call.transcript}`;
             }
         }
 
-        function clearHistory() {
-            if (confirm('Are you sure you want to clear all call history?')) {
-                calls = [];
-                renderCallHistory();
-                updateStats();
-                showNotification('Call history cleared');
-            }
-        }
-
         // Generate sample data for demonstration
         function generateSampleData() {
             const sampleCalls = [
@@ -1146,7 +1440,8 @@ ${call.transcript}`;
                     timestamp: new Date().toISOString(),
                     duration: 180,
                     status: 'completed',
-                    transcript: 'Hello, I\'m calling about the property listing on Oak Street. Is it still available? I\'d like to schedule a viewing if possible.'
+                    call_type: 'outbound',
+                    transcript: 'Hello, this is a test outbound call from SkyIQ. How can I help you today?'
                 },
                 {
                     id: '2',
@@ -1154,6 +1449,7 @@ ${call.transcript}`;
                     timestamp: new Date(Date.now() - 3600000).toISOString(),
                     duration: 45,
                     status: 'missed',
+                    call_type: 'inbound',
                     transcript: null
                 },
                 {
@@ -1162,15 +1458,17 @@ ${call.transcript}`;
                     timestamp: new Date(Date.now() - 7200000).toISOString(),
                     duration: 320,
                     status: 'completed',
-                    transcript: 'Hi, I saw your property advertisement online. Can you tell me more about the neighborhood? What are the schools like in the area?'
+                    call_type: 'inbound',
+                    transcript: 'Hi, I saw your property advertisement online. Can you tell me more about the neighborhood?'
                 },
                 {
                     id: '4',
                     caller_number: '15551234567',
                     timestamp: new Date(Date.now() - 86400000).toISOString(),
-                    duration: 0,
-                    status: 'failed',
-                    transcript: null
+                    duration: 120,
+                    status: 'completed',
+                    call_type: 'outbound',
+                    transcript: 'This is a follow-up call regarding your recent inquiry. Thank you for your interest in our services.'
                 }
             ];
             
