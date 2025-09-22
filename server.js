@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -14,7 +13,7 @@ const io = socketIo(server);
 // ElevenLabs API configuration
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID;
-const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/conversations';
+const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/conversations/phone';
 
 // MailerSend configuration
 const mailerSend = new MailerSend({
@@ -170,32 +169,50 @@ async function initiateOutboundCall(phoneNumber) {
     }
 
     try {
+        console.log(`Making request to: ${ELEVENLABS_API_URL}`);
+        console.log(`Phone number: ${phoneNumber}`);
+        console.log(`Agent ID: ${ELEVENLABS_AGENT_ID}`);
+
+        const requestBody = {
+            agent_id: ELEVENLABS_AGENT_ID,
+            customer_phone_number: phoneNumber
+        };
+
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
         const response = await fetch(ELEVENLABS_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'xi-api-key': ELEVENLABS_API_KEY
             },
-            body: JSON.stringify({
-                agent_id: ELEVENLABS_AGENT_ID,
-                mode: {
-                    type: 'phone_call',
-                    number: phoneNumber
-                }
-            })
+            body: JSON.stringify(requestBody)
         });
+
+        console.log(`Response status: ${response.status}`);
+        console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
             const errorData = await response.text();
             console.error('ElevenLabs API Error:', response.status, errorData);
-            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+            
+            // Handle specific error cases
+            if (response.status === 401) {
+                throw new Error('Invalid API key. Please check your ELEVENLABS_API_KEY.');
+            } else if (response.status === 404) {
+                throw new Error('Invalid Agent ID. Please check your ELEVENLABS_AGENT_ID.');
+            } else if (response.status === 402) {
+                throw new Error('Insufficient credits. Please add credits to your ElevenLabs account.');
+            } else {
+                throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+            }
         }
 
         const data = await response.json();
-        console.log('Outbound call initiated:', data);
+        console.log('ElevenLabs response:', data);
         
         return {
-            conversation_id: data.conversation_id,
+            conversation_id: data.conversation_id || data.id,
             status: 'initiated',
             message: 'Call initiated successfully'
         };
@@ -219,24 +236,38 @@ app.post('/api/calls/initiate', async (req, res) => {
     }
 
     // Validate phone number format (basic validation)
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)\.]{7,15}$/;
     const cleanedPhone = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
     
     if (!phoneRegex.test(cleanedPhone)) {
-        return res.status(400).json({ error: 'Invalid phone number format' });
+        return res.status(400).json({ error: 'Invalid phone number format. Please use format: +1234567890' });
+    }
+
+    // Ensure phone number starts with + for international format
+    let formattedPhone = cleanedPhone;
+    if (!formattedPhone.startsWith('+')) {
+        // If it's a US number (10 digits), add +1
+        if (formattedPhone.length === 10) {
+            formattedPhone = '+1' + formattedPhone;
+        } else if (formattedPhone.length === 11 && formattedPhone.startsWith('1')) {
+            formattedPhone = '+' + formattedPhone;
+        } else {
+            // For other countries, user should provide the country code
+            return res.status(400).json({ error: 'Please include country code (e.g., +1 for US numbers)' });
+        }
     }
 
     try {
-        console.log(`Initiating outbound call to: ${phoneNumber}`);
+        console.log(`Initiating outbound call to: ${formattedPhone}`);
         
         // Call ElevenLabs API to initiate the call
-        const callResult = await initiateOutboundCall(cleanedPhone);
+        const callResult = await initiateOutboundCall(formattedPhone);
         
         // Create initial call record in database
         const callData = {
             id: `outbound-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             timestamp: new Date().toISOString(),
-            caller_number: cleanedPhone,
+            caller_number: formattedPhone,
             called_number: 'Agent',
             duration: 0,
             status: 'initiated',
@@ -397,6 +428,62 @@ app.get('/health', async (req, res) => {
             status: 'unhealthy', 
             error: error.message,
             timestamp: new Date().toISOString()
+        });
+    }
+});
+
+// Test ElevenLabs API connection
+app.get('/test-elevenlabs', async (req, res) => {
+    try {
+        if (!ELEVENLABS_API_KEY) {
+            return res.status(400).json({ 
+                error: 'ELEVENLABS_API_KEY not configured',
+                configured: {
+                    apiKey: false,
+                    agentId: !!ELEVENLABS_AGENT_ID
+                }
+            });
+        }
+
+        // Test API key by making a simple request to get voice models
+        const response = await fetch('https://api.elevenlabs.io/v1/models', {
+            headers: {
+                'xi-api-key': ELEVENLABS_API_KEY
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            return res.status(response.status).json({
+                error: 'ElevenLabs API test failed',
+                status: response.status,
+                details: errorData,
+                configured: {
+                    apiKey: !!ELEVENLABS_API_KEY,
+                    agentId: !!ELEVENLABS_AGENT_ID
+                }
+            });
+        }
+
+        const data = await response.json();
+        res.json({
+            success: true,
+            message: 'ElevenLabs API connection successful',
+            configured: {
+                apiKey: true,
+                agentId: !!ELEVENLABS_AGENT_ID
+            },
+            availableModels: data.length || 0
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            error: 'Failed to test ElevenLabs API',
+            details: error.message,
+            configured: {
+                apiKey: !!ELEVENLABS_API_KEY,
+                agentId: !!ELEVENLABS_AGENT_ID
+            }
         });
     }
 });
