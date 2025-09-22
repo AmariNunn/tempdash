@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Call Analytics Dashboard</title>
+    <title>SkyIQ | AI Voice Solutions</title>
     <style>
         * {
             margin: 0;
@@ -13,76 +13,127 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
+            background: #f8fafc;
+            color: #1e293b;
             line-height: 1.6;
         }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            padding: 24px 0;
+            z-index: 100;
+        }
+        
+        .logo-section {
+            padding: 0 24px 32px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 32px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%234f46e5;stop-opacity:1" /><stop offset="100%" style="stop-color:%2306b6d4;stop-opacity:1" /></linearGradient></defs><path d="M20 25 Q20 15 30 15 L70 15 Q80 15 80 25 L80 45 Q80 55 70 55 L55 55 L50 65 L45 55 L30 55 Q20 55 20 45 Z" fill="url(%23grad1)" stroke="white" stroke-width="2"/><path d="M30 70 Q30 60 40 60 L75 60 Q85 60 85 70 L85 85 Q85 95 75 95 L40 95 Q30 95 30 85 Z" fill="url(%23grad1)" opacity="0.7"/><path d="M35 25 L75 25 M35 35 L65 35 M35 45 L70 45" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>') center/contain no-repeat;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4f46e5;
+        }
+        
+        .nav-menu {
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 4px 0;
+            border-radius: 8px;
+            color: #64748b;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
+        
+        .nav-item.active {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
         }
         
         .header {
-            text-align: center;
-            margin-bottom: 48px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: between;
+            align-items: center;
         }
         
-        .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #00f5ff, #ff6b6b, #4ecdc4);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
-        .header p {
-            color: #888;
-            font-size: 1.1rem;
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #4f46e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
         }
         
-        .stat-card {
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            padding: 24px;
-            border-radius: 16px;
-            border: 1px solid #333;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #00f5ff, #ff6b6b);
-        }
-        
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #00f5ff;
-            margin-bottom: 8px;
-        }
-        
-        .stat-label {
-            color: #888;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .content-area {
+            padding: 32px;
+            max-width: 1400px;
         }
         
         .connection-status {
@@ -90,17 +141,19 @@
             align-items: center;
             gap: 8px;
             padding: 8px 16px;
-            background: #1a1a1a;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
             border-radius: 20px;
-            border: 1px solid #333;
             margin-bottom: 32px;
+            color: #15803d;
+            font-size: 0.875rem;
         }
         
         .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #4ade80;
+            background: #22c55e;
             animation: pulse 2s infinite;
         }
         
@@ -109,304 +162,409 @@
             50% { opacity: 0.4; }
         }
         
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4f46e5;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
         .controls {
             display: flex;
             gap: 12px;
-            justify-content: center;
+            justify-content: flex-start;
             margin-bottom: 32px;
             flex-wrap: wrap;
         }
         
         .btn {
-            background: linear-gradient(135deg, #00f5ff, #0ea5e9);
+            background: #4f46e5;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
             border: 1px solid transparent;
         }
         
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 245, 255, 0.3);
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+        
+        .btn.secondary {
+            background: white;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .btn.secondary:hover {
+            background: #f8fafc;
+            color: #334155;
         }
         
         .btn.danger {
-            background: linear-gradient(135deg, #ff6b6b, #e53e3e);
+            background: #dc2626;
         }
         
         .btn.danger:hover {
-            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
+            background: #b91c1c;
         }
         
         .calls-section {
-            background: #111;
-            border-radius: 16px;
-            border: 1px solid #333;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
         
         .section-header {
-            padding: 24px;
-            border-bottom: 1px solid #333;
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            padding: 24px 32px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #ffffff;
         }
         
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            color: #1e293b;
         }
         
         .section-subtitle {
-            color: #888;
-            font-size: 0.9rem;
+            color: #64748b;
+            font-size: 0.875rem;
         }
         
-        .call-list {
-            max-height: 70vh;
-            overflow-y: auto;
+        .call-table {
+            width: 100%;
+            border-collapse: collapse;
         }
         
-        .call-item {
-            padding: 24px;
-            border-bottom: 1px solid #222;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .call-item:hover {
-            background: #1a1a1a;
-        }
-        
-        .call-item.new {
-            background: linear-gradient(135deg, rgba(0, 245, 255, 0.05), rgba(255, 107, 107, 0.05));
-            border-left: 4px solid #00f5ff;
-        }
-        
-        .call-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        
-        .call-id {
-            font-size: 0.9rem;
-            color: #888;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-        }
-        
-        .call-status {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: linear-gradient(135deg, #4ade80, #22c55e);
-            color: #000;
-        }
-        
-        .call-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .meta-label {
-            color: #888;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .meta-value {
-            color: #fff;
+        .call-table th {
+            background: #f8fafc;
+            padding: 12px 24px;
+            text-align: left;
             font-weight: 500;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.875rem;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .call-table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+        
+        .call-table tr:hover {
+            background: #f8fafc;
         }
         
         .phone-number {
-            color: #00f5ff;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            color: #4f46e5;
         }
         
-        .duration {
-            color: #4ade80;
-        }
-        
-        .transcript-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-        }
-        
-        .transcript-header {
-            color: #888;
-            font-size: 0.8rem;
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 12px;
         }
         
-        .transcript-content {
-            background: #0a0a0a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 16px;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            color: #ddd;
-            max-height: 200px;
-            overflow-y: auto;
+        .status-completed {
+            background: #dcfce7;
+            color: #166534;
         }
         
-        .transcript-content::-webkit-scrollbar {
-            width: 4px;
+        .status-failed {
+            background: #fef2f2;
+            color: #dc2626;
         }
         
-        .transcript-content::-webkit-scrollbar-track {
-            background: #222;
-        }
-        
-        .transcript-content::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 2px;
+        .status-missed {
+            background: #fef3c7;
+            color: #d97706;
         }
         
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #666;
+            color: #64748b;
         }
         
         .empty-icon {
-            font-size: 4rem;
+            font-size: 3rem;
             margin-bottom: 16px;
-            opacity: 0.3;
+            opacity: 0.5;
         }
         
         .empty-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #888;
+            color: #475569;
         }
         
         .empty-subtitle {
-            color: #666;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         
         .webhook-url {
-            background: #1a1a1a;
-            border: 1px solid #333;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 12px;
+            padding: 12px 16px;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 0.8rem;
-            color: #00f5ff;
+            font-size: 0.75rem;
+            color: #4f46e5;
             word-break: break-all;
+            max-width: 400px;
+            margin: 0 auto;
         }
         
         .notification {
             position: fixed;
             top: 24px;
             right: 24px;
-            background: linear-gradient(135deg, #4ade80, #22c55e);
-            color: #000;
+            background: #22c55e;
+            color: white;
             padding: 16px 24px;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 500;
             transform: translateX(400px);
             transition: transform 0.3s ease;
             z-index: 1000;
-            box-shadow: 0 8px 25px rgba(74, 222, 128, 0.3);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
         }
         
         .notification.show {
             transform: translateX(0);
         }
         
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
+        .transcript-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 4px;
+        }
+        
+        .transcript-content {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: #475569;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .content-area {
+                padding: 24px 16px;
             }
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            
-            .call-meta {
+        }
+        
+        @media (max-width: 640px) {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
             
             .controls {
                 flex-direction: column;
-                align-items: center;
+            }
+            
+            .call-table {
+                font-size: 0.75rem;
+            }
+            
+            .call-table th,
+            .call-table td {
+                padding: 8px 12px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo-section">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <div class="logo-text">SkyIQ</div>
+            </div>
+        </div>
+        
+        <nav class="nav-menu">
+            <div class="nav-item active">
+                <div class="nav-icon">📞</div>
+                <span>Call Dashboard</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">👤</div>
+                <span>Business Profile</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">⚙️</div>
+                <span>Settings</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
         <div class="header">
-            <h1>Call Analytics</h1>
-            <p>Real-time conversation monitoring and analysis</p>
-        </div>
-
-        <div class="connection-status">
-            <div class="status-dot"></div>
-            <span id="connectionStatus">Connected</span>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="totalCalls">0</div>
-                <div class="stat-label">Total Calls</div>
+            <div class="header-title">
+                <span style="background: #4f46e5; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600;">R</span>
+                Rhow Propperties Dashboard
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="transcriptCount">0</div>
-                <div class="stat-label">With Transcripts</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="lastUpdate">Never</div>
-                <div class="stat-label">Last Update</div>
+            <div class="user-profile">
+                <div class="profile-avatar">RP</div>
             </div>
         </div>
 
-        <div class="controls">
-            <button class="btn" onclick="refreshData()">Refresh Data</button>
-            <button class="btn danger" onclick="clearHistory()">Clear History</button>
-        </div>
-
-        <div class="calls-section">
-            <div class="section-header">
-                <div class="section-title">Recent Conversations</div>
-                <div class="section-subtitle">Live call monitoring and transcript analysis</div>
+        <div class="content-area">
+            <div class="connection-status">
+                <div class="status-dot"></div>
+                <span id="connectionStatus">Connected</span>
             </div>
-            
-            <div class="call-list" id="callHistory">
-                <div class="empty-state">
-                    <div class="empty-icon">📞</div>
-                    <div class="empty-title">Waiting for calls</div>
-                    <div class="empty-subtitle">Your live call data will appear here</div>
-                    <div class="webhook-url" id="webhookUrl">Loading webhook URL...</div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCalls">0</div>
+                    <div class="stat-label">Total Calls</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="transcriptCount">0</div>
+                    <div class="stat-label">With Transcripts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastUpdate">Never</div>
+                    <div class="stat-label">Last Update</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="refreshData()">Refresh Data</button>
+                <button class="btn secondary" onclick="viewAllCalls()">View All Calls</button>
+                <button class="btn danger" onclick="clearHistory()">Clear History</button>
+            </div>
+
+            <div class="calls-section">
+                <div class="section-header">
+                    <div class="section-title">Call Log</div>
+                    <div class="section-subtitle">Recent conversation monitoring and analysis</div>
+                </div>
+                
+                <div id="callHistory">
+                    <div class="empty-state">
+                        <div class="empty-icon">📞</div>
+                        <div class="empty-title">Waiting for calls</div>
+                        <div class="empty-subtitle">Your live call data will appear here</div>
+                        <div class="webhook-url" id="webhookUrl">Loading webhook URL...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transcript Modal -->
+    <div id="transcriptModal" class="transcript-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Call Transcript</div>
+                <button class="close-btn" onclick="closeTranscriptModal()">&times;</button>
+            </div>
+            <div class="transcript-content" id="modalTranscript">
+                No transcript available
             </div>
         </div>
     </div>
@@ -428,6 +586,8 @@
         const connectionStatus = document.getElementById('connectionStatus');
         const notification = document.getElementById('notification');
         const webhookUrl = document.getElementById('webhookUrl');
+        const transcriptModal = document.getElementById('transcriptModal');
+        const modalTranscript = document.getElementById('modalTranscript');
 
         // Set webhook URL
         webhookUrl.textContent = `${window.location.origin}/webhook`;
@@ -435,27 +595,22 @@
         // Socket event listeners
         socket.on('connect', () => {
             connectionStatus.textContent = 'Connected';
-            connectionStatus.style.color = '#4ade80';
+            connectionStatus.style.color = '#22c55e';
         });
 
         socket.on('disconnect', () => {
             connectionStatus.textContent = 'Disconnected';
-            connectionStatus.style.color = '#ff6b6b';
+            connectionStatus.style.color = '#dc2626';
         });
 
         socket.on('callHistory', (history) => {
             calls = history;
             console.log('Received call history:', calls.length, 'calls');
-            if (calls.length > 0) {
-                console.log('First call:', calls[0]);
-                console.log('First call transcript:', calls[0].transcript ? calls[0].transcript.length + ' chars' : 'none');
-            }
             renderCallHistory();
         });
 
         socket.on('newCall', (callData) => {
             console.log('New call received:', callData);
-            console.log('New call transcript:', callData.transcript ? callData.transcript.length + ' chars' : 'none');
             calls.unshift(callData);
             renderCallHistory();
             showNotification();
@@ -484,43 +639,43 @@
                 return;
             }
 
-            callHistory.innerHTML = calls.map((call, index) => {
-                console.log('Rendering call:', call.id, 'Transcript exists:', !!call.transcript, 'Length:', call.transcript ? call.transcript.length : 0);
-                
-                return `
-                <div class="call-item ${index === 0 ? 'new' : ''}" data-call-id="${call.id}">
-                    <div class="call-header">
-                        <div class="call-id">${call.id}</div>
-                        <div class="call-status">${call.status}</div>
-                    </div>
-                    
-                    <div class="call-meta">
-                        <div class="meta-item">
-                            <div class="meta-label">From</div>
-                            <div class="meta-value phone-number">${call.caller_number}</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">To</div>
-                            <div class="meta-value phone-number">${call.called_number}</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Duration</div>
-                            <div class="meta-value duration">${formatDuration(call.duration)}</div>
-                        </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Time</div>
-                            <div class="meta-value">${formatDate(call.timestamp)}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="transcript-section">
-                        <div class="transcript-header">Conversation Transcript</div>
-                        <div class="transcript-content">${call.transcript || 'No conversation recorded'}</div>
-                    </div>
-                </div>
+            const tableHTML = `
+                <table class="call-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Phone Number</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Transcript</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${calls.slice(0, 10).map(call => `
+                            <tr>
+                                <td>${formatDate(call.timestamp).split(' ')[0]}</td>
+                                <td>${formatTime(call.timestamp)}</td>
+                                <td class="phone-number">${call.caller_number}</td>
+                                <td>${formatDuration(call.duration)}</td>
+                                <td>
+                                    <span class="status-badge status-${call.status}">
+                                        ${call.status}
+                                    </span>
+                                </td>
+                                <td>
+                                    ${call.transcript ? 
+                                        `<button class="btn secondary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="showTranscript('${call.id}')">View</button>` : 
+                                        '<span style="color: #94a3b8;">No transcript</span>'
+                                    }
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
-            }).join('');
 
+            callHistory.innerHTML = tableHTML;
             updateStats();
         }
 
@@ -534,14 +689,18 @@
         }
 
         function formatDate(dateString) {
-            return new Date(dateString).toLocaleString();
+            return new Date(dateString).toLocaleDateString();
+        }
+
+        function formatTime(dateString) {
+            return new Date(dateString).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
 
         function formatDuration(seconds) {
-            if (!seconds || seconds === 0) return '0:00';
+            if (!seconds || seconds === 0) return '0m 0s';
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+            return `${mins}m ${secs}s`;
         }
 
         function showNotification() {
@@ -551,6 +710,23 @@
             }, 3000);
         }
 
+        function showTranscript(callId) {
+            const call = calls.find(c => c.id === callId);
+            if (call && call.transcript) {
+                modalTranscript.textContent = call.transcript;
+                transcriptModal.style.display = 'flex';
+            }
+        }
+
+        function closeTranscriptModal() {
+            transcriptModal.style.display = 'none';
+        }
+
+        function viewAllCalls() {
+            // Show all calls instead of just first 10
+            renderCallHistory();
+        }
+
         async function refreshData() {
             try {
                 console.log('Manual refresh - fetching data...');
@@ -558,10 +734,6 @@
                 const data = await response.json();
                 calls = data.calls;
                 console.log('Fetched', calls.length, 'calls from API');
-                if (calls.length > 0) {
-                    console.log('First call from API:', calls[0]);
-                    console.log('First call transcript from API:', calls[0].transcript ? calls[0].transcript.length + ' chars' : 'none');
-                }
                 renderCallHistory();
                 updateStats();
                 
@@ -585,6 +757,13 @@
                 updateStats();
             }
         }
+
+        // Close modal when clicking outside
+        transcriptModal.addEventListener('click', (e) => {
+            if (e.target === transcriptModal) {
+                closeTranscriptModal();
+            }
+        });
 
         // Initialize
         updateStats();
