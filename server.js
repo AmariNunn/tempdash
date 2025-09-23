@@ -192,6 +192,41 @@ async function updateElevenLabsPrompt(prompt) {
         }
 
         const data = await response.json();
+        return data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Function to initiate outbound call via ElevenLabs API
+async function initiateOutboundCall(phoneNumber) {
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
+        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables.');
+    }
+
+    try {
+        const requestBody = {
+            agent_id: ELEVENLABS_AGENT_ID,
+            agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
+            to_number: phoneNumber,
+            conversation_initiation_client_data: {}
+        };
+
+        const response = await fetch(ELEVENLABS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'xi-api-key': ELEVENLABS_API_KEY
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+        }
+
+        const data = await response.json();
         
         return {
             conversation_id: data.conversation_id || data.id,
@@ -570,38 +605,3 @@ server.listen(PORT, () => {
         console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
 });
-            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
-        }
-
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        throw error;
-    }
-}
-
-// Function to initiate outbound call via ElevenLabs API
-async function initiateOutboundCall(phoneNumber) {
-    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
-        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables.');
-    }
-
-    try {
-        const requestBody = {
-            agent_id: ELEVENLABS_AGENT_ID,
-            agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
-            to_number: phoneNumber,
-            conversation_initiation_client_data: {}
-        };
-
-        const response = await fetch(ELEVENLABS_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'xi-api-key': ELEVENLABS_API_KEY
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.text();
