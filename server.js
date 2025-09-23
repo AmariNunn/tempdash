@@ -5,23 +5,17 @@ const socketIo = require('socket.io');
 const path = require('path');
 const { Pool } = require('pg');
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend");
-const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-
-// Configure multer for file uploads
-const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-});
 
 // ElevenLabs API configuration
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID;
 const ELEVENLABS_PHONE_NUMBER_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID;
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/twilio/outbound-call';
+const ELEVENLABS_AGENTS_URL = 'https://api.elevenlabs.io/v1/convai/agents';
 
 // MailerSend configuration
 const mailerSend = new MailerSend({
@@ -47,10 +41,6 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/elevenlabs_calls',
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
-
-// Global batch processing state
-let currentBatch = null;
-let batchQueue = [];
 
 // Helper function for duration formatting
 function formatDuration(seconds) {
@@ -139,53 +129,36 @@ async function initializeDatabase() {
                 status VARCHAR(50) DEFAULT 'completed',
                 call_type VARCHAR(50) DEFAULT 'inbound',
                 transcript TEXT,
+                conversation_id VARCHAR(255),
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         `);
 
-        // Check if conversation_id column exists and add it if missing
-        const checkColumn = await pool.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'calls' AND column_name = 'conversation_id'
+        // Create prompts table for storing AI agent prompts
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS prompts (
+                id SERIAL PRIMARY KEY,
+                prompt TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
         `);
 
-        if (checkColumn.rows.length === 0) {
-            console.log('🔧 Adding missing conversation_id column...');
+        // Insert default prompt if none exists
+        const existingPrompt = await pool.query('SELECT COUNT(*) FROM prompts');
+        if (existingPrompt.rows[0].count === '0') {
             await pool.query(`
-                ALTER TABLE calls 
-                ADD COLUMN conversation_id VARCHAR(255)
-            `);
-            console.log('✅ conversation_id column added successfully');
+                INSERT INTO prompts (prompt) VALUES ($1)
+            `, [`You are a helpful AI assistant. Your goal is to provide excellent customer service by:
+- Greeting callers warmly and professionally
+- Listening carefully to their needs and concerns  
+- Providing accurate and helpful information
+- Being patient, empathetic, and courteous
+- Asking clarifying questions when needed
+- Offering to connect them with the right person or department when appropriate
+
+Keep your responses conversational and concise. Always maintain a friendly and professional tone.`]);
         }
-
-        // Create batches table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS batches (
-                id VARCHAR(255) PRIMARY KEY,
-                name VARCHAR(255),
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                status VARCHAR(50) DEFAULT 'pending',
-                total_calls INTEGER DEFAULT 0,
-                completed_calls INTEGER DEFAULT 0,
-                successful_calls INTEGER DEFAULT 0,
-                failed_calls INTEGER DEFAULT 0
-            )
-        `);
-
-        // Create batch_calls table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS batch_calls (
-                id VARCHAR(255) PRIMARY KEY,
-                batch_id VARCHAR(255) REFERENCES batches(id),
-                phone_number VARCHAR(50),
-                status VARCHAR(50) DEFAULT 'pending',
-                call_id VARCHAR(255),
-                error_message TEXT,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                completed_at TIMESTAMP WITH TIME ZONE
-            )
-        `);
 
         console.log('Database tables initialized successfully');
     } catch (error) {
@@ -195,27 +168,22 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
-// Function to initiate outbound call via ElevenLabs API
-async function initiateOutboundCall(phoneNumber) {
-    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
-        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables.');
+// Function to update ElevenLabs agent prompt
+async function updateElevenLabsPrompt(prompt) {
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
+        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
     }
 
     try {
-        const requestBody = {
-            agent_id: ELEVENLABS_AGENT_ID,
-            agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
-            to_number: phoneNumber,
-            conversation_initiation_client_data: {}
-        };
-
-        const response = await fetch(ELEVENLABS_API_URL, {
-            method: 'POST',
+        const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'xi-api-key': ELEVENLABS_API_KEY
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                prompt: prompt
+            })
         });
 
         if (!response.ok) {
@@ -236,173 +204,65 @@ async function initiateOutboundCall(phoneNumber) {
     }
 }
 
-// Process batch calls sequentially
-async function processBatch(batchId) {
-    try {
-        console.log(`📞 Starting batch processing for batch: ${batchId}`);
-        
-        // Update batch status to processing
-        await pool.query(
-            'UPDATE batches SET status = $1 WHERE id = $2',
-            ['processing', batchId]
-        );
-
-        // Get all pending calls for this batch
-        const batchCalls = await pool.query(
-            'SELECT * FROM batch_calls WHERE batch_id = $1 AND status = $2 ORDER BY created_at',
-            [batchId, 'pending']
-        );
-
-        for (const batchCall of batchCalls.rows) {
-            try {
-                console.log(`📞 Calling ${batchCall.phone_number}...`);
-                
-                // Update call status to processing
-                await pool.query(
-                    'UPDATE batch_calls SET status = $1 WHERE id = $2',
-                    ['processing', batchCall.id]
-                );
-
-                // Broadcast progress update
-                io.emit('batchProgress', {
-                    batchId: batchId,
-                    currentCall: batchCall.phone_number,
-                    progress: await getBatchProgress(batchId)
-                });
-
-                // Initiate the call
-                const callResult = await initiateOutboundCall(batchCall.phone_number);
-                
-                // Create call record
-                const callData = {
-                    id: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    timestamp: new Date().toISOString(),
-                    caller_number: batchCall.phone_number,
-                    called_number: 'Agent',
-                    duration: 0,
-                    status: 'initiated',
-                    call_type: 'outbound',
-                    transcript: '',
-                    conversation_id: callResult.conversation_id
-                };
-
-                // Save call to database
-                await pool.query(`
-                    INSERT INTO calls (id, timestamp, caller_number, called_number, duration, status, call_type, transcript, conversation_id)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                `, [callData.id, callData.timestamp, callData.caller_number, callData.called_number, 
-                    callData.duration, callData.status, callData.call_type, callData.transcript, callData.conversation_id]);
-
-                // Update batch call status
-                await pool.query(
-                    'UPDATE batch_calls SET status = $1, call_id = $2, completed_at = NOW() WHERE id = $3',
-                    ['completed', callData.id, batchCall.id]
-                );
-
-                // Update batch counters
-                await pool.query(
-                    'UPDATE batches SET completed_calls = completed_calls + 1, successful_calls = successful_calls + 1 WHERE id = $1',
-                    [batchId]
-                );
-
-                // Broadcast new call
-                io.emit('newCall', callData);
-
-                console.log(`✅ Call initiated successfully to ${batchCall.phone_number}`);
-
-                // Wait 2 seconds between calls to be respectful
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-            } catch (error) {
-                console.error(`❌ Failed to call ${batchCall.phone_number}:`, error.message);
-                
-                // Update batch call with error
-                await pool.query(
-                    'UPDATE batch_calls SET status = $1, error_message = $2, completed_at = NOW() WHERE id = $3',
-                    ['failed', error.message, batchCall.id]
-                );
-
-                // Update batch counters
-                await pool.query(
-                    'UPDATE batches SET completed_calls = completed_calls + 1, failed_calls = failed_calls + 1 WHERE id = $1',
-                    [batchId]
-                );
-
-                // Continue with next call
-                continue;
-            }
-        }
-
-        // Mark batch as completed
-        await pool.query(
-            'UPDATE batches SET status = $1 WHERE id = $2',
-            ['completed', batchId]
-        );
-
-        // Broadcast batch completion
-        const finalProgress = await getBatchProgress(batchId);
-        io.emit('batchCompleted', {
-            batchId: batchId,
-            progress: finalProgress
-        });
-
-        console.log(`🎉 Batch ${batchId} completed!`);
-
-    } catch (error) {
-        console.error(`💥 Batch processing failed for ${batchId}:`, error);
-        
-        // Mark batch as failed
-        await pool.query(
-            'UPDATE batches SET status = $1 WHERE id = $2',
-            ['failed', batchId]
-        );
-    }
-
-    // Clear current batch
-    currentBatch = null;
-    
-    // Process next batch in queue if any
-    if (batchQueue.length > 0) {
-        const nextBatchId = batchQueue.shift();
-        currentBatch = nextBatchId;
-        processBatch(nextBatchId);
-    }
-}
-
-// Get batch progress
-async function getBatchProgress(batchId) {
-    const result = await pool.query(
-        'SELECT * FROM batches WHERE id = $1',
-        [batchId]
-    );
-    return result.rows[0];
-}
-
-// Parse CSV content
-function parseCSV(csvContent) {
-    const lines = csvContent.trim().split('\n');
-    const phoneNumbers = [];
-    
-    // Skip header row if it exists
-    const startIndex = lines[0].toLowerCase().includes('phone') ? 1 : 0;
-    
-    for (let i = startIndex; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line) {
-            // Extract phone number (first column)
-            const phoneNumber = line.split(',')[0].trim().replace(/['"]/g, '');
-            if (phoneNumber && phoneNumber.length >= 10) {
-                phoneNumbers.push(phoneNumber);
-            }
-        }
-    }
-    
-    return phoneNumbers;
-}
-
 // Serve the main HTML page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// API endpoint to get current prompt
+app.get('/api/prompt', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT prompt FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        const prompt = result.rows.length > 0 ? result.rows[0].prompt : '';
+        res.json({ prompt });
+    } catch (error) {
+        console.error('Error fetching prompt:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// API endpoint to update prompt
+app.post('/api/prompt', async (req, res) => {
+    const { prompt } = req.body;
+    
+    if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    try {
+        // Update prompt in database
+        await pool.query(`
+            INSERT INTO prompts (prompt) VALUES ($1)
+            ON CONFLICT DO NOTHING
+        `, [prompt]);
+
+        // Update the latest prompt
+        await pool.query(`
+            UPDATE prompts SET prompt = $1, updated_at = NOW() 
+            WHERE id = (SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1)
+        `, [prompt]);
+
+        // Update ElevenLabs agent with new prompt
+        try {
+            await updateElevenLabsPrompt(prompt);
+            console.log('✅ ElevenLabs agent prompt updated successfully');
+        } catch (elevenLabsError) {
+            console.error('⚠️ Failed to update ElevenLabs prompt:', elevenLabsError.message);
+            // Continue anyway - we've saved to database
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Prompt updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Failed to update prompt:', error);
+        res.status(500).json({ 
+            error: 'Failed to update prompt', 
+            details: error.message 
+        });
+    }
 });
 
 // API endpoint to initiate single outbound call
@@ -469,122 +329,6 @@ app.post('/api/calls/initiate', async (req, res) => {
             error: 'Failed to initiate call', 
             details: error.message 
         });
-    }
-});
-
-// API endpoint to upload CSV and create batch
-app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No CSV file uploaded' });
-        }
-
-        const csvContent = req.file.buffer.toString('utf-8');
-        const phoneNumbers = parseCSV(csvContent);
-
-        if (phoneNumbers.length === 0) {
-            return res.status(400).json({ error: 'No valid phone numbers found in CSV' });
-        }
-
-        // Create batch record
-        const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        const batchName = req.body.batchName || `Batch ${new Date().toLocaleDateString()}`;
-
-        await pool.query(
-            'INSERT INTO batches (id, name, total_calls) VALUES ($1, $2, $3)',
-            [batchId, batchName, phoneNumbers.length]
-        );
-
-        // Create batch call records
-        for (const phoneNumber of phoneNumbers) {
-            const batchCallId = `bc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            await pool.query(
-                'INSERT INTO batch_calls (id, batch_id, phone_number) VALUES ($1, $2, $3)',
-                [batchCallId, batchId, phoneNumber]
-            );
-        }
-
-        res.json({
-            success: true,
-            message: `Batch created with ${phoneNumbers.length} phone numbers`,
-            batchId: batchId,
-            totalCalls: phoneNumbers.length
-        });
-
-    } catch (error) {
-        console.error('Batch upload error:', error);
-        res.status(500).json({ error: 'Failed to process CSV file' });
-    }
-});
-
-// API endpoint to start batch processing
-app.post('/api/batch/:batchId/start', async (req, res) => {
-    const { batchId } = req.params;
-
-    try {
-        // Check if batch exists
-        const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
-        if (batch.rows.length === 0) {
-            return res.status(404).json({ error: 'Batch not found' });
-        }
-
-        if (batch.rows[0].status !== 'pending') {
-            return res.status(400).json({ error: 'Batch has already been processed' });
-        }
-
-        // Add to queue or start immediately
-        if (currentBatch === null) {
-            currentBatch = batchId;
-            processBatch(batchId);
-        } else {
-            batchQueue.push(batchId);
-        }
-
-        res.json({ 
-            success: true, 
-            message: currentBatch === batchId ? 'Batch processing started' : 'Batch added to queue'
-        });
-
-    } catch (error) {
-        console.error('Batch start error:', error);
-        res.status(500).json({ error: 'Failed to start batch processing' });
-    }
-});
-
-// API endpoint to get batch status
-app.get('/api/batch/:batchId', async (req, res) => {
-    const { batchId } = req.params;
-
-    try {
-        const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
-        if (batch.rows.length === 0) {
-            return res.status(404).json({ error: 'Batch not found' });
-        }
-
-        const calls = await pool.query(
-            'SELECT * FROM batch_calls WHERE batch_id = $1 ORDER BY created_at',
-            [batchId]
-        );
-
-        res.json({
-            batch: batch.rows[0],
-            calls: calls.rows
-        });
-
-    } catch (error) {
-        console.error('Batch status error:', error);
-        res.status(500).json({ error: 'Failed to get batch status' });
-    }
-});
-
-// API endpoint to get all batches
-app.get('/api/batches', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 10');
-        res.json({ batches: result.rows });
-    } catch (error) {
-        console.error('Batches query error:', error);
-        res.status(500).json({ error: 'Database error' });
     }
 });
 
@@ -698,8 +442,6 @@ app.get('/health', async (req, res) => {
             callCount: result.rows[0].count,
             emailNotifications: emailConfig.enabled,
             elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID),
-            currentBatch: currentBatch,
-            queueLength: batchQueue.length,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -800,10 +542,6 @@ io.on('connection', async (socket) => {
     try {
         const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
         socket.emit('callHistory', result.rows);
-        
-        // Send current batches
-        const batches = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 5');
-        socket.emit('batchHistory', batches.rows);
     } catch (error) {
         console.error('Error sending call history:', error);
     }
@@ -816,12 +554,12 @@ io.on('connection', async (socket) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log(`✅ ElevenLabs Webhook Server running on port ${PORT}`);
+    console.log(`✅ SkyIQ Inbound Dashboard running on port ${PORT}`);
     console.log(`📡 Webhook endpoint: http://localhost:${PORT}/webhook`);
     console.log(`📊 Dashboard: http://localhost:${PORT}`);
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
-    console.log(`📁 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
+    console.log(`✏️ Prompt API: GET/POST http://localhost:${PORT}/api/prompt`);
     console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
     console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
@@ -832,3 +570,38 @@ server.listen(PORT, () => {
         console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
 });
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Function to initiate outbound call via ElevenLabs API
+async function initiateOutboundCall(phoneNumber) {
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
+        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables.');
+    }
+
+    try {
+        const requestBody = {
+            agent_id: ELEVENLABS_AGENT_ID,
+            agent_phone_number_id: ELEVENLABS_PHONE_NUMBER_ID,
+            to_number: phoneNumber,
+            conversation_initiation_client_data: {}
+        };
+
+        const response = await fetch(ELEVENLABS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'xi-api-key': ELEVENLABS_API_KEY
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
