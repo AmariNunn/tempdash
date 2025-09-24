@@ -288,10 +288,16 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
             ignore_default_personality: true
         };
 
+        // Clean up conflicting tool fields - only keep one
+        if (updateData.tools && updateData.tool_ids) {
+            delete updateData.tool_ids; // Keep tools, remove tool_ids
+        }
+
         console.log('Updating ElevenLabs agent with data:', {
             system_prompt: updateData.system_prompt.substring(0, 100) + '...',
             first_message: updateData.first_message,
-            ignore_default_personality: updateData.ignore_default_personality
+            ignore_default_personality: updateData.ignore_default_personality,
+            tools_cleaned: !!(updateData.tools && updateData.tool_ids)
         });
 
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
