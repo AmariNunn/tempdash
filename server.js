@@ -268,7 +268,6 @@ Remember: Every conversation is an opportunity to build trust and demonstrate Sk
 
 initializeDatabase();
 
-// Function to update ElevenLabs agent prompt
 async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
         throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
@@ -278,26 +277,34 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
         // First, get the current agent configuration to preserve other settings
         const currentAgent = await getElevenLabsAgent();
         
+        // Create a clean update object with only essential fields
         const updateData = {
-            // Preserve existing settings
-            ...currentAgent,
-            // Update only the prompt-related fields
+            name: currentAgent.name,
             system_prompt: systemPrompt,
             first_message: firstMessage || "Hello! This is Andy from SkyIQ. How can I help you today?",
-            // Ensure we're overriding the default personality
-            ignore_default_personality: true
+            ignore_default_personality: true,
+            voice: currentAgent.voice,
+            language_model: currentAgent.language_model
         };
 
-        // Clean up conflicting tool fields - only keep one
-        if (updateData.tools && updateData.tool_ids) {
-            delete updateData.tool_ids; // Keep tools, remove tool_ids
+        // Only include tools OR tool_ids, not both
+        if (currentAgent.tools && currentAgent.tools.length > 0) {
+            updateData.tools = currentAgent.tools;
+        } else if (currentAgent.tool_ids && currentAgent.tool_ids.length > 0) {
+            updateData.tool_ids = currentAgent.tool_ids;
         }
 
-        console.log('Updating ElevenLabs agent with data:', {
+        // Include other safe fields
+        if (currentAgent.webhook) {
+            updateData.webhook = currentAgent.webhook;
+        }
+
+        console.log('Updating ElevenLabs agent with cleaned data:', {
             system_prompt: updateData.system_prompt.substring(0, 100) + '...',
             first_message: updateData.first_message,
-            ignore_default_personality: updateData.ignore_default_personality,
-            tools_cleaned: !!(updateData.tools && updateData.tool_ids)
+            has_tools: !!updateData.tools,
+            has_tool_ids: !!updateData.tool_ids,
+            ignore_default_personality: updateData.ignore_default_personality
         });
 
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
