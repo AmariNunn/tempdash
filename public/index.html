@@ -8,7 +8,7 @@
     body { font-family: system-ui, sans-serif; background:#f9fafb; margin:0; padding:20px; }
     .container { max-width:800px; margin:0 auto; }
     h1 { font-size:1.5rem; margin-bottom:10px; }
-    textarea, input { width:100%; padding:10px; margin-top:8px; font-size:1rem; border:1px solid #ccc; border-radius:6px; }
+    textarea { width:100%; padding:10px; margin-top:8px; font-size:1rem; border:1px solid #ccc; border-radius:6px; min-height:120px; }
     button { margin-top:12px; padding:10px 16px; font-size:1rem; border:none; border-radius:6px; cursor:pointer; }
     button.primary { background:#4f46e5; color:#fff; }
     button.secondary { background:#e5e7eb; color:#111; margin-left:6px; }
@@ -20,16 +20,12 @@
 </head>
 <body>
   <div class="container">
-    <h1>✏️ ElevenLabs Prompt Editor</h1>
-    <label for="promptEditor">System Prompt (required):</label>
-    <textarea id="promptEditor" placeholder="Enter your system prompt..."></textarea>
-
-    <label for="firstMessageInput">First Message (optional):</label>
-    <input id="firstMessageInput" placeholder="e.g. Hello, how can I help you?"/>
+    <h1>✏️ Prompt Editor</h1>
+    <label for="promptEditor">Prompt (required):</label>
+    <textarea id="promptEditor" placeholder="Enter your prompt..."></textarea>
 
     <div>
       <button id="saveBtn" class="primary">💾 Save Prompt</button>
-      <button id="syncBtn" class="secondary">🔁 Sync from ElevenLabs</button>
       <button id="reloadBtn" class="secondary">🔄 Reload from DB</button>
     </div>
 
@@ -38,9 +34,7 @@
 
   <script>
     const promptEl = document.getElementById('promptEditor');
-    const firstMsgEl = document.getElementById('firstMessageInput');
     const saveBtn = document.getElementById('saveBtn');
-    const syncBtn = document.getElementById('syncBtn');
     const reloadBtn = document.getElementById('reloadBtn');
     const statusEl = document.getElementById('status');
 
@@ -55,9 +49,8 @@
         const r = await fetch('/api/prompt');
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || 'Failed to load');
-        promptEl.value = data.system_prompt || '';
-        if ('first_message' in data) firstMsgEl.value = data.first_message || '';
-        setStatus('Loaded prompt from DB ✅', 'success');
+        promptEl.value = data.prompt || '';
+        setStatus('Loaded prompt ✅', 'success');
       } catch (e) {
         console.error(e);
         setStatus('Error loading prompt', 'error');
@@ -65,11 +58,10 @@
     }
 
     async function savePrompt() {
-      const system_prompt = (promptEl.value || '').trim();
-      const first_message = (firstMsgEl.value || '').trim();
+      const prompt = (promptEl.value || '').trim();
 
-      if (!system_prompt) {
-        setStatus('System prompt is required', 'error');
+      if (!prompt) {
+        setStatus('Prompt is required', 'error');
         return;
       }
 
@@ -78,41 +70,21 @@
         const r = await fetch('/api/prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ system_prompt, first_message })
+          body: JSON.stringify({ prompt })   // 👈 server expects "prompt"
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || 'Failed to save');
-        if (data.warning) {
-          setStatus('Saved locally, but failed to update ElevenLabs: ' + data.warning, 'error');
-        } else {
-          setStatus('Prompt saved and applied to ElevenLabs ✅', 'success');
-        }
+        setStatus('Prompt saved ✅', 'success');
       } catch (e) {
         console.error(e);
         setStatus('Error saving prompt', 'error');
       }
     }
 
-    async function syncFromElevenLabs() {
-      try {
-        setStatus('Syncing from ElevenLabs...', 'loading');
-        const r = await fetch('/api/prompt/sync');
-        const data = await r.json();
-        if (!r.ok || !data.success) throw new Error(data.error || 'Failed to sync');
-        promptEl.value = data.system_prompt || '';
-        if ('first_message' in data) firstMsgEl.value = data.first_message || '';
-        setStatus('Synced from ElevenLabs ✅', 'success');
-      } catch (e) {
-        console.error(e);
-        setStatus('Error syncing from ElevenLabs', 'error');
-      }
-    }
-
     saveBtn.addEventListener('click', savePrompt);
-    syncBtn.addEventListener('click', syncFromElevenLabs);
     reloadBtn.addEventListener('click', loadFromDB);
 
-    // Load current prompt on page load
+    // Load prompt on page load
     loadFromDB();
   </script>
 </body>
