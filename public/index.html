@@ -1019,6 +1019,67 @@ Always ask for the caller's name and reason for calling to provide the best assi
             loadCurrentPrompt();
         }
 
+           async function savePrompt() {
+    const prompt = promptEditor.value.trim();
+    
+    if (!prompt) {
+        showPromptStatus('Please enter a prompt before saving', 'error');
+        return;
+    }
+
+    try {
+        savePromptBtn.disabled = true;
+        savePromptBtn.textContent = '💾 Saving...';
+        showPromptStatus('Saving prompt...', 'loading');
+
+        // Extract name and company for first message
+        let firstMessage = '';
+        const nameMatch = prompt.match(/(?:named|name is|you are)\s+(\w+)/i);
+        const companyMatch = prompt.match(/(?:work for|from|at)\s+([A-Za-z\s']+?)(?:\s+and|\.|$)/i);
+        
+        if (nameMatch) {
+            let agentName = nameMatch[1];
+            let company = '';
+            
+            if (companyMatch) {
+                company = ` from ${companyMatch[1].trim()}`;
+            }
+            
+            firstMessage = `Hello! This is ${agentName}${company}. How can I help you today?`;
+        }
+
+        const response = await fetch('/api/prompt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                system_prompt: prompt, 
+                first_message: firstMessage 
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            currentPrompt = prompt;
+            showPromptStatus('Prompt saved successfully!', 'success');
+            showNotification('AI agent prompt updated successfully');
+        } else {
+            showPromptStatus(result.error || 'Failed to save prompt', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving prompt:', error);
+        showPromptStatus('Error saving prompt. Please try again.', 'error');
+    } finally {
+        savePromptBtn.disabled = false;
+        savePromptBtn.textContent = '💾 Save Prompt';
+        
+        setTimeout(() => {
+            hidePromptStatus();
+        }, 5000);
+    }
+}
         // Single call functionality
         async function initiateCall() {
             const phoneNumber = phoneInput.value.trim();
