@@ -406,75 +406,6 @@ app.get('/test-elevenlabs-agent', async (req, res) => {
     }
 });
 
-// Enhanced prompt update endpoint with better error handling
-app.post('/api/prompt', async (req, res) => {
-    const { system_prompt, first_message } = req.body;
-    
-    if (!system_prompt) {
-        return res.status(400).json({ error: 'System prompt is required' });
-    }
-
-    try {
-        // Update prompt in database first
-        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
-        
-        if (existingPrompt.rows.length > 0) {
-            await pool.query(`
-                UPDATE prompts SET 
-                system_prompt = $1, 
-                first_message = $2, 
-                updated_at = NOW() 
-                WHERE id = $3
-            `, [system_prompt, first_message || '', existingPrompt.rows[0].id]);
-        } else {
-            await pool.query(`
-                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
-            `, [system_prompt, first_message || '']);
-        }
-
-        console.log('Prompt saved to database, now updating ElevenLabs...');
-
-        // Update ElevenLabs agent with new prompt
-        try {
-            await updateElevenLabsPrompt(system_prompt, first_message);
-            console.log('✅ ElevenLabs agent prompt updated successfully');
-            
-            res.json({ 
-                success: true, 
-                message: 'Prompt updated successfully in both database and ElevenLabs'
-            });
-        } catch (elevenLabsError) {
-            console.error('⚠️ Failed to update ElevenLabs prompt:', elevenLabsError.message);
-            
-            // Still return success since we saved to database
-            res.json({ 
-                success: true, 
-                message: 'Prompt saved to database, but failed to update ElevenLabs. Please check your API credentials and agent ID.',
-                warning: elevenLabsError.message,
-                elevenLabsError: true
-            });
-        }
-
-    } catch (error) {
-        console.error('Failed to update prompt:', error);
-        res.status(500).json({ 
-            error: 'Failed to update prompt', 
-            details: error.message 
-        });
-    }
-});
-
-        if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        throw error;
-    }
-}
-
 // Function to initiate outbound call via ElevenLabs API
 async function initiateOutboundCall(phoneNumber) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
@@ -812,10 +743,6 @@ app.get('/api/prompt/sync', async (req, res) => {
                 first_message = $2, 
                 updated_at = NOW() 
                 WHERE id = $3
-            `, [agentData.system_prompt || '', agentData.first_message || '', existingPrompt.rows[0].id]);
-        } else {
-            await pool.query(`
-                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
             `, [agentData.system_prompt || '', agentData.first_message || '']);
         }
 
