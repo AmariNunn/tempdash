@@ -269,13 +269,38 @@ Remember: Every conversation is an opportunity to build trust and demonstrate Sk
 initializeDatabase();
 
 function extractFirstMessageFromPrompt(systemPrompt) {
-    // Try to extract name from prompt
-    const nameMatch = systemPrompt.match(/(?:your name is|you are) (\w+)/i);
-    const agentName = nameMatch ? nameMatch[1] : "your AI assistant";
+    // Enhanced pattern matching for complex prompts
+    const namePatterns = [
+        /(?:your name is|you are|i am|call me) (\w+)/i,
+        /(?:agent named|assistant named|representative named) (\w+)/i,
+        /(?:introduce yourself as|known as) (\w+)/i
+    ];
     
-    // Look for company references
-    const companyMatch = systemPrompt.match(/(?:for|from) ([A-Z][a-zA-Z\s]+)/);
-    const company = companyMatch && companyMatch[1].length < 20 ? ` from ${companyMatch[1]}` : "";
+    const companyPatterns = [
+        /(?:for|from|at|representing) ([A-Z][a-zA-Z\s&]{2,25})/g,
+        /(?:company|business|organization) (?:called|named) ([A-Z][a-zA-Z\s&]{2,25})/i
+    ];
+    
+    let agentName = "your AI assistant";
+    let company = "";
+    
+    // Try multiple name patterns
+    for (const pattern of namePatterns) {
+        const match = systemPrompt.match(pattern);
+        if (match) {
+            agentName = match[1];
+            break;
+        }
+    }
+    
+    // Extract company info
+    for (const pattern of companyPatterns) {
+        const match = systemPrompt.match(pattern);
+        if (match && match[1].length < 25) {
+            company = ` from ${match[1]}`;
+            break;
+        }
+    }
     
     return `Hello! This is ${agentName}${company}. How can I help you today?`;
 }
