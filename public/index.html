@@ -1097,49 +1097,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
             }
         }
 
-        async function savePrompt() {
-            const prompt = promptEditor.value.trim();
-            
-            if (!prompt) {
-                showPromptStatus('Please enter a prompt before saving', 'error');
-                return;
-            }
-
-            try {
-                savePromptBtn.disabled = true;
-                savePromptBtn.textContent = '💾 Saving...';
-                showPromptStatus('Saving prompt...', 'loading');
-
-                const response = await fetch('/api/prompt', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ system_prompt: prompt, first_message: '' })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    currentPrompt = prompt;
-                    showPromptStatus('Prompt saved successfully!', 'success');
-                    showNotification('AI agent prompt updated successfully');
-                } else {
-                    showPromptStatus(result.error || 'Failed to save prompt', 'error');
-                }
-            } catch (error) {
-                console.error('Error saving prompt:', error);
-                showPromptStatus('Error saving prompt. Please try again.', 'error');
-            } finally {
-                savePromptBtn.disabled = false;
-                savePromptBtn.textContent = '💾 Save Prompt';
-                
-                setTimeout(() => {
-                    hidePromptStatus();
-                }, 5000);
-            }
-        }
-
+        
         function loadTemplate(templateName) {
             if (promptTemplates[templateName]) {
                 promptEditor.value = promptTemplates[templateName];
