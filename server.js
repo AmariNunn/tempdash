@@ -275,10 +275,24 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     }
 
     try {
+        // First, get the current agent configuration to preserve other settings
+        const currentAgent = await getElevenLabsAgent();
+        
         const updateData = {
+            // Preserve existing settings
+            ...currentAgent,
+            // Update only the prompt-related fields
             system_prompt: systemPrompt,
-            first_message: firstMessage || "Hello! This is Andy from SkyIQ. How can I help you today?"
+            first_message: firstMessage || "Hello! This is Andy from SkyIQ. How can I help you today?",
+            // Ensure we're overriding the default personality
+            ignore_default_personality: true
         };
+
+        console.log('Updating ElevenLabs agent with data:', {
+            system_prompt: updateData.system_prompt.substring(0, 100) + '...',
+            first_message: updateData.first_message,
+            ignore_default_personality: updateData.ignore_default_personality
+        });
 
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
             method: 'PATCH',
@@ -291,28 +305,164 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
 
         if (!response.ok) {
             const errorData = await response.text();
+            console.error('ElevenLabs API Error Response:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorData
+            });
             throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
         }
 
         const data = await response.json();
+        console.log('ElevenLabs agent updated successfully');
         return data;
     } catch (error) {
+        console.error('Error updating ElevenLabs prompt:', error);
         throw error;
     }
 }
 
-// Function to get current ElevenLabs agent configuration
+// Enhanced function to get current ElevenLabs agent configuration
 async function getElevenLabsAgent() {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
         throw new Error('ElevenLabs configuration incomplete');
     }
 
     try {
+        console.log('Fetching ElevenLabs agent configuration...');
+        
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
             headers: {
-                'xi-api-key': ELEVENLABS_API_KEY
+                'xi-api-key': ELEVENLABS_API_KEY,
+                'Content-Type': 'application/json'
             }
         });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Failed to fetch ElevenLabs agent:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorData
+            });
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+        }
+
+        const data = await response.json();
+        console.log('Successfully fetched ElevenLabs agent configuration');
+        return data;
+    } catch (error) {
+        console.error('Error fetching ElevenLabs agent:', error);
+        throw error;
+    }
+}
+
+// Enhanced test endpoint for better debugging
+app.get('/test-elevenlabs-agent', async (req, res) => {
+    try {
+        if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
+            return res.status(400).json({ 
+                error: 'ElevenLabs configuration incomplete',
+                configured: {
+                    apiKey: !!ELEVENLABS_API_KEY,
+                    agentId: !!ELEVENLABS_AGENT_ID,
+                    phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
+                }
+            });
+        }
+
+        // Get current agent configuration
+        const agentData = await getElevenLabsAgent();
+        
+        res.json({
+            success: true,
+            message: 'ElevenLabs agent configuration retrieved successfully',
+            agent: {
+                name: agentData.name,
+                system_prompt: agentData.system_prompt?.substring(0, 200) + '...' || 'Not set',
+                first_message: agentData.first_message || 'Not set',
+                ignore_default_personality: agentData.ignore_default_personality || false,
+                voice_id: agentData.voice?.voice_id || 'Not set',
+                model_id: agentData.language_model?.model_id || 'Not set'
+            },
+            configured: {
+                apiKey: true,
+                agentId: true,
+                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
+            }
+        });
+
+    } catch (error) {
+        console.error('Test ElevenLabs agent failed:', error);
+        res.status(500).json({
+            error: 'Failed to test ElevenLabs agent configuration',
+            details: error.message,
+            configured: {
+                apiKey: !!ELEVENLABS_API_KEY,
+                agentId: !!ELEVENLABS_AGENT_ID,
+                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
+            }
+        });
+    }
+});
+
+// Enhanced prompt update endpoint with better error handling
+app.post('/api/prompt', async (req, res) => {
+    const { system_prompt, first_message } = req.body;
+    
+    if (!system_prompt) {
+        return res.status(400).json({ error: 'System prompt is required' });
+    }
+
+    try {
+        // Update prompt in database first
+        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        
+        if (existingPrompt.rows.length > 0) {
+            await pool.query(`
+                UPDATE prompts SET 
+                system_prompt = $1, 
+                first_message = $2, 
+                updated_at = NOW() 
+                WHERE id = $3
+            `, [system_prompt, first_message || '', existingPrompt.rows[0].id]);
+        } else {
+            await pool.query(`
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [system_prompt, first_message || '']);
+        }
+
+        console.log('Prompt saved to database, now updating ElevenLabs...');
+
+        // Update ElevenLabs agent with new prompt
+        try {
+            await updateElevenLabsPrompt(system_prompt, first_message);
+            console.log('✅ ElevenLabs agent prompt updated successfully');
+            
+            res.json({ 
+                success: true, 
+                message: 'Prompt updated successfully in both database and ElevenLabs'
+            });
+        } catch (elevenLabsError) {
+            console.error('⚠️ Failed to update ElevenLabs prompt:', elevenLabsError.message);
+            
+            // Still return success since we saved to database
+            res.json({ 
+                success: true, 
+                message: 'Prompt saved to database, but failed to update ElevenLabs. Please check your API credentials and agent ID.',
+                warning: elevenLabsError.message,
+                elevenLabsError: true
+            });
+        }
+
+    } catch (error) {
+        console.error('Failed to update prompt:', error);
+        res.status(500).json({ 
+            error: 'Failed to update prompt', 
+            details: error.message 
+        });
+    }
+});
 
         if (!response.ok) {
             const errorData = await response.text();
