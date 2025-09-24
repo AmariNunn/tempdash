@@ -268,23 +268,29 @@ Remember: Every conversation is an opportunity to build trust and demonstrate Sk
 
 initializeDatabase();
 
+function extractFirstMessageFromPrompt(systemPrompt) {
+    // Try to extract name from prompt
+    const nameMatch = systemPrompt.match(/(?:your name is|you are) (\w+)/i);
+    const agentName = nameMatch ? nameMatch[1] : "your AI assistant";
+    
+    // Look for company references
+    const companyMatch = systemPrompt.match(/(?:for|from) ([A-Z][a-zA-Z\s]+)/);
+    const company = companyMatch && companyMatch[1].length < 20 ? ` from ${companyMatch[1]}` : "";
+    
+    return `Hello! This is ${agentName}${company}. How can I help you today?`;
+}
+
 async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-        throw new Error('ElevenLabs configuration incomplete.');
+        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
     }
 
     try {
-        // Get current agent to preserve structure
-        const currentAgent = await getElevenLabsAgent();
-        
         const updateData = {
             conversation_config: {
-                ...currentAgent.conversation_config,
                 agent: {
-                    ...currentAgent.conversation_config.agent,
                     first_message: firstMessage || extractFirstMessageFromPrompt(systemPrompt),
                     prompt: {
-                        ...currentAgent.conversation_config.agent.prompt,
                         prompt: systemPrompt,
                         ignore_default_personality: true
                     }
@@ -295,7 +301,7 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
         console.log('Updating ElevenLabs agent with nested structure:', {
             prompt: systemPrompt.substring(0, 100) + '...',
             first_message: updateData.conversation_config.agent.first_message,
-            ignore_default_personality: updateData.conversation_config.agent.prompt.ignore_default_personality
+            ignore_default_personality: true
         });
 
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
@@ -309,43 +315,7 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
 
         if (!response.ok) {
             const errorData = await response.text();
-            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
-        }
-
-        const data = await response.json();
-        console.log('ElevenLabs agent updated successfully');
-        return data;
-    } catch (error) {
-        console.error('Error updating ElevenLabs prompt:', error);
-        throw error;
-    }
-}
-
-function extractFirstMessageFromPrompt(systemPrompt) {
-    const nameMatch = systemPrompt.match(/(?:your name is|you are) (\w+)/i);
-    const agentName = nameMatch ? nameMatch[1] : "your AI assistant";
-    return `Hello! This is ${agentName}. How can I help you today?`;
-}
-
-// Enhanced function to get current ElevenLabs agent configuration
-async function getElevenLabsAgent() {
-    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-        throw new Error('ElevenLabs configuration incomplete');
-    }
-
-    try {
-        console.log('Fetching ElevenLabs agent configuration...');
-        
-        const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
-            headers: {
-                'xi-api-key': ELEVENLABS_API_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Failed to fetch ElevenLabs agent:', {
+            console.error('ElevenLabs API Error Response:', {
                 status: response.status,
                 statusText: response.statusText,
                 body: errorData
@@ -354,10 +324,10 @@ async function getElevenLabsAgent() {
         }
 
         const data = await response.json();
-        console.log('Successfully fetched ElevenLabs agent configuration');
+        console.log('ElevenLabs agent updated successfully');
         return data;
     } catch (error) {
-        console.error('Error fetching ElevenLabs agent:', error);
+        console.error('Error updating ElevenLabs prompt:', error);
         throw error;
     }
 }
