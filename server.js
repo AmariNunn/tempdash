@@ -270,41 +270,32 @@ initializeDatabase();
 
 async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
+        throw new Error('ElevenLabs configuration incomplete.');
     }
 
     try {
-        // First, get the current agent configuration to preserve other settings
+        // Get current agent to preserve structure
         const currentAgent = await getElevenLabsAgent();
         
-        // Create a clean update object with only essential fields
         const updateData = {
-            name: currentAgent.name,
-            system_prompt: systemPrompt,
-            first_message: firstMessage || "Hello! This is Andy from SkyIQ. How can I help you today?",
-            ignore_default_personality: true,
-            voice: currentAgent.voice,
-            language_model: currentAgent.language_model
+            conversation_config: {
+                ...currentAgent.conversation_config,
+                agent: {
+                    ...currentAgent.conversation_config.agent,
+                    first_message: firstMessage || extractFirstMessageFromPrompt(systemPrompt),
+                    prompt: {
+                        ...currentAgent.conversation_config.agent.prompt,
+                        prompt: systemPrompt,
+                        ignore_default_personality: true
+                    }
+                }
+            }
         };
 
-        // Only include tools OR tool_ids, not both
-        if (currentAgent.tools && currentAgent.tools.length > 0) {
-            updateData.tools = currentAgent.tools;
-        } else if (currentAgent.tool_ids && currentAgent.tool_ids.length > 0) {
-            updateData.tool_ids = currentAgent.tool_ids;
-        }
-
-        // Include other safe fields
-        if (currentAgent.webhook) {
-            updateData.webhook = currentAgent.webhook;
-        }
-
-        console.log('Updating ElevenLabs agent with cleaned data:', {
-            system_prompt: updateData.system_prompt.substring(0, 100) + '...',
-            first_message: updateData.first_message,
-            has_tools: !!updateData.tools,
-            has_tool_ids: !!updateData.tool_ids,
-            ignore_default_personality: updateData.ignore_default_personality
+        console.log('Updating ElevenLabs agent with nested structure:', {
+            prompt: systemPrompt.substring(0, 100) + '...',
+            first_message: updateData.conversation_config.agent.first_message,
+            ignore_default_personality: updateData.conversation_config.agent.prompt.ignore_default_personality
         });
 
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
@@ -318,11 +309,6 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('ElevenLabs API Error Response:', {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorData
-            });
             throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
         }
 
@@ -333,6 +319,12 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
         console.error('Error updating ElevenLabs prompt:', error);
         throw error;
     }
+}
+
+function extractFirstMessageFromPrompt(systemPrompt) {
+    const nameMatch = systemPrompt.match(/(?:your name is|you are) (\w+)/i);
+    const agentName = nameMatch ? nameMatch[1] : "your AI assistant";
+    return `Hello! This is ${agentName}. How can I help you today?`;
 }
 
 // Enhanced function to get current ElevenLabs agent configuration
