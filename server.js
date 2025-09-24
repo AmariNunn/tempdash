@@ -271,14 +271,15 @@ initializeDatabase();
 function extractFirstMessageFromPrompt(systemPrompt) {
     // Enhanced pattern matching for complex prompts
     const namePatterns = [
-        /(?:your name is|you are|i am|call me) (\w+)/i,
-        /(?:agent named|assistant named|representative named) (\w+)/i,
-        /(?:introduce yourself as|known as) (\w+)/i
+        /(?:your name is|you are|i am|call me|named)\s+(\w+)/i,
+        /(?:agent named|assistant named|representative named)\s+(\w+)/i,
+        /(?:introduce yourself as|known as)\s+(\w+)/i
     ];
     
     const companyPatterns = [
-        /(?:for|from|at|representing) ([A-Z][a-zA-Z\s&]{2,25})/g,
-        /(?:company|business|organization) (?:called|named) ([A-Z][a-zA-Z\s&]{2,25})/i
+        /(?:for|from|at|representing)\s+([A-Z][a-zA-Z\s&']{2,25})/i,
+        /work for\s+([A-Z][a-zA-Z\s&']{2,25})/i,
+        /(\w+)'s\s+(\w+)/i // Matches "MJ's Movers"
     ];
     
     let agentName = "your AI assistant";
@@ -287,24 +288,27 @@ function extractFirstMessageFromPrompt(systemPrompt) {
     // Try multiple name patterns
     for (const pattern of namePatterns) {
         const match = systemPrompt.match(pattern);
-        if (match && match[1]) {
-            agentName = match[1];
+        if (match && match[1] && match[1].trim().length > 0) {
+            agentName = match[1].trim();
             break;
         }
     }
     
-    // Extract company info - fixed the undefined error
+    // Extract company info
     for (const pattern of companyPatterns) {
         const match = systemPrompt.match(pattern);
-        if (match && match[1] && match[1].length < 25) {
-            company = ` from ${match[1]}`;
+        if (match && match[1] && match[1].trim().length < 25) {
+            if (pattern.source.includes("'s")) {
+                company = ` from ${match[1]}'s ${match[2]}`;
+            } else {
+                company = ` from ${match[1].trim()}`;
+            }
             break;
         }
     }
     
     return `Hello! This is ${agentName}${company}. How can I help you today?`;
 }
-
 async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
         throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
