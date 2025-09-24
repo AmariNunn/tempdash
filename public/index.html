@@ -1081,8 +1081,8 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 
                 if (response.ok) {
                     const data = await response.json();
-                    promptEditor.value = data.prompt || '';
-                    currentPrompt = data.prompt || '';
+                    promptEditor.value = data.system_prompt || '';
+                    currentPrompt = data.system_prompt || '';
                     showPromptStatus('Prompt loaded successfully', 'success');
                 } else {
                     showPromptStatus('Failed to load current prompt', 'error');
@@ -1115,7 +1115,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ system_prompt: prompt, first_message: '' })
                 });
 
                 const result = await response.json();
