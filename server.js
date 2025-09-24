@@ -287,16 +287,16 @@ function extractFirstMessageFromPrompt(systemPrompt) {
     // Try multiple name patterns
     for (const pattern of namePatterns) {
         const match = systemPrompt.match(pattern);
-        if (match) {
+        if (match && match[1]) {
             agentName = match[1];
             break;
         }
     }
     
-    // Extract company info
+    // Extract company info - fixed the undefined error
     for (const pattern of companyPatterns) {
         const match = systemPrompt.match(pattern);
-        if (match && match[1].length < 25) {
+        if (match && match[1] && match[1].length < 25) {
             company = ` from ${match[1]}`;
             break;
         }
