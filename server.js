@@ -269,46 +269,31 @@ Remember: Every conversation is an opportunity to build trust and demonstrate Sk
 initializeDatabase();
 
 function extractFirstMessageFromPrompt(systemPrompt) {
-    // Enhanced pattern matching for complex prompts
-    const namePatterns = [
-        /(?:your name is|you are|i am|call me|named)\s+(\w+)/i,
-        /(?:agent named|assistant named|representative named)\s+(\w+)/i,
-        /(?:introduce yourself as|known as)\s+(\w+)/i
-    ];
+    console.log('Debugging prompt:', systemPrompt.substring(0, 200));
     
-    const companyPatterns = [
-        /(?:for|from|at|representing)\s+([A-Z][a-zA-Z\s&']{2,25})/i,
-        /work for\s+([A-Z][a-zA-Z\s&']{2,25})/i,
-        /(\w+)'s\s+(\w+)/i // Matches "MJ's Movers"
-    ];
-    
+    // Very specific patterns for your prompt format
     let agentName = "your AI assistant";
     let company = "";
     
-    // Try multiple name patterns
-    for (const pattern of namePatterns) {
-        const match = systemPrompt.match(pattern);
-        if (match && match[1] && match[1].trim().length > 0) {
-            agentName = match[1].trim();
-            break;
-        }
+    // Extract name - looking for "named MJ"
+    const nameMatch = systemPrompt.match(/named\s+([A-Za-z]+)/i);
+    if (nameMatch && nameMatch[1]) {
+        agentName = nameMatch[1].trim();
+        console.log('Found name:', agentName);
     }
     
-    // Extract company info
-    for (const pattern of companyPatterns) {
-        const match = systemPrompt.match(pattern);
-        if (match && match[1] && match[1].trim().length < 25) {
-            if (pattern.source.includes("'s")) {
-                company = ` from ${match[1]}'s ${match[2]}`;
-            } else {
-                company = ` from ${match[1].trim()}`;
-            }
-            break;
-        }
+    // Extract company - looking for "work for MJs Movers" or similar
+    const companyMatch = systemPrompt.match(/work for\s+([A-Za-z\s']+?)(?:\s+and|\.|$)/i);
+    if (companyMatch && companyMatch[1]) {
+        company = ` from ${companyMatch[1].trim()}`;
+        console.log('Found company:', company);
     }
     
-    return `Hello! This is ${agentName}${company}. How can I help you today?`;
+    const result = `Hello! This is ${agentName}${company}. How can I help you today?`;
+    console.log('Generated greeting:', result);
+    return result;
 }
+
 async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
         throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
