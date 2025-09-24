@@ -5,10 +5,17 @@ const socketIo = require('socket.io');
 const path = require('path');
 const { Pool } = require('pg');
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend");
+const multer = require('multer');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+
+// Configure multer for file uploads
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // ElevenLabs API configuration
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
@@ -41,6 +48,10 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/elevenlabs_calls',
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
+
+// Global batch processing state
+let currentBatch = null;
+let batchQueue = [];
 
 // Helper function for duration formatting
 function formatDuration(seconds) {
@@ -129,16 +140,32 @@ async function initializeDatabase() {
                 status VARCHAR(50) DEFAULT 'completed',
                 call_type VARCHAR(50) DEFAULT 'inbound',
                 transcript TEXT,
-                conversation_id VARCHAR(255),
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         `);
+
+        // Check if conversation_id column exists and add it if missing
+        const checkColumn = await pool.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'calls' AND column_name = 'conversation_id'
+        `);
+
+        if (checkColumn.rows.length === 0) {
+            console.log('🔧 Adding missing conversation_id column...');
+            await pool.query(`
+                ALTER TABLE calls 
+                ADD COLUMN conversation_id VARCHAR(255)
+            `);
+            console.log('✅ conversation_id column added successfully');
+        }
 
         // Create prompts table for storing AI agent prompts
         await pool.query(`
             CREATE TABLE IF NOT EXISTS prompts (
                 id SERIAL PRIMARY KEY,
-                prompt TEXT,
+                system_prompt TEXT,
+                first_message TEXT,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
@@ -148,17 +175,90 @@ async function initializeDatabase() {
         const existingPrompt = await pool.query('SELECT COUNT(*) FROM prompts');
         if (existingPrompt.rows[0].count === '0') {
             await pool.query(`
-                INSERT INTO prompts (prompt) VALUES ($1)
-            `, [`You are a helpful AI assistant. Your goal is to provide excellent customer service by:
-- Greeting callers warmly and professionally
-- Listening carefully to their needs and concerns  
-- Providing accurate and helpful information
-- Being patient, empathetic, and courteous
-- Asking clarifying questions when needed
-- Offering to connect them with the right person or department when appropriate
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [
+                `You are Andy, a professional AI voice agent for SkyIQ, specializing in AI voice solutions and customer service automation.
 
-Keep your responses conversational and concise. Always maintain a friendly and professional tone.`]);
+**Your Role:**
+- Handle both inbound customer inquiries and outbound sales calls
+- Provide expert guidance on AI voice technology
+- Maintain a professional, helpful, and engaging demeanor
+- Focus on understanding customer needs and providing valuable solutions
+
+**For Inbound Calls:**
+- Greet warmly: "Thank you for calling SkyIQ! This is Andy. How can I help you today?"
+- Listen actively to understand their specific needs
+- Ask clarifying questions to better serve them
+- Provide detailed information about SkyIQ's AI voice solutions
+- Collect contact information when appropriate
+- Always end with clear next steps and follow-up commitments
+
+**For Outbound Calls:**
+- Introduce yourself: "Hi, this is Andy calling from SkyIQ. Is this [Customer Name]?"
+- Ask for permission: "Do you have a moment to discuss how AI voice technology could benefit your business?"
+- Clearly explain the purpose of your call
+- Focus on how SkyIQ's solutions can solve their specific challenges
+- Schedule demos or follow-up meetings when appropriate
+
+**Key Topics You Can Discuss:**
+- AI voice agent implementation and benefits
+- Automated customer service solutions
+- Sales call automation and lead qualification
+- Custom voice application development
+- Integration with existing business systems
+- ROI and cost savings from AI voice solutions
+- Technical specifications and requirements
+
+**Conversation Guidelines:**
+- Keep responses conversational and concise (1-2 sentences typically)
+- Show genuine interest in their business challenges
+- Use examples and case studies when relevant
+- Handle objections professionally and with empathy
+- If you don't know something specific, offer to connect them with a specialist
+- Always maintain confidence in SkyIQ's capabilities while being honest about limitations
+
+**Data Collection Priority:**
+- Company name and industry
+- Current communication/customer service challenges
+- Contact information (name, email, phone)
+- Decision-making timeline
+- Budget considerations (when appropriate)
+
+Remember: Every conversation is an opportunity to build trust and demonstrate SkyIQ's commitment to solving real business problems with advanced AI voice technology.`,
+                "Hello! This is Andy from SkyIQ. Thanks for taking my call. How are you doing today?"
+            ]);
         }
+
+        // Create batches table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS batches (
+                id VARCHAR(255) PRIMARY KEY,
+                name VARCHAR(255),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                status VARCHAR(50) DEFAULT 'pending',
+                total_calls INTEGER DEFAULT 0,
+                completed_calls INTEGER DEFAULT 0,
+                successful_calls INTEGER DEFAULT 0,
+                failed_calls INTEGER DEFAULT 0
+            )
+        `);
+
+        // Create batch_calls table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS batch_calls (
+                id VARCHAR(255) PRIMARY KEY,
+                batch_id VARCHAR(255) REFERENCES batches(id),
+                phone_number VARCHAR(50),
+                first_name VARCHAR(100),
+                last_name VARCHAR(100),
+                company VARCHAR(200),
+                status VARCHAR(50) DEFAULT 'pending',
+                call_id VARCHAR(255),
+                error_message TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                completed_at TIMESTAMP WITH TIME ZONE
+            )
+        `);
 
         console.log('Database tables initialized successfully');
     } catch (error) {
@@ -169,21 +269,24 @@ Keep your responses conversational and concise. Always maintain a friendly and p
 initializeDatabase();
 
 // Function to update ElevenLabs agent prompt
-async function updateElevenLabsPrompt(prompt) {
+async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
         throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
     }
 
     try {
+        const updateData = {
+            system_prompt: systemPrompt,
+            first_message: firstMessage || "Hello! This is Andy from SkyIQ. How can I help you today?"
+        };
+
         const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'xi-api-key': ELEVENLABS_API_KEY
             },
-            body: JSON.stringify({
-                prompt: prompt
-            })
+            body: JSON.stringify(updateData)
         });
 
         if (!response.ok) {
@@ -193,6 +296,30 @@ async function updateElevenLabsPrompt(prompt) {
 
         const data = await response.json();
         return data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Function to get current ElevenLabs agent configuration
+async function getElevenLabsAgent() {
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
+        throw new Error('ElevenLabs configuration incomplete');
+    }
+
+    try {
+        const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
+            headers: {
+                'xi-api-key': ELEVENLABS_API_KEY
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+        }
+
+        return await response.json();
     } catch (error) {
         throw error;
     }
@@ -239,6 +366,203 @@ async function initiateOutboundCall(phoneNumber) {
     }
 }
 
+// Process batch calls sequentially
+async function processBatch(batchId) {
+    try {
+        console.log(`📞 Starting batch processing for batch: ${batchId}`);
+        
+        // Update batch status to processing
+        await pool.query(
+            'UPDATE batches SET status = $1 WHERE id = $2',
+            ['processing', batchId]
+        );
+
+        // Get all pending calls for this batch
+        const batchCalls = await pool.query(
+            'SELECT * FROM batch_calls WHERE batch_id = $1 AND status = $2 ORDER BY created_at',
+            [batchId, 'pending']
+        );
+
+        for (const batchCall of batchCalls.rows) {
+            try {
+                const customerName = batchCall.first_name && batchCall.last_name 
+                    ? `${batchCall.first_name} ${batchCall.last_name}`
+                    : batchCall.first_name || 'Customer';
+                
+                console.log(`📞 Calling ${customerName} at ${batchCall.phone_number}...`);
+                
+                // Update call status to processing
+                await pool.query(
+                    'UPDATE batch_calls SET status = $1 WHERE id = $2',
+                    ['processing', batchCall.id]
+                );
+
+                // Broadcast progress update with customer info
+                io.emit('batchProgress', {
+                    batchId: batchId,
+                    currentCall: batchCall.phone_number,
+                    currentCustomer: customerName,
+                    progress: await getBatchProgress(batchId)
+                });
+
+                // Initiate the call
+                const callResult = await initiateOutboundCall(batchCall.phone_number);
+                
+                // Create call record
+                const callData = {
+                    id: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    timestamp: new Date().toISOString(),
+                    caller_number: batchCall.phone_number,
+                    called_number: 'Agent',
+                    duration: 0,
+                    status: 'initiated',
+                    call_type: 'outbound',
+                    transcript: '',
+                    conversation_id: callResult.conversation_id
+                };
+
+                // Save call to database
+                await pool.query(`
+                    INSERT INTO calls (id, timestamp, caller_number, called_number, duration, status, call_type, transcript, conversation_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `, [callData.id, callData.timestamp, callData.caller_number, callData.called_number, 
+                    callData.duration, callData.status, callData.call_type, callData.transcript, callData.conversation_id]);
+
+                // Update batch call status
+                await pool.query(
+                    'UPDATE batch_calls SET status = $1, call_id = $2, completed_at = NOW() WHERE id = $3',
+                    ['completed', callData.id, batchCall.id]
+                );
+
+                // Update batch counters
+                await pool.query(
+                    'UPDATE batches SET completed_calls = completed_calls + 1, successful_calls = successful_calls + 1 WHERE id = $1',
+                    [batchId]
+                );
+
+                // Broadcast new call
+                io.emit('newCall', callData);
+
+                console.log(`✅ Call initiated successfully to ${customerName} (${batchCall.phone_number})`);
+
+                // Wait 2 seconds between calls to be respectful
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+            } catch (error) {
+                console.error(`❌ Failed to call ${batchCall.phone_number}:`, error.message);
+                
+                // Update batch call with error
+                await pool.query(
+                    'UPDATE batch_calls SET status = $1, error_message = $2, completed_at = NOW() WHERE id = $3',
+                    ['failed', error.message, batchCall.id]
+                );
+
+                // Update batch counters
+                await pool.query(
+                    'UPDATE batches SET completed_calls = completed_calls + 1, failed_calls = failed_calls + 1 WHERE id = $1',
+                    [batchId]
+                );
+
+                // Continue with next call
+                continue;
+            }
+        }
+
+        // Mark batch as completed
+        await pool.query(
+            'UPDATE batches SET status = $1 WHERE id = $2',
+            ['completed', batchId]
+        );
+
+        // Broadcast batch completion
+        const finalProgress = await getBatchProgress(batchId);
+        io.emit('batchCompleted', {
+            batchId: batchId,
+            progress: finalProgress
+        });
+
+        console.log(`🎉 Batch ${batchId} completed!`);
+
+    } catch (error) {
+        console.error(`💥 Batch processing failed for ${batchId}:`, error);
+        
+        // Mark batch as failed
+        await pool.query(
+            'UPDATE batches SET status = $1 WHERE id = $2',
+            ['failed', batchId]
+        );
+    }
+
+    // Clear current batch
+    currentBatch = null;
+    
+    // Process next batch in queue if any
+    if (batchQueue.length > 0) {
+        const nextBatchId = batchQueue.shift();
+        currentBatch = nextBatchId;
+        processBatch(nextBatchId);
+    }
+}
+
+// Get batch progress
+async function getBatchProgress(batchId) {
+    const result = await pool.query(
+        'SELECT * FROM batches WHERE id = $1',
+        [batchId]
+    );
+    return result.rows[0];
+}
+
+// Parse CSV content with enhanced format support
+function parseCSV(csvContent) {
+    const lines = csvContent.trim().split('\n');
+    const contacts = [];
+    
+    if (lines.length === 0) return contacts;
+    
+    // Check if first line has headers
+    const firstLine = lines[0].toLowerCase();
+    const hasHeaders = firstLine.includes('phone') || firstLine.includes('name') || firstLine.includes('company');
+    
+    if (hasHeaders) {
+        // Parse with headers
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+        const phoneIndex = headers.findIndex(h => h.includes('phone'));
+        const firstNameIndex = headers.findIndex(h => h.includes('first') && h.includes('name'));
+        const lastNameIndex = headers.findIndex(h => h.includes('last') && h.includes('name'));
+        const companyIndex = headers.findIndex(h => h.includes('company'));
+        
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/['"]/g, ''));
+            const phoneNumber = values[phoneIndex] || '';
+            
+            if (phoneNumber && phoneNumber.length >= 10) {
+                contacts.push({
+                    phone_number: phoneNumber,
+                    first_name: values[firstNameIndex] || '',
+                    last_name: values[lastNameIndex] || '',
+                    company: values[companyIndex] || ''
+                });
+            }
+        }
+    } else {
+        // Simple format - one phone number per line
+        for (const line of lines) {
+            const phoneNumber = line.trim().replace(/['"]/g, '');
+            if (phoneNumber && phoneNumber.length >= 10) {
+                contacts.push({
+                    phone_number: phoneNumber,
+                    first_name: '',
+                    last_name: '',
+                    company: ''
+                });
+            }
+        }
+    }
+    
+    return contacts;
+}
+
 // Serve the main HTML page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -247,55 +571,115 @@ app.get('/', (req, res) => {
 // API endpoint to get current prompt
 app.get('/api/prompt', async (req, res) => {
     try {
-        const result = await pool.query('SELECT prompt FROM prompts ORDER BY updated_at DESC LIMIT 1');
-        const prompt = result.rows.length > 0 ? result.rows[0].prompt : '';
-        res.json({ prompt });
+        const result = await pool.query('SELECT * FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.json({ 
+                system_prompt: '', 
+                first_message: '',
+                success: true 
+            });
+        }
+        
+        const prompt = result.rows[0];
+        res.json({ 
+            system_prompt: prompt.system_prompt || '',
+            first_message: prompt.first_message || '',
+            updated_at: prompt.updated_at,
+            success: true 
+        });
     } catch (error) {
         console.error('Error fetching prompt:', error);
         res.status(500).json({ error: 'Database error' });
     }
 });
 
-// API endpoint to update prompt
+// API endpoint to update prompt from dashboard
 app.post('/api/prompt', async (req, res) => {
-    const { prompt } = req.body;
+    const { system_prompt, first_message } = req.body;
     
-    if (!prompt) {
-        return res.status(400).json({ error: 'Prompt is required' });
+    if (!system_prompt) {
+        return res.status(400).json({ error: 'System prompt is required' });
     }
 
     try {
         // Update prompt in database
-        await pool.query(`
-            INSERT INTO prompts (prompt) VALUES ($1)
-            ON CONFLICT DO NOTHING
-        `, [prompt]);
-
-        // Update the latest prompt
-        await pool.query(`
-            UPDATE prompts SET prompt = $1, updated_at = NOW() 
-            WHERE id = (SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1)
-        `, [prompt]);
+        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        
+        if (existingPrompt.rows.length > 0) {
+            await pool.query(`
+                UPDATE prompts SET 
+                system_prompt = $1, 
+                first_message = $2, 
+                updated_at = NOW() 
+                WHERE id = $3
+            `, [system_prompt, first_message || '', existingPrompt.rows[0].id]);
+        } else {
+            await pool.query(`
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [system_prompt, first_message || '']);
+        }
 
         // Update ElevenLabs agent with new prompt
         try {
-            await updateElevenLabsPrompt(prompt);
+            await updateElevenLabsPrompt(system_prompt, first_message);
             console.log('✅ ElevenLabs agent prompt updated successfully');
+            
+            res.json({ 
+                success: true, 
+                message: 'Prompt updated successfully in both database and ElevenLabs'
+            });
         } catch (elevenLabsError) {
             console.error('⚠️ Failed to update ElevenLabs prompt:', elevenLabsError.message);
-            // Continue anyway - we've saved to database
+            
+            res.json({ 
+                success: true, 
+                message: 'Prompt saved to database, but failed to update ElevenLabs. Please check your API credentials.',
+                warning: elevenLabsError.message
+            });
         }
-
-        res.json({ 
-            success: true, 
-            message: 'Prompt updated successfully'
-        });
 
     } catch (error) {
         console.error('Failed to update prompt:', error);
         res.status(500).json({ 
             error: 'Failed to update prompt', 
             details: error.message 
+        });
+    }
+});
+
+// API endpoint to sync prompt from ElevenLabs
+app.get('/api/prompt/sync', async (req, res) => {
+    try {
+        const agentData = await getElevenLabsAgent();
+        
+        // Update local database with ElevenLabs data
+        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        
+        if (existingPrompt.rows.length > 0) {
+            await pool.query(`
+                UPDATE prompts SET 
+                system_prompt = $1, 
+                first_message = $2, 
+                updated_at = NOW() 
+                WHERE id = $3
+            `, [agentData.system_prompt || '', agentData.first_message || '', existingPrompt.rows[0].id]);
+        } else {
+            await pool.query(`
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [agentData.system_prompt || '', agentData.first_message || '']);
+        }
+
+        res.json({
+            success: true,
+            message: 'Prompt synced from ElevenLabs successfully',
+            system_prompt: agentData.system_prompt,
+            first_message: agentData.first_message
+        });
+    } catch (error) {
+        console.error('Failed to sync prompt:', error);
+        res.status(500).json({
+            error: 'Failed to sync prompt from ElevenLabs',
+            details: error.message
         });
     }
 });
@@ -367,9 +751,126 @@ app.post('/api/calls/initiate', async (req, res) => {
     }
 });
 
+// API endpoint to upload CSV and create batch
+app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No CSV file uploaded' });
+        }
+
+        const csvContent = req.file.buffer.toString('utf-8');
+        const contacts = parseCSV(csvContent);
+
+        if (contacts.length === 0) {
+            return res.status(400).json({ error: 'No valid phone numbers found in CSV' });
+        }
+
+        // Create batch record
+        const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const batchName = req.body.batchName || `Batch ${new Date().toLocaleDateString()}`;
+
+        await pool.query(
+            'INSERT INTO batches (id, name, total_calls) VALUES ($1, $2, $3)',
+            [batchId, batchName, contacts.length]
+        );
+
+        // Create batch call records
+        for (const contact of contacts) {
+            const batchCallId = `bc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            await pool.query(
+                'INSERT INTO batch_calls (id, batch_id, phone_number, first_name, last_name, company) VALUES ($1, $2, $3, $4, $5, $6)',
+                [batchCallId, batchId, contact.phone_number, contact.first_name, contact.last_name, contact.company]
+            );
+        }
+
+        res.json({
+            success: true,
+            message: `Batch created with ${contacts.length} contacts`,
+            batchId: batchId,
+            totalCalls: contacts.length
+        });
+
+    } catch (error) {
+        console.error('Batch upload error:', error);
+        res.status(500).json({ error: 'Failed to process CSV file' });
+    }
+});
+
+// API endpoint to start batch processing
+app.post('/api/batch/:batchId/start', async (req, res) => {
+    const { batchId } = req.params;
+
+    try {
+        // Check if batch exists
+        const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
+        if (batch.rows.length === 0) {
+            return res.status(404).json({ error: 'Batch not found' });
+        }
+
+        if (batch.rows[0].status !== 'pending') {
+            return res.status(400).json({ error: 'Batch has already been processed' });
+        }
+
+        // Add to queue or start immediately
+        if (currentBatch === null) {
+            currentBatch = batchId;
+            processBatch(batchId);
+        } else {
+            batchQueue.push(batchId);
+        }
+
+        res.json({ 
+            success: true, 
+            message: currentBatch === batchId ? 'Batch processing started' : 'Batch added to queue'
+        });
+
+    } catch (error) {
+        console.error('Batch start error:', error);
+        res.status(500).json({ error: 'Failed to start batch processing' });
+    }
+});
+
+// API endpoint to get batch status
+app.get('/api/batch/:batchId', async (req, res) => {
+    const { batchId } = req.params;
+
+    try {
+        const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
+        if (batch.rows.length === 0) {
+            return res.status(404).json({ error: 'Batch not found' });
+        }
+
+        const calls = await pool.query(
+            'SELECT * FROM batch_calls WHERE batch_id = $1 ORDER BY created_at',
+            [batchId]
+        );
+
+        res.json({
+            batch: batch.rows[0],
+            calls: calls.rows
+        });
+
+    } catch (error) {
+        console.error('Batch status error:', error);
+        res.status(500).json({ error: 'Failed to get batch status' });
+    }
+});
+
+// API endpoint to get all batches
+app.get('/api/batches', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 10');
+        res.json({ batches: result.rows });
+    } catch (error) {
+        console.error('Batches query error:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // Webhook endpoint - ElevenLabs will POST here
 app.post('/webhook', async (req, res) => {
     console.log('Webhook received from ElevenLabs');
+    console.log('🔍 Full webhook data:', JSON.stringify(req.body, null, 2));
     
     const webhookData = req.body;
     
@@ -477,6 +978,8 @@ app.get('/health', async (req, res) => {
             callCount: result.rows[0].count,
             emailNotifications: emailConfig.enabled,
             elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID),
+            currentBatch: currentBatch,
+            queueLength: batchQueue.length,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -577,6 +1080,10 @@ io.on('connection', async (socket) => {
     try {
         const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
         socket.emit('callHistory', result.rows);
+        
+        // Send current batches
+        const batches = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 5');
+        socket.emit('batchHistory', batches.rows);
     } catch (error) {
         console.error('Error sending call history:', error);
     }
@@ -589,13 +1096,19 @@ io.on('connection', async (socket) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log(`✅ SkyIQ Inbound Dashboard running on port ${PORT}`);
+    console.log(`✅ SkyIQ Dashboard Server running on port ${PORT}`);
     console.log(`📡 Webhook endpoint: http://localhost:${PORT}/webhook`);
     console.log(`📊 Dashboard: http://localhost:${PORT}`);
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
-    console.log(`✏️ Prompt API: GET/POST http://localhost:${PORT}/api/prompt`);
-    console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
+    console.log(`📁 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
+    console.log(`✏️ Prompt management:`);
+    console.log(`   GET  http://localhost:${PORT}/api/prompt - Get current prompt`);
+    console.log(`   POST http://localhost:${PORT}/api/prompt - Update prompt`);
+    console.log(`   GET  http://localhost:${PORT}/api/prompt/sync - Sync from ElevenLabs`);
+    console.log(`🧪 Test endpoints:`);
+    console.log(`   POST http://localhost:${PORT}/test-email - Test email notifications`);
+    console.log(`   GET  http://localhost:${PORT}/test-elevenlabs - Test ElevenLabs API`);
     console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
     console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
@@ -604,4 +1117,5 @@ server.listen(PORT, () => {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
         console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
+    console.log(`🎙️ Prompt management: Available via dashboard and API`);
 });
