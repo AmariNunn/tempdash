@@ -22,6 +22,7 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID;
 const ELEVENLABS_PHONE_NUMBER_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID;
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/twilio/outbound-call';
+const ELEVENLABS_AGENTS_URL = 'https://api.elevenlabs.io/v1/convai/agents';
 
 // MailerSend configuration
 const mailerSend = new MailerSend({
@@ -159,6 +160,75 @@ async function initializeDatabase() {
             console.log('✅ conversation_id column added successfully');
         }
 
+        // Create prompts table for storing AI agent prompts
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS prompts (
+                id SERIAL PRIMARY KEY,
+                system_prompt TEXT,
+                first_message TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+        `);
+
+        // Insert default prompt if none exists
+        const existingPrompt = await pool.query('SELECT COUNT(*) FROM prompts');
+        if (existingPrompt.rows[0].count === '0') {
+            await pool.query(`
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [
+                `You are Andy, a professional AI voice agent for SkyIQ, specializing in AI voice solutions and customer service automation.
+
+**Your Role:**
+- Handle both inbound customer inquiries and outbound sales calls
+- Provide expert guidance on AI voice technology
+- Maintain a professional, helpful, and engaging demeanor
+- Focus on understanding customer needs and providing valuable solutions
+
+**For Inbound Calls:**
+- Greet warmly: "Thank you for calling SkyIQ! This is Andy. How can I help you today?"
+- Listen actively to understand their specific needs
+- Ask clarifying questions to better serve them
+- Provide detailed information about SkyIQ's AI voice solutions
+- Collect contact information when appropriate
+- Always end with clear next steps and follow-up commitments
+
+**For Outbound Calls:**
+- Introduce yourself: "Hi, this is Andy calling from SkyIQ. Is this [Customer Name]?"
+- Ask for permission: "Do you have a moment to discuss how AI voice technology could benefit your business?"
+- Clearly explain the purpose of your call
+- Focus on how SkyIQ's solutions can solve their specific challenges
+- Schedule demos or follow-up meetings when appropriate
+
+**Key Topics You Can Discuss:**
+- AI voice agent implementation and benefits
+- Automated customer service solutions
+- Sales call automation and lead qualification
+- Custom voice application development
+- Integration with existing business systems
+- ROI and cost savings from AI voice solutions
+- Technical specifications and requirements
+
+**Conversation Guidelines:**
+- Keep responses conversational and concise (1-2 sentences typically)
+- Show genuine interest in their business challenges
+- Use examples and case studies when relevant
+- Handle objections professionally and with empathy
+- If you don't know something specific, offer to connect them with a specialist
+- Always maintain confidence in SkyIQ's capabilities while being honest about limitations
+
+**Data Collection Priority:**
+- Company name and industry
+- Current communication/customer service challenges
+- Contact information (name, email, phone)
+- Decision-making timeline
+- Budget considerations (when appropriate)
+
+Remember: Every conversation is an opportunity to build trust and demonstrate SkyIQ's commitment to solving real business problems with advanced AI voice technology.`,
+                "Hello! This is Andy from SkyIQ. Thanks for taking my call. How are you doing today?"
+            ]);
+        }
+
         // Create batches table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS batches (
@@ -179,6 +249,9 @@ async function initializeDatabase() {
                 id VARCHAR(255) PRIMARY KEY,
                 batch_id VARCHAR(255) REFERENCES batches(id),
                 phone_number VARCHAR(50),
+                first_name VARCHAR(100),
+                last_name VARCHAR(100),
+                company VARCHAR(200),
                 status VARCHAR(50) DEFAULT 'pending',
                 call_id VARCHAR(255),
                 error_message TEXT,
@@ -194,6 +267,63 @@ async function initializeDatabase() {
 }
 
 initializeDatabase();
+
+// Function to update ElevenLabs agent prompt
+async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
+        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
+    }
+
+    try {
+        const updateData = {
+            system_prompt: systemPrompt,
+            first_message: firstMessage || "Hello! This is Andy from SkyIQ. How can I help you today?"
+        };
+
+        const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'xi-api-key': ELEVENLABS_API_KEY
+            },
+            body: JSON.stringify(updateData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Function to get current ElevenLabs agent configuration
+async function getElevenLabsAgent() {
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
+        throw new Error('ElevenLabs configuration incomplete');
+    }
+
+    try {
+        const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
+            headers: {
+                'xi-api-key': ELEVENLABS_API_KEY
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        throw error;
+    }
+}
 
 // Function to initiate outbound call via ElevenLabs API
 async function initiateOutboundCall(phoneNumber) {
@@ -255,7 +385,11 @@ async function processBatch(batchId) {
 
         for (const batchCall of batchCalls.rows) {
             try {
-                console.log(`📞 Calling ${batchCall.phone_number}...`);
+                const customerName = batchCall.first_name && batchCall.last_name 
+                    ? `${batchCall.first_name} ${batchCall.last_name}`
+                    : batchCall.first_name || 'Customer';
+                
+                console.log(`📞 Calling ${customerName} at ${batchCall.phone_number}...`);
                 
                 // Update call status to processing
                 await pool.query(
@@ -263,10 +397,11 @@ async function processBatch(batchId) {
                     ['processing', batchCall.id]
                 );
 
-                // Broadcast progress update
+                // Broadcast progress update with customer info
                 io.emit('batchProgress', {
                     batchId: batchId,
                     currentCall: batchCall.phone_number,
+                    currentCustomer: customerName,
                     progress: await getBatchProgress(batchId)
                 });
 
@@ -308,7 +443,7 @@ async function processBatch(batchId) {
                 // Broadcast new call
                 io.emit('newCall', callData);
 
-                console.log(`✅ Call initiated successfully to ${batchCall.phone_number}`);
+                console.log(`✅ Call initiated successfully to ${customerName} (${batchCall.phone_number})`);
 
                 // Wait 2 seconds between calls to be respectful
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -378,31 +513,175 @@ async function getBatchProgress(batchId) {
     return result.rows[0];
 }
 
-// Parse CSV content
+// Parse CSV content with enhanced format support
 function parseCSV(csvContent) {
     const lines = csvContent.trim().split('\n');
-    const phoneNumbers = [];
+    const contacts = [];
     
-    // Skip header row if it exists
-    const startIndex = lines[0].toLowerCase().includes('phone') ? 1 : 0;
+    if (lines.length === 0) return contacts;
     
-    for (let i = startIndex; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line) {
-            // Extract phone number (first column)
-            const phoneNumber = line.split(',')[0].trim().replace(/['"]/g, '');
+    // Check if first line has headers
+    const firstLine = lines[0].toLowerCase();
+    const hasHeaders = firstLine.includes('phone') || firstLine.includes('name') || firstLine.includes('company');
+    
+    if (hasHeaders) {
+        // Parse with headers
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+        const phoneIndex = headers.findIndex(h => h.includes('phone'));
+        const firstNameIndex = headers.findIndex(h => h.includes('first') && h.includes('name'));
+        const lastNameIndex = headers.findIndex(h => h.includes('last') && h.includes('name'));
+        const companyIndex = headers.findIndex(h => h.includes('company'));
+        
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim().replace(/['"]/g, ''));
+            const phoneNumber = values[phoneIndex] || '';
+            
             if (phoneNumber && phoneNumber.length >= 10) {
-                phoneNumbers.push(phoneNumber);
+                contacts.push({
+                    phone_number: phoneNumber,
+                    first_name: values[firstNameIndex] || '',
+                    last_name: values[lastNameIndex] || '',
+                    company: values[companyIndex] || ''
+                });
+            }
+        }
+    } else {
+        // Simple format - one phone number per line
+        for (const line of lines) {
+            const phoneNumber = line.trim().replace(/['"]/g, '');
+            if (phoneNumber && phoneNumber.length >= 10) {
+                contacts.push({
+                    phone_number: phoneNumber,
+                    first_name: '',
+                    last_name: '',
+                    company: ''
+                });
             }
         }
     }
     
-    return phoneNumbers;
+    return contacts;
 }
 
 // Serve the main HTML page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// API endpoint to get current prompt
+app.get('/api/prompt', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.json({ 
+                system_prompt: '', 
+                first_message: '',
+                success: true 
+            });
+        }
+        
+        const prompt = result.rows[0];
+        res.json({ 
+            system_prompt: prompt.system_prompt || '',
+            first_message: prompt.first_message || '',
+            updated_at: prompt.updated_at,
+            success: true 
+        });
+    } catch (error) {
+        console.error('Error fetching prompt:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// API endpoint to update prompt from dashboard
+app.post('/api/prompt', async (req, res) => {
+    const { system_prompt, first_message } = req.body;
+    
+    if (!system_prompt) {
+        return res.status(400).json({ error: 'System prompt is required' });
+    }
+
+    try {
+        // Update prompt in database
+        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        
+        if (existingPrompt.rows.length > 0) {
+            await pool.query(`
+                UPDATE prompts SET 
+                system_prompt = $1, 
+                first_message = $2, 
+                updated_at = NOW() 
+                WHERE id = $3
+            `, [system_prompt, first_message || '', existingPrompt.rows[0].id]);
+        } else {
+            await pool.query(`
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [system_prompt, first_message || '']);
+        }
+
+        // Update ElevenLabs agent with new prompt
+        try {
+            await updateElevenLabsPrompt(system_prompt, first_message);
+            console.log('✅ ElevenLabs agent prompt updated successfully');
+            
+            res.json({ 
+                success: true, 
+                message: 'Prompt updated successfully in both database and ElevenLabs'
+            });
+        } catch (elevenLabsError) {
+            console.error('⚠️ Failed to update ElevenLabs prompt:', elevenLabsError.message);
+            
+            res.json({ 
+                success: true, 
+                message: 'Prompt saved to database, but failed to update ElevenLabs. Please check your API credentials.',
+                warning: elevenLabsError.message
+            });
+        }
+
+    } catch (error) {
+        console.error('Failed to update prompt:', error);
+        res.status(500).json({ 
+            error: 'Failed to update prompt', 
+            details: error.message 
+        });
+    }
+});
+
+// API endpoint to sync prompt from ElevenLabs
+app.get('/api/prompt/sync', async (req, res) => {
+    try {
+        const agentData = await getElevenLabsAgent();
+        
+        // Update local database with ElevenLabs data
+        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
+        
+        if (existingPrompt.rows.length > 0) {
+            await pool.query(`
+                UPDATE prompts SET 
+                system_prompt = $1, 
+                first_message = $2, 
+                updated_at = NOW() 
+                WHERE id = $3
+            `, [agentData.system_prompt || '', agentData.first_message || '', existingPrompt.rows[0].id]);
+        } else {
+            await pool.query(`
+                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
+            `, [agentData.system_prompt || '', agentData.first_message || '']);
+        }
+
+        res.json({
+            success: true,
+            message: 'Prompt synced from ElevenLabs successfully',
+            system_prompt: agentData.system_prompt,
+            first_message: agentData.first_message
+        });
+    } catch (error) {
+        console.error('Failed to sync prompt:', error);
+        res.status(500).json({
+            error: 'Failed to sync prompt from ElevenLabs',
+            details: error.message
+        });
+    }
 });
 
 // API endpoint to initiate single outbound call
@@ -480,9 +759,9 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
         }
 
         const csvContent = req.file.buffer.toString('utf-8');
-        const phoneNumbers = parseCSV(csvContent);
+        const contacts = parseCSV(csvContent);
 
-        if (phoneNumbers.length === 0) {
+        if (contacts.length === 0) {
             return res.status(400).json({ error: 'No valid phone numbers found in CSV' });
         }
 
@@ -492,23 +771,23 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
 
         await pool.query(
             'INSERT INTO batches (id, name, total_calls) VALUES ($1, $2, $3)',
-            [batchId, batchName, phoneNumbers.length]
+            [batchId, batchName, contacts.length]
         );
 
         // Create batch call records
-        for (const phoneNumber of phoneNumbers) {
+        for (const contact of contacts) {
             const batchCallId = `bc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             await pool.query(
-                'INSERT INTO batch_calls (id, batch_id, phone_number) VALUES ($1, $2, $3)',
-                [batchCallId, batchId, phoneNumber]
+                'INSERT INTO batch_calls (id, batch_id, phone_number, first_name, last_name, company) VALUES ($1, $2, $3, $4, $5, $6)',
+                [batchCallId, batchId, contact.phone_number, contact.first_name, contact.last_name, contact.company]
             );
         }
 
         res.json({
             success: true,
-            message: `Batch created with ${phoneNumbers.length} phone numbers`,
+            message: `Batch created with ${contacts.length} contacts`,
             batchId: batchId,
-            totalCalls: phoneNumbers.length
+            totalCalls: contacts.length
         });
 
     } catch (error) {
@@ -591,6 +870,7 @@ app.get('/api/batches', async (req, res) => {
 // Webhook endpoint - ElevenLabs will POST here
 app.post('/webhook', async (req, res) => {
     console.log('Webhook received from ElevenLabs');
+    console.log('🔍 Full webhook data:', JSON.stringify(req.body, null, 2));
     
     const webhookData = req.body;
     
@@ -816,13 +1096,19 @@ io.on('connection', async (socket) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log(`✅ ElevenLabs Webhook Server running on port ${PORT}`);
+    console.log(`✅ SkyIQ Dashboard Server running on port ${PORT}`);
     console.log(`📡 Webhook endpoint: http://localhost:${PORT}/webhook`);
     console.log(`📊 Dashboard: http://localhost:${PORT}`);
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
     console.log(`📁 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
-    console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
+    console.log(`✏️ Prompt management:`);
+    console.log(`   GET  http://localhost:${PORT}/api/prompt - Get current prompt`);
+    console.log(`   POST http://localhost:${PORT}/api/prompt - Update prompt`);
+    console.log(`   GET  http://localhost:${PORT}/api/prompt/sync - Sync from ElevenLabs`);
+    console.log(`🧪 Test endpoints:`);
+    console.log(`   POST http://localhost:${PORT}/test-email - Test email notifications`);
+    console.log(`   GET  http://localhost:${PORT}/test-elevenlabs - Test ElevenLabs API`);
     console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
     console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
@@ -831,4 +1117,5 @@ server.listen(PORT, () => {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
         console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
+    console.log(`🎙️ Prompt management: Available via dashboard and API`);
 });

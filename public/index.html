@@ -104,7 +104,7 @@
         
         .content-area {
             padding: 16px;
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
@@ -134,44 +134,8 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
         }
-
-        .calling-tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 24px;
-            background: white;
-            padding: 4px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px 16px;
-            border: none;
-            background: none;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: #64748b;
-        }
-
-        .tab-btn.active {
-            background: #4f46e5;
-            color: white;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
         
-        .outbound-call-section {
+        .section-card {
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
             border-radius: 16px;
             border: 1px solid #e2e8f0;
@@ -180,13 +144,13 @@
             overflow: hidden;
         }
         
-        .outbound-header {
+        .section-header {
             padding: 20px 16px;
             border-bottom: 1px solid #e2e8f0;
             background: linear-gradient(135deg, #fafbff 0%, #f1f5f9 100%);
         }
         
-        .outbound-title {
+        .section-title {
             font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 4px;
@@ -197,13 +161,13 @@
             gap: 8px;
         }
         
-        .outbound-subtitle {
+        .section-subtitle {
             color: #64748b;
             font-size: 0.875rem;
             font-weight: 500;
         }
         
-        .outbound-form {
+        .section-content {
             padding: 20px 16px;
         }
         
@@ -232,65 +196,43 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        .csv-upload-area {
-            border: 2px dashed #e2e8f0;
-            border-radius: 12px;
-            padding: 40px 20px;
-            text-align: center;
-            background: #f8fafc;
-            margin-bottom: 16px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .csv-upload-area:hover {
-            border-color: #4f46e5;
-            background: #fafbff;
-        }
-
-        .csv-upload-area.dragover {
-            border-color: #4f46e5;
-            background: #f0f4ff;
-        }
-
-        .upload-icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
-            color: #64748b;
-        }
-
-        .upload-text {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-
-        .upload-subtitle {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .batch-name-input {
+        .prompt-editor {
             width: 100%;
-            padding: 12px 16px;
+            min-height: 180px;
+            padding: 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
-            font-size: 1rem;
-            margin-bottom: 16px;
+            font-size: 0.875rem;
+            font-family: system-ui, -apple-system, sans-serif;
             transition: all 0.2s ease;
+            background: #ffffff;
+            resize: vertical;
+            line-height: 1.5;
         }
 
-        .batch-name-input:focus {
+        .prompt-editor:focus {
             outline: none;
             border-color: #4f46e5;
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
+
+        .prompt-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-status, .call-status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: none;
+        }
         
-        .call-btn {
+        .call-btn, .btn {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: white;
             border: none;
@@ -306,78 +248,56 @@
             min-height: 48px;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-            width: 100%;
             justify-content: center;
         }
+
+        .call-btn {
+            width: 100%;
+        }
         
-        .call-btn:hover {
+        .btn:hover, .call-btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
         }
         
-        .call-btn:active {
+        .btn:active, .call-btn:active {
             transform: scale(0.98);
         }
         
-        .call-btn:disabled {
+        .btn:disabled, .call-btn:disabled {
             background: #94a3b8;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        .batch-status {
-            padding: 16px;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-top: 16px;
-            display: none;
+        .btn.secondary {
+            background: white;
+            color: #4f46e5;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .batch-status.active {
-            display: block;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e2e8f0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 12px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4f46e5, #06b6d4);
-            width: 0%;
-            transition: width 0.3s ease;
+        .btn.secondary:hover {
+            border-color: #4f46e5;
+            background: #f8faff;
         }
         
-        .call-status {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-top: 12px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: none;
-        }
-        
-        .call-status.success {
+        .call-status.success, .prompt-status.success {
             background: #dcfce7;
             color: #166534;
             border: 1px solid #bbf7d0;
             display: block;
         }
         
-        .call-status.error {
+        .call-status.error, .prompt-status.error {
             background: #fef2f2;
             color: #dc2626;
             border: 1px solid #fecaca;
             display: block;
         }
         
-        .call-status.loading {
+        .call-status.loading, .prompt-status.loading {
             background: #dbeafe;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
@@ -386,15 +306,15 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
         
         .stat-card {
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
-            padding: 20px;
-            border-radius: 16px;
+            padding: 16px;
+            border-radius: 12px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             transition: all 0.3s ease;
@@ -413,24 +333,20 @@
             background: linear-gradient(90deg, #4f46e5, #06b6d4);
         }
         
-        .stat-card:active {
-            transform: scale(0.98);
-        }
-        
         .stat-value {
-            font-size: 2.25rem;
+            font-size: 1.75rem;
             font-weight: 800;
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             line-height: 1.1;
         }
         
         .stat-label {
             color: #64748b;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -440,89 +356,29 @@
             display: flex;
             gap: 8px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
-        }
-        
-        .btn {
-            background: #4f46e5;
-            color: white;
-            border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            min-height: 44px;
-            min-width: 100px;
-        }
-        
-        .btn:active {
-            transform: scale(0.95);
-            background: #4338ca;
-        }
-        
-        .btn.secondary {
-            background: white;
-            color: #64748b;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .btn.secondary:active {
-            background: #f8fafc;
-            color: #334155;
-        }
-        
-        .calls-section {
-            background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-            overflow: hidden;
-        }
-        
-        .section-header {
-            padding: 20px 16px;
-            border-bottom: 1px solid #e2e8f0;
-            background: linear-gradient(135deg, #fafbff 0%, #f1f5f9 100%);
-        }
-        
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: #1e293b;
-            letter-spacing: -0.025em;
-        }
-        
-        .section-subtitle {
-            color: #64748b;
-            font-size: 0.875rem;
-            font-weight: 500;
         }
         
         .call-cards {
             padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
         }
         
         .call-card {
             background: white;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 8px;
+            padding: 12px;
             transition: all 0.2s ease;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
-        .call-card:active {
-            transform: scale(0.98);
+        .call-card:hover {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
         }
         
@@ -530,13 +386,13 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             gap: 12px;
         }
         
         .call-phone {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: #4f46e5;
             flex-shrink: 0;
@@ -544,9 +400,9 @@
         
         .call-datetime {
             text-align: right;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: #64748b;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         
         .call-date {
@@ -561,21 +417,20 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
+            font-size: 0.75rem;
         }
         
         .call-duration {
-            font-size: 0.875rem;
             color: #475569;
             font-weight: 500;
         }
         
         .call-type-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.6rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -592,9 +447,9 @@
         }
         
         .status-badge {
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.6rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -618,22 +473,22 @@
         .call-actions {
             display: flex;
             justify-content: flex-end;
+            margin-top: 8px;
         }
         
         .transcript-btn {
             background: none;
             border: 1px solid #e2e8f0;
             color: #4f46e5;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
-            min-height: 36px;
         }
         
-        .transcript-btn:active {
+        .transcript-btn:hover {
             background: #f8fafc;
             border-color: #4f46e5;
         }
@@ -645,34 +500,35 @@
         
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 40px 20px;
             color: #64748b;
         }
         
         .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 16px;
+            font-size: 2.5rem;
+            margin-bottom: 12px;
             opacity: 0.5;
         }
         
         .empty-title {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #475569;
         }
         
         .empty-subtitle {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
+            font-size: 0.875rem;
         }
         
         .webhook-url {
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px 16px;
+            border-radius: 6px;
+            padding: 8px 12px;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #4f46e5;
             word-break: break-all;
             max-width: 100%;
@@ -761,7 +617,7 @@
             flex-shrink: 0;
         }
         
-        .close-btn:active {
+        .close-btn:hover {
             background: #f1f5f9;
         }
         
@@ -779,12 +635,34 @@
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
+
+        .prompt-templates {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .template-btn {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #64748b;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .template-btn:hover {
+            background: #e2e8f0;
+            color: #4f46e5;
+        }
         
         /* Media Queries */
         @media (min-width: 768px) {
             .stats-grid {
                 grid-template-columns: repeat(4, 1fr);
-                gap: 20px;
             }
             
             .content-area {
@@ -845,7 +723,7 @@
             }
             
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
             
             .controls {
@@ -864,9 +742,13 @@
             .phone-input {
                 min-width: 100%;
             }
-            
-            .calling-tabs {
+
+            .prompt-actions {
                 flex-direction: column;
+            }
+
+            .prompt-templates {
+                justify-content: center;
             }
         }
     </style>
@@ -879,7 +761,7 @@
                     <div class="logo-icon"></div>
                     <div class="logo-text" id="appName">SkyIQ</div>
                 </div>
-                <div class="header-title" id="companyName">Sales Dashboard</div>
+                <div class="header-title" id="companyName">Inbound Dashboard</div>
             </div>
             <div class="user-profile">
                 <div class="profile-avatar" id="userInitials">--</div>
@@ -892,97 +774,40 @@
                 <span id="connectionStatus">Connected</span>
             </div>
 
-            <!-- Calling Tabs -->
-            <div class="calling-tabs">
-                <button class="tab-btn active" onclick="switchTab('single')">📞 Single Call</button>
-                <button class="tab-btn" onclick="switchTab('batch')">📁 Batch Calls</button>
-            </div>
-
-            <!-- Single Call Tab -->
-            <div id="singleTab" class="tab-content active">
-                <div class="outbound-call-section">
-                    <div class="outbound-header">
-                        <div class="outbound-title">
-                            📞 Single Outbound Call
-                        </div>
-                        <div class="outbound-subtitle">Make individual calls directly from your dashboard</div>
+            <!-- Outbound Call Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        📞 Make Call
                     </div>
-                    <div class="outbound-form">
-                        <div class="phone-input-group">
-                            <input 
-                                type="tel" 
-                                id="phoneInput" 
-                                class="phone-input" 
-                                placeholder="Enter phone number (e.g., +1-555-123-4567)"
-                                maxlength="20"
-                            >
-                            <button id="callButton" class="call-btn" onclick="initiateCall()">
-                                📞 Start Call
-                            </button>
-                        </div>
-                        <div id="callStatus" class="call-status"></div>
-                    </div>
+                    <div class="section-subtitle">Make individual calls directly from your dashboard</div>
                 </div>
-            </div>
-
-            <!-- Batch Call Tab -->
-            <div id="batchTab" class="tab-content">
-                <div class="outbound-call-section">
-                    <div class="outbound-header">
-                        <div class="outbound-title">
-                            📁 Batch Outbound Calls
-                        </div>
-                        <div class="outbound-subtitle">Upload CSV file and call multiple numbers sequentially</div>
-                    </div>
-                    <div class="outbound-form">
+                <div class="section-content">
+                    <div class="phone-input-group">
                         <input 
-                            type="text" 
-                            id="batchNameInput" 
-                            class="batch-name-input" 
-                            placeholder="Campaign name (e.g., 'Q4 Sales Outreach')"
+                            type="tel" 
+                            id="phoneInput" 
+                            class="phone-input" 
+                            placeholder="Enter phone number (e.g., +1-555-123-4567)"
+                            maxlength="20"
                         >
-                        
-                        <div class="csv-upload-area" id="csvUploadArea" onclick="document.getElementById('csvFileInput').click()">
-                            <div class="upload-icon">📄</div>
-                            <div class="upload-text">Click to upload CSV file</div>
-                            <div class="upload-subtitle">or drag and drop your file here</div>
-                            <div class="upload-subtitle" style="margin-top: 8px; font-size: 0.75rem;">
-                                <strong>Enhanced Format:</strong> phone_number,first_name,last_name,company<br>
-                                <strong>Simple Format:</strong> One phone number per line
-                            </div>
-                        </div>
-                        
-                        <input 
-                            type="file" 
-                            id="csvFileInput" 
-                            class="file-input" 
-                            accept=".csv,.txt"
-                            onchange="handleFileSelect(this.files[0])"
-                        >
-                        
-                        <button id="batchCallButton" class="call-btn" onclick="startBatch()" disabled>
-                            📁 Start Batch Calling
+                        <button id="callButton" class="call-btn" onclick="initiateCall()">
+                            📞 Start Call
                         </button>
-                        
-                        <div id="batchStatus" class="batch-status">
-                            <div id="batchProgress"></div>
-                            <div class="progress-bar">
-                                <div id="progressFill" class="progress-fill"></div>
-                            </div>
-                            <div id="batchStats"></div>
-                        </div>
                     </div>
+                    <div id="callStatus" class="call-status"></div>
                 </div>
             </div>
 
+            <!-- Stats Section -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-value" id="totalCalls">0</div>
                     <div class="stat-label">Total Calls</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="outboundCalls">0</div>
-                    <div class="stat-label">Outbound Calls</div>
+                    <div class="stat-value" id="inboundCalls">0</div>
+                    <div class="stat-label">Inbound Calls</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="transcriptCount">0</div>
@@ -999,10 +824,11 @@
                 <button class="btn secondary" onclick="viewAllCalls()">View All Calls</button>
             </div>
 
-            <div class="calls-section">
+            <!-- Compact Call Log -->
+            <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">Call Log</div>
-                    <div class="section-subtitle">Recent conversation monitoring and analysis</div>
+                    <div class="section-title">Recent Calls</div>
+                    <div class="section-subtitle">Latest conversation activity</div>
                 </div>
                 
                 <div id="callHistory">
@@ -1012,6 +838,41 @@
                         <div class="empty-subtitle">Your live call data will appear here</div>
                         <div class="webhook-url" id="webhookUrl">Loading webhook URL...</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Prompt Editor Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        ✏️ Edit AI Agent Prompt
+                    </div>
+                    <div class="section-subtitle">Customize how your AI agent responds to calls</div>
+                </div>
+                <div class="section-content">
+                    <div class="prompt-templates">
+                        <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
+                        <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
+                        <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
+                        <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
+                    </div>
+                    
+                    <textarea 
+                        id="promptEditor" 
+                        class="prompt-editor"
+                        placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
+                    ></textarea>
+                    
+                    <div class="prompt-actions">
+                        <button id="savePromptBtn" class="btn" onclick="savePrompt()">
+                            💾 Save Prompt
+                        </button>
+                        <button class="btn secondary" onclick="loadCurrentPrompt()">
+                            🔄 Reload Current
+                        </button>
+                    </div>
+                    
+                    <div id="promptStatus" class="prompt-status"></div>
                 </div>
             </div>
         </div>
@@ -1038,18 +899,59 @@
         // Configuration object
         const config = {
             appName: 'SkyIQ',
-            companyName: 'Sales Dashboard',
+            companyName: 'Inbound Dashboard',
             userInitials: 'RP',
-            maxCallsToShow: 20,
+            maxCallsToShow: 10,
             autoRefreshInterval: 30000,
             socketEnabled: true
         };
 
         // Global variables
         let calls = [];
-        let batches = [];
-        let currentBatch = null;
-        let selectedFile = null;
+        let currentPrompt = '';
+
+        // Prompt templates
+        const promptTemplates = {
+            sales: `You are a professional sales agent for our company. Your goal is to:
+- Greet callers warmly and professionally
+- Listen to their needs and understand their pain points
+- Present our solutions in a compelling way
+- Handle objections with empathy and expertise
+- Guide the conversation toward scheduling a demo or next steps
+- Always be helpful, knowledgeable, and customer-focused
+
+Keep responses concise and conversational. Ask qualifying questions to understand their business needs.`,
+
+            support: `You are a helpful customer support agent. Your primary objectives are to:
+- Provide excellent customer service with patience and empathy
+- Listen carefully to customer issues and concerns
+- Offer clear, step-by-step solutions
+- Escalate complex technical issues when appropriate
+- Ensure customer satisfaction before ending the call
+- Document any issues for follow-up
+
+Always remain calm and professional, even with frustrated customers. Focus on resolving their problems efficiently.`,
+
+            appointment: `You are an appointment scheduling specialist. Your role is to:
+- Greet callers professionally and understand their scheduling needs
+- Check availability and offer suitable time slots
+- Collect necessary information for the appointment
+- Confirm all details including date, time, and contact information
+- Send confirmation and any preparation instructions
+- Handle rescheduling requests professionally
+
+Be efficient but thorough. Always double-check appointment details before confirming.`,
+
+            receptionist: `You are a friendly and professional receptionist. Your responsibilities include:
+- Greeting callers with warmth and professionalism
+- Directing calls to the appropriate department or person
+- Taking detailed messages when needed
+- Providing basic company information and hours
+- Handling general inquiries politely
+- Maintaining a helpful and courteous tone
+
+Always ask for the caller's name and reason for calling to provide the best assistance.`
+        };
 
         // Socket connection
         let socket;
@@ -1069,10 +971,6 @@
                 renderCallHistory();
             });
 
-            socket.on('batchHistory', (batchHistory) => {
-                batches = batchHistory;
-            });
-
             socket.on('newCall', (callData) => {
                 calls.unshift(callData);
                 renderCallHistory();
@@ -1088,20 +986,12 @@
                     updateStats();
                 }
             });
-
-            socket.on('batchProgress', (data) => {
-                updateBatchProgress(data);
-            });
-
-            socket.on('batchCompleted', (data) => {
-                completeBatch(data);
-            });
         }
 
         // DOM elements
         const callHistory = document.getElementById('callHistory');
         const totalCalls = document.getElementById('totalCalls');
-        const outboundCalls = document.getElementById('outboundCalls');
+        const inboundCalls = document.getElementById('inboundCalls');
         const transcriptCount = document.getElementById('transcriptCount');
         const lastUpdate = document.getElementById('lastUpdate');
         const connectionStatus = document.getElementById('connectionStatus');
@@ -1112,13 +1002,9 @@
         const phoneInput = document.getElementById('phoneInput');
         const callButton = document.getElementById('callButton');
         const callStatus = document.getElementById('callStatus');
-
-        // Batch calling elements
-        const csvUploadArea = document.getElementById('csvUploadArea');
-        const csvFileInput = document.getElementById('csvFileInput');
-        const batchNameInput = document.getElementById('batchNameInput');
-        const batchCallButton = document.getElementById('batchCallButton');
-        const batchStatus = document.getElementById('batchStatus');
+        const promptEditor = document.getElementById('promptEditor');
+        const savePromptBtn = document.getElementById('savePromptBtn');
+        const promptStatus = document.getElementById('promptStatus');
 
         // Initialize app
         function initializeApp() {
@@ -1130,17 +1016,7 @@
             webhookUrl.textContent = `${window.location.origin}/webhook`;
             
             updateStats();
-        }
-
-        // Tab switching
-        function switchTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tabName + 'Tab').classList.add('active');
+            loadCurrentPrompt();
         }
 
         // Single call functionality
@@ -1197,144 +1073,78 @@
             }
         }
 
-        // Batch calling functionality
-        function handleFileSelect(file) {
-            if (!file) return;
-
-            if (!file.name.toLowerCase().endsWith('.csv') && !file.name.toLowerCase().endsWith('.txt')) {
-                showNotification('Please select a CSV or TXT file', true);
-                return;
+        // Prompt management functions
+        async function loadCurrentPrompt() {
+            try {
+                showPromptStatus('Loading current prompt...', 'loading');
+                const response = await fetch('/api/prompt');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    promptEditor.value = data.prompt || '';
+                    currentPrompt = data.prompt || '';
+                    showPromptStatus('Prompt loaded successfully', 'success');
+                } else {
+                    showPromptStatus('Failed to load current prompt', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading prompt:', error);
+                showPromptStatus('Error loading prompt', 'error');
+            } finally {
+                setTimeout(() => {
+                    hidePromptStatus();
+                }, 3000);
             }
-
-            selectedFile = file;
-            csvUploadArea.innerHTML = `
-                <div class="upload-icon">✅</div>
-                <div class="upload-text">${file.name}</div>
-                <div class="upload-subtitle">Ready to upload ${Math.round(file.size / 1024)}KB</div>
-            `;
-
-            batchCallButton.disabled = false;
         }
 
-        // Drag and drop functionality
-        csvUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            csvUploadArea.classList.add('dragover');
-        });
-
-        csvUploadArea.addEventListener('dragleave', () => {
-            csvUploadArea.classList.remove('dragover');
-        });
-
-        csvUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            csvUploadArea.classList.remove('dragover');
+        async function savePrompt() {
+            const prompt = promptEditor.value.trim();
             
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFileSelect(files[0]);
-            }
-        });
-
-        async function startBatch() {
-            if (!selectedFile) {
-                showNotification('Please select a CSV file first', true);
+            if (!prompt) {
+                showPromptStatus('Please enter a prompt before saving', 'error');
                 return;
             }
 
             try {
-                batchCallButton.disabled = true;
-                batchCallButton.textContent = '📁 Uploading...';
+                savePromptBtn.disabled = true;
+                savePromptBtn.textContent = '💾 Saving...';
+                showPromptStatus('Saving prompt...', 'loading');
 
-                const formData = new FormData();
-                formData.append('csvFile', selectedFile);
-                formData.append('batchName', batchNameInput.value || `Batch ${new Date().toLocaleDateString()}`);
-
-                const response = await fetch('/api/batch/upload', {
+                const response = await fetch('/api/prompt', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
-                    showNotification(`Batch created: ${result.totalCalls} numbers`);
-                    currentBatch = result.batchId;
-                    
-                    // Start the batch
-                    const startResponse = await fetch(`/api/batch/${result.batchId}/start`, {
-                        method: 'POST'
-                    });
-
-                    const startResult = await startResponse.json();
-                    
-                    if (startResult.success) {
-                        showNotification('Batch calling started!');
-                        batchStatus.classList.add('active');
-                        document.getElementById('batchProgress').textContent = 'Starting batch calls...';
-                        
-                        // Reset form
-                        selectedFile = null;
-                        batchNameInput.value = '';
-                        resetUploadArea();
-                    }
+                    currentPrompt = prompt;
+                    showPromptStatus('Prompt saved successfully!', 'success');
+                    showNotification('AI agent prompt updated successfully');
                 } else {
-                    showNotification(result.error || 'Failed to create batch', true);
+                    showPromptStatus(result.error || 'Failed to save prompt', 'error');
                 }
             } catch (error) {
-                console.error('Error starting batch:', error);
-                showNotification('Error starting batch calls', true);
+                console.error('Error saving prompt:', error);
+                showPromptStatus('Error saving prompt. Please try again.', 'error');
             } finally {
-                batchCallButton.disabled = false;
-                batchCallButton.textContent = '📁 Start Batch Calling';
+                savePromptBtn.disabled = false;
+                savePromptBtn.textContent = '💾 Save Prompt';
+                
+                setTimeout(() => {
+                    hidePromptStatus();
+                }, 5000);
             }
         }
 
-        function resetUploadArea() {
-            csvUploadArea.innerHTML = `
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">Click to upload CSV file</div>
-                <div class="upload-subtitle">or drag and drop your file here</div>
-                <div class="upload-subtitle" style="margin-top: 8px; font-size: 0.75rem;">
-                    Format: One phone number per line or use header "phone_number"
-                </div>
-            `;
-            batchCallButton.disabled = true;
-        }
-
-        function updateBatchProgress(data) {
-            const progress = data.progress;
-            const percentage = Math.round((progress.completed_calls / progress.total_calls) * 100);
-            
-            const customerInfo = data.currentCustomer && data.currentCustomer !== data.currentCall 
-                ? `${data.currentCustomer} (${data.currentCall})`
-                : data.currentCall;
-            
-            document.getElementById('batchProgress').textContent = 
-                `Calling ${customerInfo} (${progress.completed_calls}/${progress.total_calls})`;
-            
-            document.getElementById('progressFill').style.width = `${percentage}%`;
-            
-            document.getElementById('batchStats').innerHTML = `
-                <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.875rem;">
-                    <span>✅ Success: ${progress.successful_calls}</span>
-                    <span>❌ Failed: ${progress.failed_calls}</span>
-                    <span>📊 ${percentage}% Complete</span>
-                </div>
-            `;
-        }
-
-        function completeBatch(data) {
-            const progress = data.progress;
-            document.getElementById('batchProgress').textContent = 
-                `Batch completed! ${progress.successful_calls} successful, ${progress.failed_calls} failed`;
-            
-            showNotification(`Batch completed: ${progress.successful_calls}/${progress.total_calls} calls successful`);
-            
-            setTimeout(() => {
-                batchStatus.classList.remove('active');
-                refreshData();
-            }, 5000);
+        function loadTemplate(templateName) {
+            if (promptTemplates[templateName]) {
+                promptEditor.value = promptTemplates[templateName];
+                showNotification(`${templateName.charAt(0).toUpperCase() + templateName.slice(1)} template loaded`);
+            }
         }
 
         // Phone input formatting
@@ -1366,6 +1176,15 @@
 
         function hideCallStatus() {
             callStatus.className = 'call-status';
+        }
+
+        function showPromptStatus(message, type) {
+            promptStatus.textContent = message;
+            promptStatus.className = `prompt-status ${type}`;
+        }
+
+        function hidePromptStatus() {
+            promptStatus.className = 'prompt-status';
         }
 
         function updateConnectionStatus(status, color) {
@@ -1404,9 +1223,9 @@
                                 </div>
                             </div>
                             <div class="call-details">
-                                <div class="call-duration">Duration: ${formatDuration(call.duration)}</div>
+                                <div class="call-duration">${formatDuration(call.duration)}</div>
                                 <div class="call-type-badge call-type-${call.call_type || 'inbound'}">
-                                    ${call.call_type === 'outbound' ? '📤 Outbound' : '📥 Inbound'}
+                                    ${call.call_type === 'outbound' ? '📤 Out' : '📥 In'}
                                 </div>
                                 <span class="status-badge status-${getStatusClass(call.status)}">
                                     ${call.status || 'Unknown'}
@@ -1451,8 +1270,8 @@
         function updateStats() {
             totalCalls.textContent = calls.length;
             
-            const outboundCallCount = calls.filter(call => call.call_type === 'outbound').length;
-            outboundCalls.textContent = outboundCallCount;
+            const inboundCallCount = calls.filter(call => call.call_type !== 'outbound').length;
+            inboundCalls.textContent = inboundCallCount;
             
             const callsWithTranscripts = calls.filter(call => 
                 call.transcript && call.transcript.length > 0
@@ -1488,15 +1307,17 @@
         }
 
         function formatDuration(seconds) {
-            if (!seconds || seconds === 0) return '0m 0s';
+            if (!seconds || seconds === 0) return '0s';
             const hours = Math.floor(seconds / 3600);
             const mins = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
             
             if (hours > 0) {
-                return `${hours}h ${mins}m ${secs}s`;
-            } else {
+                return `${hours}h ${mins}m`;
+            } else if (mins > 0) {
                 return `${mins}m ${secs}s`;
+            } else {
+                return `${secs}s`;
             }
         }
 
@@ -1547,7 +1368,7 @@ ${call.transcript}`;
                 viewBtn.textContent = `✅ Showing All ${calls.length}`;
                 setTimeout(() => {
                     viewBtn.textContent = originalText;
-                    config.maxCallsToShow = 20;
+                    config.maxCallsToShow = 10;
                 }, 2000);
             }
         }
