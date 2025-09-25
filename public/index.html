@@ -57,15 +57,15 @@
         .logo-icon {
             width: 36px;
             height: 36px;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%234f46e5;stop-opacity:1" /><stop offset="100%" style="stop-color:%2306b6d4;stop-opacity:1" /></linearGradient></defs><path d="M20 25 Q20 15 30 15 L70 15 Q80 15 80 25 L80 45 Q80 55 70 55 L55 55 L50 65 L45 55 L30 55 Q20 55 20 45 Z" fill="url(%23grad1)" stroke="white" stroke-width="2"/><path d="M30 70 Q30 60 40 60 L75 60 Q85 60 85 70 L85 85 Q85 95 75 95 L40 95 Q30 95 30 85 Z" fill="url(%23grad1)" opacity="0.7"/><path d="M35 25 L75 25 M35 35 L65 35 M35 45 L70 45" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>') center/contain no-repeat;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23009AEE;stop-opacity:1" /><stop offset="100%" style="stop-color:%230080CC;stop-opacity:1" /></linearGradient></defs><path d="M20 25 Q20 15 30 15 L70 15 Q80 15 80 25 L80 45 Q80 55 70 55 L55 55 L50 65 L45 55 L30 55 Q20 55 20 45 Z" fill="url(%23grad1)" stroke="white" stroke-width="2"/><path d="M30 70 Q30 60 40 60 L75 60 Q85 60 85 70 L85 85 Q85 95 75 95 L40 95 Q30 95 30 85 Z" fill="url(%23grad1)" opacity="0.7"/><path d="M35 25 L75 25 M35 35 L65 35 M35 45 L70 45" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>') center/contain no-repeat;
             border-radius: 10px;
-            filter: drop-shadow(0 2px 4px rgba(79, 70, 229, 0.2));
+            filter: drop-shadow(0 2px 4px rgba(0, 154, 238, 0.2));
         }
         
         .logo-text {
             font-size: 1.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -92,14 +92,14 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: 600;
             font-size: 0.75rem;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 154, 238, 0.3);
         }
         
         .content-area {
@@ -192,8 +192,110 @@
         
         .phone-input:focus {
             outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .url-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
+        }
+
+        .url-list {
+            margin-bottom: 16px;
+        }
+
+        .url-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+
+        .url-text {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #475569;
+            word-break: break-all;
+        }
+
+        .url-status {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .url-status.pending {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .url-status.scraping {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .url-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .url-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .remove-url-btn {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .remove-url-btn:hover {
+            background: #fef2f2;
+        }
+
+        .scraped-data-preview {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 0.875rem;
+            color: #475569;
+            line-height: 1.5;
         }
 
         .prompt-editor {
@@ -212,8 +314,8 @@
 
         .prompt-editor:focus {
             outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
         }
 
         .prompt-actions {
@@ -223,7 +325,7 @@
             flex-wrap: wrap;
         }
 
-        .prompt-status, .call-status {
+        .prompt-status, .call-status, .scraping-status {
             padding: 12px 16px;
             border-radius: 8px;
             margin-top: 12px;
@@ -233,7 +335,7 @@
         }
         
         .call-btn, .btn {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -247,7 +349,7 @@
             gap: 8px;
             min-height: 48px;
             flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 154, 238, 0.3);
             justify-content: center;
         }
 
@@ -257,7 +359,7 @@
         
         .btn:hover, .call-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+            box-shadow: 0 6px 16px rgba(0, 154, 238, 0.4);
         }
         
         .btn:active, .call-btn:active {
@@ -273,31 +375,31 @@
 
         .btn.secondary {
             background: white;
-            color: #4f46e5;
+            color: #009AEE;
             border: 2px solid #e2e8f0;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .btn.secondary:hover {
-            border-color: #4f46e5;
-            background: #f8faff;
+            border-color: #009AEE;
+            background: #f0f9ff;
         }
         
-        .call-status.success, .prompt-status.success {
+        .call-status.success, .prompt-status.success, .scraping-status.success {
             background: #dcfce7;
             color: #166534;
             border: 1px solid #bbf7d0;
             display: block;
         }
         
-        .call-status.error, .prompt-status.error {
+        .call-status.error, .prompt-status.error, .scraping-status.error {
             background: #fef2f2;
             color: #dc2626;
             border: 1px solid #fecaca;
             display: block;
         }
         
-        .call-status.loading, .prompt-status.loading {
+        .call-status.loading, .prompt-status.loading, .scraping-status.loading {
             background: #dbeafe;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
@@ -330,13 +432,13 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #4f46e5, #06b6d4);
+            background: linear-gradient(90deg, #009AEE, #0080CC);
         }
         
         .stat-value {
             font-size: 1.75rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -394,7 +496,7 @@
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #4f46e5;
+            color: #009AEE;
             flex-shrink: 0;
         }
         
@@ -479,7 +581,7 @@
         .transcript-btn {
             background: none;
             border: 1px solid #e2e8f0;
-            color: #4f46e5;
+            color: #009AEE;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.7rem;
@@ -490,7 +592,7 @@
         
         .transcript-btn:hover {
             background: #f8fafc;
-            border-color: #4f46e5;
+            border-color: #009AEE;
         }
         
         .transcript-btn:disabled {
@@ -529,7 +631,7 @@
             padding: 8px 12px;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.7rem;
-            color: #4f46e5;
+            color: #009AEE;
             word-break: break-all;
             max-width: 100%;
             margin: 0 auto;
@@ -656,7 +758,48 @@
 
         .template-btn:hover {
             background: #e2e8f0;
-            color: #4f46e5;
+            color: #009AEE;
+        }
+
+        .tabs-container {
+            margin-bottom: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .tab.active {
+            color: #009AEE;
+            border-bottom-color: #009AEE;
+        }
+
+        .tab:hover:not(.active) {
+            color: #475569;
+            background: #f8fafc;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
         
         /* Media Queries */
@@ -692,7 +835,7 @@
                 font-size: 0.875rem;
             }
             
-            .phone-input-group {
+            .phone-input-group, .url-input-group {
                 flex-wrap: nowrap;
             }
         }
@@ -735,11 +878,11 @@
                 padding: 14px 16px;
             }
             
-            .phone-input-group {
+            .phone-input-group, .url-input-group {
                 flex-direction: column;
             }
             
-            .phone-input {
+            .phone-input, .url-input {
                 min-width: 100%;
             }
 
@@ -749,6 +892,16 @@
 
             .prompt-templates {
                 justify-content: center;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .tab {
+                padding: 8px 16px;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -761,7 +914,7 @@
                     <div class="logo-icon"></div>
                     <div class="logo-text" id="appName">SkyIQ</div>
                 </div>
-                <div class="header-title" id="companyName">Inbound Dashboard</div>
+                <div class="header-title" id="companyName">AI Voice Dashboard</div>
             </div>
             <div class="user-profile">
                 <div class="profile-avatar" id="userInitials">--</div>
@@ -799,6 +952,47 @@
                 </div>
             </div>
 
+            <!-- Website Scraping Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        🌐 Website Data Scraper
+                    </div>
+                    <div class="section-subtitle">Add website URLs to scrape data and enhance your AI agent's knowledge</div>
+                </div>
+                <div class="section-content">
+                    <div class="url-input-group">
+                        <input 
+                            type="url" 
+                            id="urlInput" 
+                            class="url-input" 
+                            placeholder="Enter website URL (e.g., https://example.com)"
+                        >
+                        <button id="addUrlButton" class="btn" onclick="addUrl()">
+                            ➕ Add URL
+                        </button>
+                    </div>
+                    
+                    <div id="urlList" class="url-list"></div>
+                    
+                    <div class="prompt-actions">
+                        <button id="scrapeAllButton" class="btn" onclick="scrapeAllUrls()">
+                            🕷️ Scrape All URLs
+                        </button>
+                        <button class="btn secondary" onclick="clearAllUrls()">
+                            🗑️ Clear All URLs
+                        </button>
+                    </div>
+                    
+                    <div id="scrapingStatus" class="scraping-status"></div>
+                    
+                    <div id="scrapedDataPreview" class="scraped-data-preview" style="display: none;">
+                        <strong>Scraped Data Preview:</strong>
+                        <div id="scrapedDataContent"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Section -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -824,7 +1018,7 @@
                 <button class="btn secondary" onclick="viewAllCalls()">View All Calls</button>
             </div>
 
-            <!-- Compact Call Log -->
+            <!-- Recent Call Log -->
             <div class="section-card">
                 <div class="section-header">
                     <div class="section-title">Recent Calls</div>
@@ -841,43 +1035,152 @@
                 </div>
             </div>
 
-            <!-- Prompt Editor Section -->
+            <!-- AI Agent Configuration -->
             <div class="section-card">
                 <div class="section-header">
                     <div class="section-title">
-                        ✏️ Edit AI Agent Prompt
+                        🤖 AI Agent Configuration
                     </div>
-                    <div class="section-subtitle">Customize how your AI agent responds to calls</div>
+                    <div class="section-subtitle">Customize your AI agent's behavior and knowledge</div>
                 </div>
                 <div class="section-content">
-                    <div class="prompt-templates">
-                        <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
-                        <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
-                        <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
-                        <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
+                    <div class="tabs-container">
+                        <div class="tabs">
+                            <button class="tab active" onclick="switchTab('prompt-tab', this)">✏️ Prompt Editor</button>
+                            <button class="tab" onclick="switchTab('knowledge-tab', this)">📚 Knowledge Base</button>
+                            <button class="tab" onclick="switchTab('settings-tab', this)">⚙️ Settings</button>
+                        </div>
+
+                        <!-- Prompt Editor Tab -->
+                        <div id="prompt-tab" class="tab-content active">
+                            <div class="prompt-templates">
+                                <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
+                                <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
+                                <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
+                                <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
+                            </div>
+                            
+                            <textarea 
+                                id="promptEditor" 
+                                class="prompt-editor"
+                                placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
+                            ></textarea>
+                            
+                            <div class="prompt-actions">
+                                <button id="savePromptBtn" class="btn" onclick="savePrompt()">
+                                    💾 Save Prompt
+                                </button>
+                                <button class="btn secondary" onclick="loadCurrentPrompt()">
+                                    🔄 Reload Current
+                                </button>
+                                <button class="btn secondary" onclick="insertScrapedData()">
+                                    📊 Insert Scraped Data
+                                </button>
+                            </div>
+                            
+                            <div id="promptStatus" class="prompt-status"></div>
+                        </div>
+
+                        <!-- Knowledge Base Tab -->
+                        <div id="knowledge-tab" class="tab-content">
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                View and manage scraped website data that enhances your AI agent's knowledge
+                            </div>
+                            
+                            <div id="knowledgeBaseContent">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📚</div>
+                                    <div class="empty-title">No Knowledge Data</div>
+                                    <div class="empty-subtitle">Scrape websites to build your agent's knowledge base</div>
+                                </div>
+                            </div>
+                            
+                            <div class="prompt-actions">
+                                <button class="btn secondary" onclick="exportKnowledgeBase()">
+                                    📥 Export Data
+                                </button>
+                                <button class="btn secondary" onclick="clearKnowledgeBase()">
+                                    🗑️ Clear All Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Settings Tab -->
+                        <div id="settings-tab" class="tab-content">
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                Configure your AI agent's behavior and response settings
+                            </div>
+                            
+                            <div style="display: grid; gap: 16px;">
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Response Speed
+                                    </label>
+                                    <select id="responseSpeed" class="url-input" style="min-width: 200px;">
+                                        <option value="fast">Fast (Quick responses)</option>
+                                        <option value="balanced" selected>Balanced (Default)</option>
+                                        <option value="thoughtful">Thoughtful (More detailed)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Conversation Style
+                                    </label>
+                                    <select id="conversationStyle" class="url-input" style="min-width: 200px;">
+                                        <option value="professional">Professional</option>
+                                        <option value="friendly" selected>Friendly</option>
+                                        <option value="casual">Casual</option>
+                                        <option value="formal">Formal</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Auto-Update Knowledge
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="autoUpdateKnowledge" checked>
+                                        <span>Automatically include new scraped data in agent prompts</span>
+                                    </label>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Max Knowledge Length
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="maxKnowledgeLength" 
+                                        min="1000" 
+                                        max="10000" 
+                                        value="5000"
+                                        style="width: 100%;"
+                                    >
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #6b7280;">
+                                        <span>1K characters</span>
+                                        <span id="knowledgeLengthValue">5K characters</span>
+                                        <span>10K characters</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="prompt-actions">
+                                <button class="btn" onclick="saveSettings()">
+                                    💾 Save Settings
+                                </button>
+                                <button class="btn secondary" onclick="resetSettings()">
+                                    🔄 Reset to Default
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <textarea 
-                        id="promptEditor" 
-                        class="prompt-editor"
-                        placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
-                    ></textarea>
-                    
-                    <div class="prompt-actions">
-                        <button id="savePromptBtn" class="btn" onclick="savePrompt()">
-                            💾 Save Prompt
-                        </button>
-                        <button class="btn secondary" onclick="loadCurrentPrompt()">
-                            🔄 Reload Current
-                        </button>
-                    </div>
-                    
-                    <div id="promptStatus" class="prompt-status"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Transcript Modal -->
     <div id="transcriptModal" class="transcript-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -890,6 +1193,7 @@
         </div>
     </div>
 
+    <!-- Notification -->
     <div id="notification" class="notification">
         New call received
     </div>
@@ -899,8 +1203,8 @@
         // Configuration object
         const config = {
             appName: 'SkyIQ',
-            companyName: 'Inbound Dashboard',
-            userInitials: 'RP',
+            companyName: 'AI Voice Dashboard',
+            userInitials: 'SQ',
             maxCallsToShow: 10,
             autoRefreshInterval: 30000,
             socketEnabled: true
@@ -909,6 +1213,14 @@
         // Global variables
         let calls = [];
         let currentPrompt = '';
+        let urlList = [];
+        let scrapedData = [];
+        let settings = {
+            responseSpeed: 'balanced',
+            conversationStyle: 'friendly',
+            autoUpdateKnowledge: true,
+            maxKnowledgeLength: 5000
+        };
 
         // Prompt templates
         const promptTemplates = {
@@ -986,25 +1298,16 @@ Always ask for the caller's name and reason for calling to provide the best assi
                     updateStats();
                 }
             });
-        }
 
-        // DOM elements
-        const callHistory = document.getElementById('callHistory');
-        const totalCalls = document.getElementById('totalCalls');
-        const inboundCalls = document.getElementById('inboundCalls');
-        const transcriptCount = document.getElementById('transcriptCount');
-        const lastUpdate = document.getElementById('lastUpdate');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const notification = document.getElementById('notification');
-        const transcriptModal = document.getElementById('transcriptModal');
-        const modalTranscript = document.getElementById('modalTranscript');
-        const modalTitle = document.getElementById('modalTitle');
-        const phoneInput = document.getElementById('phoneInput');
-        const callButton = document.getElementById('callButton');
-        const callStatus = document.getElementById('callStatus');
-        const promptEditor = document.getElementById('promptEditor');
-        const savePromptBtn = document.getElementById('savePromptBtn');
-        const promptStatus = document.getElementById('promptStatus');
+            socket.on('scrapingComplete', (data) => {
+                updateUrlStatus(data.url, data.success ? 'success' : 'error');
+                if (data.success) {
+                    scrapedData.push(data);
+                    updateKnowledgeBase();
+                    showNotification('Website scraped successfully');
+                }
+            });
+        }
 
         // Initialize app
         function initializeApp() {
@@ -1017,72 +1320,321 @@ Always ask for the caller's name and reason for calling to provide the best assi
             
             updateStats();
             loadCurrentPrompt();
+            loadSettings();
+            
+            // Initialize knowledge length slider
+            const slider = document.getElementById('maxKnowledgeLength');
+            const valueDisplay = document.getElementById('knowledgeLengthValue');
+            
+            slider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                valueDisplay.textContent = `${Math.round(value/1000)}K characters`;
+            });
         }
 
-           async function savePrompt() {
-    const prompt = promptEditor.value.trim();
-    
-    if (!prompt) {
-        showPromptStatus('Please enter a prompt before saving', 'error');
-        return;
-    }
-
-    try {
-        savePromptBtn.disabled = true;
-        savePromptBtn.textContent = '💾 Saving...';
-        showPromptStatus('Saving prompt...', 'loading');
-
-        // Extract name and company for first message
-        let firstMessage = '';
-        const nameMatch = prompt.match(/(?:named|name is|you are)\s+(\w+)/i);
-        const companyMatch = prompt.match(/(?:work for|from|at)\s+([A-Za-z\s']+?)(?:\s+and|\.|$)/i);
-        
-        if (nameMatch) {
-            let agentName = nameMatch[1];
-            let company = '';
+        // Tab switching functionality
+        function switchTab(tabId, tabButton) {
+            // Remove active class from all tabs and tab contents
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            if (companyMatch) {
-                company = ` from ${companyMatch[1].trim()}`;
+            // Add active class to clicked tab and corresponding content
+            tabButton.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // URL management functions
+        function addUrl() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showNotification('Please enter a URL', true);
+                return;
             }
+
+            // Basic URL validation
+            try {
+                new URL(url);
+            } catch (e) {
+                showNotification('Please enter a valid URL', true);
+                return;
+            }
+
+            // Check if URL already exists
+            if (urlList.some(item => item.url === url)) {
+                showNotification('URL already added', true);
+                return;
+            }
+
+            // Add URL to list
+            urlList.push({
+                id: Date.now().toString(),
+                url: url,
+                status: 'pending',
+                data: null
+            });
+
+            urlInput.value = '';
+            renderUrlList();
+            showNotification('URL added successfully');
+        }
+
+        function removeUrl(urlId) {
+            urlList = urlList.filter(item => item.id !== urlId);
+            scrapedData = scrapedData.filter(item => item.id !== urlId);
+            renderUrlList();
+            updateKnowledgeBase();
+            showNotification('URL removed');
+        }
+
+        function clearAllUrls() {
+            urlList = [];
+            scrapedData = [];
+            renderUrlList();
+            updateKnowledgeBase();
+            showNotification('All URLs cleared');
+        }
+
+        function renderUrlList() {
+            const urlListContainer = document.getElementById('urlList');
             
-            firstMessage = `Hello! This is ${agentName}${company}. How can I help you today?`;
+            if (urlList.length === 0) {
+                urlListContainer.innerHTML = '';
+                return;
+            }
+
+            urlListContainer.innerHTML = urlList.map(item => `
+                <div class="url-item">
+                    <div class="url-text">${item.url}</div>
+                    <div class="url-status ${item.status}">${item.status}</div>
+                    <button class="remove-url-btn" onclick="removeUrl('${item.id}')">✕</button>
+                </div>
+            `).join('');
         }
 
-        const response = await fetch('/api/prompt', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ 
-                system_prompt: prompt, 
-                first_message: firstMessage 
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            currentPrompt = prompt;
-            showPromptStatus('Prompt saved successfully!', 'success');
-            showNotification('AI agent prompt updated successfully');
-        } else {
-            showPromptStatus(result.error || 'Failed to save prompt', 'error');
+        function updateUrlStatus(url, status) {
+            const urlItem = urlList.find(item => item.url === url);
+            if (urlItem) {
+                urlItem.status = status;
+                renderUrlList();
+            }
         }
-    } catch (error) {
-        console.error('Error saving prompt:', error);
-        showPromptStatus('Error saving prompt. Please try again.', 'error');
-    } finally {
-        savePromptBtn.disabled = false;
-        savePromptBtn.textContent = '💾 Save Prompt';
-        
-        setTimeout(() => {
-            hidePromptStatus();
-        }, 5000);
-    }
-}
+
+        // Web scraping functions
+        async function scrapeAllUrls() {
+            if (urlList.length === 0) {
+                showNotification('No URLs to scrape', true);
+                return;
+            }
+
+            const scrapeButton = document.getElementById('scrapeAllButton');
+            scrapeButton.disabled = true;
+            scrapeButton.textContent = '🕷️ Scraping...';
+            
+            showScrapingStatus('Starting to scrape websites...', 'loading');
+
+            try {
+                for (const urlItem of urlList) {
+                    if (urlItem.status === 'success') continue; // Skip already scraped URLs
+                    
+                    updateUrlStatus(urlItem.url, 'scraping');
+                    showScrapingStatus(`Scraping ${urlItem.url}...`, 'loading');
+
+                    try {
+                        const response = await fetch('/api/scrape', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ url: urlItem.url })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            urlItem.status = 'success';
+                            urlItem.data = result.data;
+                            
+                            scrapedData.push({
+                                id: urlItem.id,
+                                url: urlItem.url,
+                                data: result.data,
+                                timestamp: new Date().toISOString()
+                            });
+                        } else {
+                            urlItem.status = 'error';
+                        }
+                    } catch (error) {
+                        console.error(`Error scraping ${urlItem.url}:`, error);
+                        urlItem.status = 'error';
+                    }
+
+                    renderUrlList();
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between requests
+                }
+
+                updateKnowledgeBase();
+                showScrapingStatus('All URLs scraped successfully!', 'success');
+                showNotification('Website scraping completed');
+
+            } catch (error) {
+                console.error('Scraping error:', error);
+                showScrapingStatus('Error during scraping process', 'error');
+            } finally {
+                scrapeButton.disabled = false;
+                scrapeButton.textContent = '🕷️ Scrape All URLs';
+                
+                setTimeout(() => {
+                    hideScrapingStatus();
+                }, 5000);
+            }
+        }
+
+        // Knowledge base functions
+        function updateKnowledgeBase() {
+            const knowledgeContent = document.getElementById('knowledgeBaseContent');
+            
+            if (scrapedData.length === 0) {
+                knowledgeContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📚</div>
+                        <div class="empty-title">No Knowledge Data</div>
+                        <div class="empty-subtitle">Scrape websites to build your agent's knowledge base</div>
+                    </div>
+                `;
+                return;
+            }
+
+            knowledgeContent.innerHTML = scrapedData.map(item => `
+                <div class="url-item" style="margin-bottom: 16px;">
+                    <div>
+                        <div class="url-text" style="font-weight: 600; color: #009AEE;">${item.url}</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                            Scraped: ${new Date(item.timestamp).toLocaleString()}
+                        </div>
+                        <div style="margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 0.875rem; line-height: 1.4; max-height: 120px; overflow-y: auto;">
+                            ${item.data.substring(0, 300)}${item.data.length > 300 ? '...' : ''}
+                        </div>
+                    </div>
+                    <button class="remove-url-btn" onclick="removeFromKnowledgeBase('${item.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFromKnowledgeBase(itemId) {
+            scrapedData = scrapedData.filter(item => item.id !== itemId);
+            urlList = urlList.filter(item => item.id !== itemId);
+            updateKnowledgeBase();
+            renderUrlList();
+            showNotification('Item removed from knowledge base');
+        }
+
+        function clearKnowledgeBase() {
+            if (confirm('Are you sure you want to clear all knowledge base data?')) {
+                scrapedData = [];
+                updateKnowledgeBase();
+                showNotification('Knowledge base cleared');
+            }
+        }
+
+        function exportKnowledgeBase() {
+            if (scrapedData.length === 0) {
+                showNotification('No data to export', true);
+                return;
+            }
+
+            const dataStr = JSON.stringify(scrapedData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `skyiq-knowledge-base-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('Knowledge base exported');
+        }
+
+        function insertScrapedData() {
+            if (scrapedData.length === 0) {
+                showNotification('No scraped data available', true);
+                return;
+            }
+
+            const promptEditor = document.getElementById('promptEditor');
+            const maxLength = settings.maxKnowledgeLength;
+            
+            let knowledgeText = '\n\n--- WEBSITE KNOWLEDGE BASE ---\n';
+            let totalLength = 0;
+
+            for (const item of scrapedData) {
+                const itemText = `\n[Source: ${item.url}]\n${item.data}\n`;
+                if (totalLength + itemText.length > maxLength) {
+                    const remainingLength = maxLength - totalLength;
+                    if (remainingLength > 100) { // Only add if we have substantial space left
+                        knowledgeText += itemText.substring(0, remainingLength) + '...\n';
+                    }
+                    break;
+                }
+                knowledgeText += itemText;
+                totalLength += itemText.length;
+            }
+
+            knowledgeText += '--- END KNOWLEDGE BASE ---\n';
+
+            promptEditor.value += knowledgeText;
+            showNotification('Scraped data inserted into prompt');
+        }
+
+        // Settings functions
+        function loadSettings() {
+            document.getElementById('responseSpeed').value = settings.responseSpeed;
+            document.getElementById('conversationStyle').value = settings.conversationStyle;
+            document.getElementById('autoUpdateKnowledge').checked = settings.autoUpdateKnowledge;
+            document.getElementById('maxKnowledgeLength').value = settings.maxKnowledgeLength;
+            
+            const valueDisplay = document.getElementById('knowledgeLengthValue');
+            valueDisplay.textContent = `${Math.round(settings.maxKnowledgeLength/1000)}K characters`;
+        }
+
+        function saveSettings() {
+            settings.responseSpeed = document.getElementById('responseSpeed').value;
+            settings.conversationStyle = document.getElementById('conversationStyle').value;
+            settings.autoUpdateKnowledge = document.getElementById('autoUpdateKnowledge').checked;
+            settings.maxKnowledgeLength = parseInt(document.getElementById('maxKnowledgeLength').value);
+            
+            // Save to localStorage
+            localStorage.setItem('skyiq-settings', JSON.stringify(settings));
+            showNotification('Settings saved successfully');
+        }
+
+        function resetSettings() {
+            settings = {
+                responseSpeed: 'balanced',
+                conversationStyle: 'friendly',
+                autoUpdateKnowledge: true,
+                maxKnowledgeLength: 5000
+            };
+            loadSettings();
+            localStorage.removeItem('skyiq-settings');
+            showNotification('Settings reset to default');
+        }
+
+        // Load settings from localStorage on startup
+        function loadStoredSettings() {
+            const stored = localStorage.getItem('skyiq-settings');
+            if (stored) {
+                try {
+                    settings = {...settings, ...JSON.parse(stored)};
+                } catch (e) {
+                    console.error('Error loading settings:', e);
+                }
+            }
+        }
+
         // Single call functionality
         async function initiateCall() {
-            const phoneNumber = phoneInput.value.trim();
+            const phoneNumber = document.getElementById('phoneInput').value.trim();
             
             if (!phoneNumber) {
                 showCallStatus('Please enter a phone number', 'error');
@@ -1096,6 +1648,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
             }
 
             try {
+                const callButton = document.getElementById('callButton');
                 callButton.disabled = true;
                 callButton.textContent = '📞 Initiating...';
                 showCallStatus('Initiating call...', 'loading');
@@ -1112,7 +1665,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
 
                 if (result.success) {
                     showCallStatus(`Call initiated successfully to ${phoneNumber}`, 'success');
-                    phoneInput.value = '';
+                    document.getElementById('phoneInput').value = '';
                     showNotification('Outbound call initiated successfully');
                     
                     setTimeout(() => {
@@ -1125,6 +1678,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 console.error('Error initiating call:', error);
                 showCallStatus('Error initiating call. Please try again.', 'error');
             } finally {
+                const callButton = document.getElementById('callButton');
                 callButton.disabled = false;
                 callButton.textContent = '📞 Start Call';
                 
@@ -1142,7 +1696,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 
                 if (response.ok) {
                     const data = await response.json();
-                    promptEditor.value = data.system_prompt || '';
+                    document.getElementById('promptEditor').value = data.system_prompt || '';
                     currentPrompt = data.system_prompt || '';
                     showPromptStatus('Prompt loaded successfully', 'success');
                 } else {
@@ -1158,60 +1712,133 @@ Always ask for the caller's name and reason for calling to provide the best assi
             }
         }
 
-        
+        async function savePrompt() {
+            const prompt = document.getElementById('promptEditor').value.trim();
+            
+            if (!prompt) {
+                showPromptStatus('Please enter a prompt before saving', 'error');
+                return;
+            }
+
+            try {
+                const savePromptBtn = document.getElementById('savePromptBtn');
+                savePromptBtn.disabled = true;
+                savePromptBtn.textContent = '💾 Saving...';
+                showPromptStatus('Saving prompt...', 'loading');
+
+                const response = await fetch('/api/prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ system_prompt: prompt, first_message: '' })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentPrompt = prompt;
+                    showPromptStatus('Prompt saved successfully!', 'success');
+                    showNotification('AI agent prompt updated successfully');
+                } else {
+                    showPromptStatus(result.error || 'Failed to save prompt', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving prompt:', error);
+                showPromptStatus('Error saving prompt. Please try again.', 'error');
+            } finally {
+                const savePromptBtn = document.getElementById('savePromptBtn');
+                savePromptBtn.disabled = false;
+                savePromptBtn.textContent = '💾 Save Prompt';
+                
+                setTimeout(() => {
+                    hidePromptStatus();
+                }, 5000);
+            }
+        }
+
         function loadTemplate(templateName) {
             if (promptTemplates[templateName]) {
-                promptEditor.value = promptTemplates[templateName];
+                document.getElementById('promptEditor').value = promptTemplates[templateName];
                 showNotification(`${templateName.charAt(0).toUpperCase() + templateName.slice(1)} template loaded`);
             }
         }
 
         // Phone input formatting
-        phoneInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
+        document.addEventListener('DOMContentLoaded', () => {
+            const phoneInput = document.getElementById('phoneInput');
+            const urlInput = document.getElementById('urlInput');
             
-            if (value.length >= 10) {
-                if (value.length === 10) {
-                    value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
-                } else if (value.length === 11 && value.charAt(0) === '1') {
-                    value = `+1 (${value.substr(1, 3)}) ${value.substr(4, 3)}-${value.substr(7, 4)}`;
+            phoneInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                if (value.length >= 10) {
+                    if (value.length === 10) {
+                        value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
+                    } else if (value.length === 11 && value.charAt(0) === '1') {
+                        value = `+1 (${value.substr(1, 3)}) ${value.substr(4, 3)}-${value.substr(7, 4)}`;
+                    }
                 }
-            }
-            
-            e.target.value = value;
-        });
+                
+                e.target.value = value;
+            });
 
-        phoneInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                initiateCall();
-            }
+            phoneInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    initiateCall();
+                }
+            });
+
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addUrl();
+                }
+            });
         });
 
         // Utility functions
         function showCallStatus(message, type) {
+            const callStatus = document.getElementById('callStatus');
             callStatus.textContent = message;
             callStatus.className = `call-status ${type}`;
         }
 
         function hideCallStatus() {
+            const callStatus = document.getElementById('callStatus');
             callStatus.className = 'call-status';
         }
 
         function showPromptStatus(message, type) {
+            const promptStatus = document.getElementById('promptStatus');
             promptStatus.textContent = message;
             promptStatus.className = `prompt-status ${type}`;
         }
 
         function hidePromptStatus() {
+            const promptStatus = document.getElementById('promptStatus');
             promptStatus.className = 'prompt-status';
         }
 
+        function showScrapingStatus(message, type) {
+            const scrapingStatus = document.getElementById('scrapingStatus');
+            scrapingStatus.textContent = message;
+            scrapingStatus.className = `scraping-status ${type}`;
+        }
+
+        function hideScrapingStatus() {
+            const scrapingStatus = document.getElementById('scrapingStatus');
+            scrapingStatus.className = 'scraping-status';
+        }
+
         function updateConnectionStatus(status, color) {
+            const connectionStatus = document.getElementById('connectionStatus');
             connectionStatus.textContent = status;
             connectionStatus.style.color = color;
         }
 
         function renderCallHistory() {
+            const callHistory = document.getElementById('callHistory');
+            
             if (calls.length === 0) {
                 callHistory.innerHTML = `
                     <div class="empty-state">
@@ -1230,6 +1857,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
         }
 
         function renderCardView(callsToShow) {
+            const callHistory = document.getElementById('callHistory');
             const cardsHTML = `
                 <div class="call-cards">
                     ${callsToShow.map(call => `
@@ -1287,6 +1915,11 @@ Always ask for the caller's name and reason for calling to provide the best assi
         }
 
         function updateStats() {
+            const totalCalls = document.getElementById('totalCalls');
+            const inboundCalls = document.getElementById('inboundCalls');
+            const transcriptCount = document.getElementById('transcriptCount');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
             totalCalls.textContent = calls.length;
             
             const inboundCallCount = calls.filter(call => call.call_type !== 'outbound').length;
@@ -1341,6 +1974,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
         }
 
         function showNotification(message = 'New call received', isError = false) {
+            const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = `notification ${isError ? 'error' : ''}`;
             notification.classList.add('show');
@@ -1355,6 +1989,10 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 const phoneNumber = formatPhoneNumber(call.caller_number || call.phone || 'Unknown');
                 const callDate = formatDate(call.timestamp);
                 const callTime = formatTime(call.timestamp);
+                
+                const modalTitle = document.getElementById('modalTitle');
+                const modalTranscript = document.getElementById('modalTranscript');
+                const transcriptModal = document.getElementById('transcriptModal');
                 
                 modalTitle.textContent = `Transcript - ${phoneNumber}`;
                 
@@ -1374,6 +2012,7 @@ ${call.transcript}`;
         }
 
         function closeTranscriptModal() {
+            const transcriptModal = document.getElementById('transcriptModal');
             transcriptModal.style.display = 'none';
         }
 
@@ -1422,26 +2061,30 @@ ${call.transcript}`;
             }
         }
 
-        // Close modal when clicking outside
-        transcriptModal.addEventListener('click', (e) => {
-            if (e.target === transcriptModal) {
-                closeTranscriptModal();
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && transcriptModal.style.display === 'flex') {
-                closeTranscriptModal();
-            }
-            if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                refreshData();
-            }
-        });
-
-        // Initialize the app
+        // Modal event listeners
         document.addEventListener('DOMContentLoaded', () => {
+            const transcriptModal = document.getElementById('transcriptModal');
+            
+            // Close modal when clicking outside
+            transcriptModal.addEventListener('click', (e) => {
+                if (e.target === transcriptModal) {
+                    closeTranscriptModal();
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && transcriptModal.style.display === 'flex') {
+                    closeTranscriptModal();
+                }
+                if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    refreshData();
+                }
+            });
+
+            // Initialize the app
+            loadStoredSettings();
             initializeApp();
             refreshData();
         });
