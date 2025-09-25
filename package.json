@@ -1,7 +1,7 @@
 {
   "name": "elevenlabs-webhook-dashboard",
   "version": "1.0.0",
-  "description": "Real-time ElevenLabs call history dashboard with webhook support, batch outbound calling, and web scraping for AI agent enhancement",
+  "description": "Real-time ElevenLabs call history dashboard with webhook support and batch outbound calling",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -31,8 +31,6 @@
     "batch-calling",
     "sales-automation",
     "web-scraping",
-    "skyiq",
-    "ai-agent",
-    "knowledge-base"
+    "skyiq"
   ]
 }
