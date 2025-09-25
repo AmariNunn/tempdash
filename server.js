@@ -6,6 +6,8 @@ const path = require('path');
 const { Pool } = require('pg');
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend");
 const multer = require('multer');
+const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +24,7 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_AGENT_ID = process.env.ELEVENLABS_AGENT_ID;
 const ELEVENLABS_PHONE_NUMBER_ID = process.env.ELEVENLABS_PHONE_NUMBER_ID;
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/twilio/outbound-call';
-const ELEVENLABS_AGENTS_URL = 'https://api.elevenlabs.io/v1/convai/agents';
+const ELEVENLABS_AGENT_UPDATE_URL = 'https://api.elevenlabs.io/v1/convai/agents';
 
 // MailerSend configuration
 const mailerSend = new MailerSend({
@@ -38,6 +40,15 @@ const emailConfig = {
     toName: 'SkyIQ User'
 };
 
+// Web scraping configuration
+const scrapingConfig = {
+    maxContentLength: 50000, // Maximum content length per URL
+    timeout: 30000, // 30 second timeout
+    maxConcurrentScrapes: 3, // Maximum concurrent scraping operations
+    userAgent: 'SkyIQ-Bot/1.0 (+https://skyiq.ai/bot)',
+    retryAttempts: 2
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -45,13 +56,15 @@ app.use(express.static('public'));
 
 // Database setup
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/elevenlabs_calls',
+    connectionString: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/skyiq_calls',
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Global batch processing state
 let currentBatch = null;
 let batchQueue = [];
+let scrapingQueue = [];
+let activeScrapes = 0;
 
 // Helper function for duration formatting
 function formatDuration(seconds) {
@@ -67,7 +80,248 @@ function formatDuration(seconds) {
     }
 }
 
-// Email notification function using MailerSend (only for inbound calls)
+// Text cleaning and extraction utilities
+function cleanText(text) {
+    return text
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .replace(/\n\s*\n/g, '\n') // Remove empty lines
+        .replace(/[^\w\s\.,!?;:()\-'"]/g, '') // Remove special characters except basic punctuation
+        .trim()
+        .substring(0, scrapingConfig.maxContentLength);
+}
+
+function extractMainContent($) {
+    // Remove unwanted elements
+    $('script, style, nav, header, footer, aside, .advertisement, .ad, .sidebar, .menu').remove();
+    
+    // Try to find main content areas
+    const contentSelectors = [
+        'main',
+        '[role="main"]',
+        '.main-content',
+        '.content',
+        'article',
+        '.post-content',
+        '.entry-content',
+        '.page-content',
+        '#content',
+        '#main'
+    ];
+    
+    for (const selector of contentSelectors) {
+        const element = $(selector);
+        if (element.length && element.text().trim().length > 200) {
+            return cleanText(element.text());
+        }
+    }
+    
+    // Fallback to body content
+    return cleanText($('body').text());
+}
+
+// Web scraping function with multiple strategies
+async function scrapeWebsite(url) {
+    console.log(`🕷️ Starting scrape for: ${url}`);
+    
+    let browser;
+    let lastError;
+    
+    for (let attempt = 1; attempt <= scrapingConfig.retryAttempts; attempt++) {
+        try {
+            // Strategy 1: Try simple fetch with Cheerio first
+            if (attempt === 1) {
+                console.log(`🔍 Attempt ${attempt}: Using fetch + Cheerio for ${url}`);
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), scrapingConfig.timeout);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': scrapingConfig.userAgent,
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                        'Accept-Encoding': 'gzip, deflate',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1'
+                    },
+                    signal: controller.signal,
+                    timeout: scrapingConfig.timeout
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const html = await response.text();
+                const $ = cheerio.load(html);
+                const content = extractMainContent($);
+                
+                if (content.length < 100) {
+                    throw new Error('Content too short, trying browser method');
+                }
+                
+                console.log(`✅ Successfully scraped ${url} with Cheerio (${content.length} chars)`);
+                return {
+                    content,
+                    method: 'cheerio',
+                    contentLength: content.length,
+                    title: $('title').text().trim() || 'Untitled'
+                };
+            }
+            
+            // Strategy 2: Use Puppeteer for JavaScript-heavy sites
+            console.log(`🤖 Attempt ${attempt}: Using Puppeteer for ${url}`);
+            
+            browser = await puppeteer.launch({
+                headless: true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                    '--disable-gpu'
+                ]
+            });
+            
+            const page = await browser.newPage();
+            
+            // Set user agent and viewport
+            await page.setUserAgent(scrapingConfig.userAgent);
+            await page.setViewport({ width: 1366, height: 768 });
+            
+            // Block unnecessary resources to speed up loading
+            await page.setRequestInterception(true);
+            page.on('request', (req) => {
+                const resourceType = req.resourceType();
+                if (['image', 'font', 'media'].includes(resourceType)) {
+                    req.abort();
+                } else {
+                    req.continue();
+                }
+            });
+            
+            // Navigate to the page
+            await page.goto(url, {
+                waitUntil: 'networkidle0',
+                timeout: scrapingConfig.timeout
+            });
+            
+            // Wait a bit for dynamic content to load
+            await page.waitForTimeout(2000);
+            
+            // Extract content
+            const result = await page.evaluate(() => {
+                // Remove unwanted elements
+                const unwantedSelectors = [
+                    'script', 'style', 'nav', 'header', 'footer', 'aside',
+                    '.advertisement', '.ad', '.sidebar', '.menu', '.popup',
+                    '.modal', '.overlay', '.cookie-banner'
+                ];
+                
+                unwantedSelectors.forEach(selector => {
+                    const elements = document.querySelectorAll(selector);
+                    elements.forEach(el => el.remove());
+                });
+                
+                // Try to find main content
+                const contentSelectors = [
+                    'main', '[role="main"]', '.main-content', '.content',
+                    'article', '.post-content', '.entry-content', '.page-content',
+                    '#content', '#main'
+                ];
+                
+                let content = '';
+                const title = document.title || 'Untitled';
+                
+                for (const selector of contentSelectors) {
+                    const element = document.querySelector(selector);
+                    if (element && element.innerText.trim().length > 200) {
+                        content = element.innerText.trim();
+                        break;
+                    }
+                }
+                
+                // Fallback to body content
+                if (!content) {
+                    content = document.body.innerText.trim();
+                }
+                
+                return { content, title };
+            });
+            
+            await browser.close();
+            browser = null;
+            
+            const cleanedContent = cleanText(result.content);
+            
+            if (cleanedContent.length < 100) {
+                throw new Error('Extracted content too short');
+            }
+            
+            console.log(`✅ Successfully scraped ${url} with Puppeteer (${cleanedContent.length} chars)`);
+            return {
+                content: cleanedContent,
+                method: 'puppeteer',
+                contentLength: cleanedContent.length,
+                title: result.title
+            };
+            
+        } catch (error) {
+            lastError = error;
+            console.log(`❌ Attempt ${attempt} failed for ${url}: ${error.message}`);
+            
+            if (browser) {
+                try {
+                    await browser.close();
+                } catch (closeError) {
+                    console.error('Error closing browser:', closeError);
+                }
+                browser = null;
+            }
+            
+            if (attempt < scrapingConfig.retryAttempts) {
+                console.log(`⏳ Waiting before retry ${attempt + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+            }
+        }
+    }
+    
+    throw new Error(`Failed to scrape ${url} after ${scrapingConfig.retryAttempts} attempts. Last error: ${lastError.message}`);
+}
+
+// Queue-based scraping to prevent overload
+async function processScrapeQueue() {
+    while (scrapingQueue.length > 0 && activeScrapes < scrapingConfig.maxConcurrentScrapes) {
+        const { url, resolve, reject } = scrapingQueue.shift();
+        activeScrapes++;
+        
+        scrapeWebsite(url)
+            .then(result => {
+                activeScrapes--;
+                resolve(result);
+                processScrapeQueue(); // Process next in queue
+            })
+            .catch(error => {
+                activeScrapes--;
+                reject(error);
+                processScrapeQueue(); // Process next in queue
+            });
+    }
+}
+
+function queueScrape(url) {
+    return new Promise((resolve, reject) => {
+        scrapingQueue.push({ url, resolve, reject });
+        processScrapeQueue();
+    });
+}
+
+// Email notification function using MailerSend (updated with SkyIQ branding)
 async function sendCallNotification(callData) {
     if (!emailConfig.enabled || !emailConfig.toEmail || !process.env.MAILERSEND_API_KEY || callData.call_type === 'outbound') {
         return;
@@ -82,7 +336,7 @@ async function sendCallNotification(callData) {
         .setSubject(`📞 Inbound Call - ${callData.caller_number} - SkyIQ`)
         .setHtml(`
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-                <div style="background: linear-gradient(135deg, #4f46e5, #06b6d4); padding: 30px 20px; text-align: center; color: white; border-radius: 12px 12px 0 0;">
+                <div style="background: linear-gradient(135deg, #009AEE, #0080CC); padding: 30px 20px; text-align: center; color: white; border-radius: 12px 12px 0 0;">
                     <div style="display: inline-block; background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; margin-bottom: 15px; font-size: 24px;">📞</div>
                     <h1 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700;">New Inbound Call</h1>
                     <p style="margin: 0; opacity: 0.9; font-size: 16px;">SkyIQ Dashboard Notification</p>
@@ -94,15 +348,15 @@ async function sendCallNotification(callData) {
                     <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px;">
                         <table style="width: 100%; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 12px 0; font-weight: 600; color: #4f46e5; width: 130px; vertical-align: top;">📞 Phone:</td>
+                                <td style="padding: 12px 0; font-weight: 600; color: #009AEE; width: 130px; vertical-align: top;">📞 Phone:</td>
                                 <td style="padding: 12px 0; font-family: 'SF Mono', Monaco, monospace; font-size: 16px; color: #1e293b;">${callData.caller_number}</td>
                             </tr>
                             <tr style="border-top: 1px solid #e2e8f0;">
-                                <td style="padding: 12px 0; font-weight: 600; color: #4f46e5; vertical-align: top;">📅 Date:</td>
+                                <td style="padding: 12px 0; font-weight: 600; color: #009AEE; vertical-align: top;">📅 Date:</td>
                                 <td style="padding: 12px 0; color: #1e293b;">${new Date(callData.timestamp).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
                             </tr>
                             <tr style="border-top: 1px solid #e2e8f0;">
-                                <td style="padding: 12px 0; font-weight: 600; color: #4f46e5; vertical-align: top;">⏱️ Duration:</td>
+                                <td style="padding: 12px 0; font-weight: 600; color: #009AEE; vertical-align: top;">⏱️ Duration:</td>
                                 <td style="padding: 12px 0; color: #1e293b;">${formatDuration(callData.duration)}</td>
                             </tr>
                         </table>
@@ -110,7 +364,7 @@ async function sendCallNotification(callData) {
                     
                     <div style="text-align: center; margin-top: 30px;">
                         <a href="${process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'}" 
-                           style="display: inline-block; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                           style="display: inline-block; background: linear-gradient(135deg, #009AEE, #0080CC); color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(0, 154, 238, 0.3);">
                             🖥️ View Dashboard
                         </a>
                     </div>
@@ -140,94 +394,39 @@ async function initializeDatabase() {
                 status VARCHAR(50) DEFAULT 'completed',
                 call_type VARCHAR(50) DEFAULT 'inbound',
                 transcript TEXT,
+                conversation_id VARCHAR(255),
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
         `);
 
-        // Check if conversation_id column exists and add it if missing
-        const checkColumn = await pool.query(`
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'calls' AND column_name = 'conversation_id'
-        `);
-
-        if (checkColumn.rows.length === 0) {
-            console.log('🔧 Adding missing conversation_id column...');
-            await pool.query(`
-                ALTER TABLE calls 
-                ADD COLUMN conversation_id VARCHAR(255)
-            `);
-            console.log('✅ conversation_id column added successfully');
-        }
-
-        // Create prompts table for storing AI agent prompts
+        // Create scraped_data table
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS prompts (
-                id SERIAL PRIMARY KEY,
-                system_prompt TEXT,
-                first_message TEXT,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            CREATE TABLE IF NOT EXISTS scraped_data (
+                id VARCHAR(255) PRIMARY KEY,
+                url TEXT NOT NULL,
+                title VARCHAR(500),
+                content TEXT NOT NULL,
+                content_length INTEGER DEFAULT 0,
+                scraping_method VARCHAR(50),
+                scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                status VARCHAR(50) DEFAULT 'active',
+                error_message TEXT
             )
         `);
 
-        // Insert default prompt if none exists
-        const existingPrompt = await pool.query('SELECT COUNT(*) FROM prompts');
-        if (existingPrompt.rows[0].count === '0') {
-            await pool.query(`
-                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
-            `, [
-                `You are Andy, a professional AI voice agent for SkyIQ, specializing in AI voice solutions and customer service automation.
-
-**Your Role:**
-- Handle both inbound customer inquiries and outbound sales calls
-- Provide expert guidance on AI voice technology
-- Maintain a professional, helpful, and engaging demeanor
-- Focus on understanding customer needs and providing valuable solutions
-
-**For Inbound Calls:**
-- Greet warmly: "Thank you for calling SkyIQ! This is Andy. How can I help you today?"
-- Listen actively to understand their specific needs
-- Ask clarifying questions to better serve them
-- Provide detailed information about SkyIQ's AI voice solutions
-- Collect contact information when appropriate
-- Always end with clear next steps and follow-up commitments
-
-**For Outbound Calls:**
-- Introduce yourself: "Hi, this is Andy calling from SkyIQ. Is this [Customer Name]?"
-- Ask for permission: "Do you have a moment to discuss how AI voice technology could benefit your business?"
-- Clearly explain the purpose of your call
-- Focus on how SkyIQ's solutions can solve their specific challenges
-- Schedule demos or follow-up meetings when appropriate
-
-**Key Topics You Can Discuss:**
-- AI voice agent implementation and benefits
-- Automated customer service solutions
-- Sales call automation and lead qualification
-- Custom voice application development
-- Integration with existing business systems
-- ROI and cost savings from AI voice solutions
-- Technical specifications and requirements
-
-**Conversation Guidelines:**
-- Keep responses conversational and concise (1-2 sentences typically)
-- Show genuine interest in their business challenges
-- Use examples and case studies when relevant
-- Handle objections professionally and with empathy
-- If you don't know something specific, offer to connect them with a specialist
-- Always maintain confidence in SkyIQ's capabilities while being honest about limitations
-
-**Data Collection Priority:**
-- Company name and industry
-- Current communication/customer service challenges
-- Contact information (name, email, phone)
-- Decision-making timeline
-- Budget considerations (when appropriate)
-
-Remember: Every conversation is an opportunity to build trust and demonstrate SkyIQ's commitment to solving real business problems with advanced AI voice technology.`,
-                "Hello! This is Andy from SkyIQ. Thanks for taking my call. How are you doing today?"
-            ]);
-        }
+        // Create agent_prompts table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agent_prompts (
+                id SERIAL PRIMARY KEY,
+                system_prompt TEXT NOT NULL,
+                first_message TEXT,
+                includes_scraped_data BOOLEAN DEFAULT false,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                is_current BOOLEAN DEFAULT true
+            )
+        `);
 
         // Create batches table
         await pool.query(`
@@ -249,9 +448,6 @@ Remember: Every conversation is an opportunity to build trust and demonstrate Sk
                 id VARCHAR(255) PRIMARY KEY,
                 batch_id VARCHAR(255) REFERENCES batches(id),
                 phone_number VARCHAR(50),
-                first_name VARCHAR(100),
-                last_name VARCHAR(100),
-                company VARCHAR(200),
                 status VARCHAR(50) DEFAULT 'pending',
                 call_id VARCHAR(255),
                 error_message TEXT,
@@ -260,140 +456,49 @@ Remember: Every conversation is an opportunity to build trust and demonstrate Sk
             )
         `);
 
-        console.log('Database tables initialized successfully');
+        console.log('✅ Database tables initialized successfully');
     } catch (error) {
-        console.error('Database initialization error:', error);
+        console.error('❌ Database initialization error:', error);
     }
 }
 
 initializeDatabase();
 
-function extractFirstMessageFromPrompt(systemPrompt) {
-    console.log('Debugging prompt:', systemPrompt.substring(0, 200));
-    
-    // Very specific patterns for your prompt format
-    let agentName = "your AI assistant";
-    let company = "";
-    
-    // Extract name - looking for "named MJ"
-    const nameMatch = systemPrompt.match(/named\s+([A-Za-z]+)/i);
-    if (nameMatch && nameMatch[1]) {
-        agentName = nameMatch[1].trim();
-        console.log('Found name:', agentName);
-    }
-    
-    // Extract company - looking for "work for MJs Movers" or similar
-    const companyMatch = systemPrompt.match(/work for\s+([A-Za-z\s']+?)(?:\s+and|\.|$)/i);
-    if (companyMatch && companyMatch[1]) {
-        company = ` from ${companyMatch[1].trim()}`;
-        console.log('Found company:', company);
-    }
-    
-    const result = `Hello! This is ${agentName}${company}. How can I help you today?`;
-    console.log('Generated greeting:', result);
-    return result;
-}
-
-async function updateElevenLabsPrompt(systemPrompt, firstMessage) {
+// Function to update ElevenLabs agent prompt
+async function updateElevenLabsPrompt(systemPrompt, firstMessage = '') {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID environment variables.');
+        throw new Error('ElevenLabs configuration incomplete');
     }
 
     try {
-        const updateData = {
-            conversation_config: {
-                agent: {
-                    first_message: firstMessage || extractFirstMessageFromPrompt(systemPrompt),
-                    prompt: {
-                        prompt: systemPrompt,
-                        ignore_default_personality: true
-                    }
-                }
-            }
-        };
-
-        console.log('Updating ElevenLabs agent with nested structure:', {
-            prompt: systemPrompt.substring(0, 100) + '...',
-            first_message: updateData.conversation_config.agent.first_message,
-            ignore_default_personality: true
-        });
-
-        const response = await fetch(`${ELEVENLABS_AGENTS_URL}/${ELEVENLABS_AGENT_ID}`, {
+        const response = await fetch(`${ELEVENLABS_AGENT_UPDATE_URL}/${ELEVENLABS_AGENT_ID}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'xi-api-key': ELEVENLABS_API_KEY
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify({
+                prompt: {
+                    prompt: systemPrompt,
+                    ...(firstMessage && { first_message: firstMessage })
+                }
+            })
         });
 
         if (!response.ok) {
             const errorData = await response.text();
-            console.error('ElevenLabs API Error Response:', {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorData
-            });
             throw new Error(`ElevenLabs API error: ${response.status} - ${errorData}`);
         }
 
-        const data = await response.json();
-        console.log('ElevenLabs agent updated successfully');
-        return data;
+        const result = await response.json();
+        console.log('✅ ElevenLabs agent prompt updated successfully');
+        return result;
+
     } catch (error) {
-        console.error('Error updating ElevenLabs prompt:', error);
+        console.error('❌ Failed to update ElevenLabs prompt:', error);
         throw error;
     }
 }
-
-// Enhanced test endpoint for better debugging
-app.get('/test-elevenlabs-agent', async (req, res) => {
-    try {
-        if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
-            return res.status(400).json({ 
-                error: 'ElevenLabs configuration incomplete',
-                configured: {
-                    apiKey: !!ELEVENLABS_API_KEY,
-                    agentId: !!ELEVENLABS_AGENT_ID,
-                    phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-                }
-            });
-        }
-
-        // Get current agent configuration
-        const agentData = await getElevenLabsAgent();
-        
-        res.json({
-            success: true,
-            message: 'ElevenLabs agent configuration retrieved successfully',
-            agent: {
-                name: agentData.name,
-                system_prompt: agentData.system_prompt?.substring(0, 200) + '...' || 'Not set',
-                first_message: agentData.first_message || 'Not set',
-                ignore_default_personality: agentData.ignore_default_personality || false,
-                voice_id: agentData.voice?.voice_id || 'Not set',
-                model_id: agentData.language_model?.model_id || 'Not set'
-            },
-            configured: {
-                apiKey: true,
-                agentId: true,
-                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-            }
-        });
-
-    } catch (error) {
-        console.error('Test ElevenLabs agent failed:', error);
-        res.status(500).json({
-            error: 'Failed to test ElevenLabs agent configuration',
-            details: error.message,
-            configured: {
-                apiKey: !!ELEVENLABS_API_KEY,
-                agentId: !!ELEVENLABS_AGENT_ID,
-                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-            }
-        });
-    }
-});
 
 // Function to initiate outbound call via ElevenLabs API
 async function initiateOutboundCall(phoneNumber) {
@@ -455,11 +560,7 @@ async function processBatch(batchId) {
 
         for (const batchCall of batchCalls.rows) {
             try {
-                const customerName = batchCall.first_name && batchCall.last_name 
-                    ? `${batchCall.first_name} ${batchCall.last_name}`
-                    : batchCall.first_name || 'Customer';
-                
-                console.log(`📞 Calling ${customerName} at ${batchCall.phone_number}...`);
+                console.log(`📞 Calling ${batchCall.phone_number}...`);
                 
                 // Update call status to processing
                 await pool.query(
@@ -467,11 +568,10 @@ async function processBatch(batchId) {
                     ['processing', batchCall.id]
                 );
 
-                // Broadcast progress update with customer info
+                // Broadcast progress update
                 io.emit('batchProgress', {
                     batchId: batchId,
                     currentCall: batchCall.phone_number,
-                    currentCustomer: customerName,
                     progress: await getBatchProgress(batchId)
                 });
 
@@ -513,7 +613,7 @@ async function processBatch(batchId) {
                 // Broadcast new call
                 io.emit('newCall', callData);
 
-                console.log(`✅ Call initiated successfully to ${customerName} (${batchCall.phone_number})`);
+                console.log(`✅ Call initiated successfully to ${batchCall.phone_number}`);
 
                 // Wait 2 seconds between calls to be respectful
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -583,54 +683,26 @@ async function getBatchProgress(batchId) {
     return result.rows[0];
 }
 
-// Parse CSV content with enhanced format support
+// Parse CSV content
 function parseCSV(csvContent) {
     const lines = csvContent.trim().split('\n');
-    const contacts = [];
+    const phoneNumbers = [];
     
-    if (lines.length === 0) return contacts;
+    // Skip header row if it exists
+    const startIndex = lines[0].toLowerCase().includes('phone') ? 1 : 0;
     
-    // Check if first line has headers
-    const firstLine = lines[0].toLowerCase();
-    const hasHeaders = firstLine.includes('phone') || firstLine.includes('name') || firstLine.includes('company');
-    
-    if (hasHeaders) {
-        // Parse with headers
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-        const phoneIndex = headers.findIndex(h => h.includes('phone'));
-        const firstNameIndex = headers.findIndex(h => h.includes('first') && h.includes('name'));
-        const lastNameIndex = headers.findIndex(h => h.includes('last') && h.includes('name'));
-        const companyIndex = headers.findIndex(h => h.includes('company'));
-        
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',').map(v => v.trim().replace(/['"]/g, ''));
-            const phoneNumber = values[phoneIndex] || '';
-            
+    for (let i = startIndex; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line) {
+            // Extract phone number (first column)
+            const phoneNumber = line.split(',')[0].trim().replace(/['"]/g, '');
             if (phoneNumber && phoneNumber.length >= 10) {
-                contacts.push({
-                    phone_number: phoneNumber,
-                    first_name: values[firstNameIndex] || '',
-                    last_name: values[lastNameIndex] || '',
-                    company: values[companyIndex] || ''
-                });
-            }
-        }
-    } else {
-        // Simple format - one phone number per line
-        for (const line of lines) {
-            const phoneNumber = line.trim().replace(/['"]/g, '');
-            if (phoneNumber && phoneNumber.length >= 10) {
-                contacts.push({
-                    phone_number: phoneNumber,
-                    first_name: '',
-                    last_name: '',
-                    company: ''
-                });
+                phoneNumbers.push(phoneNumber);
             }
         }
     }
     
-    return contacts;
+    return phoneNumbers;
 }
 
 // Serve the main HTML page
@@ -638,114 +710,213 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API endpoint to get current prompt
-app.get('/api/prompt', async (req, res) => {
+// API endpoint for web scraping
+app.post('/api/scrape', async (req, res) => {
+    const { url } = req.body;
+    
+    if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+    }
+
     try {
-        const result = await pool.query('SELECT * FROM prompts ORDER BY updated_at DESC LIMIT 1');
-        if (result.rows.length === 0) {
-            return res.json({ 
-                system_prompt: '', 
-                first_message: '',
-                success: true 
+        // Validate URL
+        const urlObj = new URL(url);
+        if (!['http:', 'https:'].includes(urlObj.protocol)) {
+            return res.status(400).json({ error: 'Only HTTP and HTTPS URLs are supported' });
+        }
+
+        console.log(`🕷️ Scraping request for: ${url}`);
+
+        // Check if URL was recently scraped
+        const existingScrape = await pool.query(
+            'SELECT * FROM scraped_data WHERE url = $1 AND scraped_at > NOW() - INTERVAL \'1 hour\' ORDER BY scraped_at DESC LIMIT 1',
+            [url]
+        );
+
+        if (existingScrape.rows.length > 0) {
+            console.log(`📋 Using cached data for: ${url}`);
+            return res.json({
+                success: true,
+                data: existingScrape.rows[0].content,
+                cached: true,
+                scrapedAt: existingScrape.rows[0].scraped_at,
+                method: existingScrape.rows[0].scraping_method,
+                title: existingScrape.rows[0].title
             });
         }
+
+        // Perform scraping
+        const result = await queueScrape(url);
         
-        const prompt = result.rows[0];
-        res.json({ 
-            system_prompt: prompt.system_prompt || '',
-            first_message: prompt.first_message || '',
-            updated_at: prompt.updated_at,
-            success: true 
+        // Store in database
+        const scrapeId = `scrape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await pool.query(
+            `INSERT INTO scraped_data (id, url, title, content, content_length, scraping_method) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [scrapeId, url, result.title, result.content, result.contentLength, result.method]
+        );
+
+        console.log(`✅ Scraping completed for: ${url} (${result.contentLength} characters)`);
+
+        res.json({
+            success: true,
+            data: result.content,
+            cached: false,
+            scrapedAt: new Date().toISOString(),
+            method: result.method,
+            title: result.title,
+            contentLength: result.contentLength
         });
+
+    } catch (error) {
+        console.error(`❌ Scraping failed for ${url}:`, error);
+        
+        // Store error in database
+        try {
+            const scrapeId = `scrape-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            await pool.query(
+                `INSERT INTO scraped_data (id, url, content, status, error_message) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [scrapeId, url, '', 'error', error.message]
+            );
+        } catch (dbError) {
+            console.error('Error storing scrape error:', dbError);
+        }
+
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            url: url
+        });
+    }
+});
+
+// API endpoint to get scraped data
+app.get('/api/scraped-data', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 50',
+            ['active']
+        );
+        
+        res.json({
+            success: true,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching scraped data:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// API endpoint to delete scraped data
+app.delete('/api/scraped-data/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        await pool.query('DELETE FROM scraped_data WHERE id = $1', [id]);
+        res.json({ success: true, message: 'Scraped data deleted' });
+    } catch (error) {
+        console.error('Error deleting scraped data:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// API endpoint to get current agent prompt
+app.get('/api/prompt', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM agent_prompts WHERE is_current = true ORDER BY updated_at DESC LIMIT 1'
+        );
+        
+        if (result.rows.length > 0) {
+            res.json({
+                success: true,
+                system_prompt: result.rows[0].system_prompt,
+                first_message: result.rows[0].first_message,
+                includes_scraped_data: result.rows[0].includes_scraped_data
+            });
+        } else {
+            // Return default prompt if none exists
+            res.json({
+                success: true,
+                system_prompt: 'You are a helpful AI assistant for SkyIQ. Please assist callers professionally and courteously.',
+                first_message: '',
+                includes_scraped_data: false
+            });
+        }
     } catch (error) {
         console.error('Error fetching prompt:', error);
         res.status(500).json({ error: 'Database error' });
     }
 });
 
-// API endpoint to update prompt from dashboard
+// API endpoint to update agent prompt
 app.post('/api/prompt', async (req, res) => {
-    const { system_prompt, first_message } = req.body;
+    const { system_prompt, first_message = '', auto_include_scraped_data = false } = req.body;
     
     if (!system_prompt) {
         return res.status(400).json({ error: 'System prompt is required' });
     }
 
     try {
-        // Update prompt in database
-        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
-        
-        if (existingPrompt.rows.length > 0) {
-            await pool.query(`
-                UPDATE prompts SET 
-                system_prompt = $1, 
-                first_message = $2, 
-                updated_at = NOW() 
-                WHERE id = $3
-            `, [system_prompt, first_message || '', existingPrompt.rows[0].id]);
-        } else {
-            await pool.query(`
-                INSERT INTO prompts (system_prompt, first_message) VALUES ($1, $2)
-            `, [system_prompt, first_message || '']);
+        let finalPrompt = system_prompt;
+        let includesScrapedData = false;
+
+        // Auto-include scraped data if requested
+        if (auto_include_scraped_data) {
+            const scrapedDataResult = await pool.query(
+                'SELECT url, title, content FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 10',
+                ['active']
+            );
+
+            if (scrapedDataResult.rows.length > 0) {
+                let knowledgeSection = '\n\n--- WEBSITE KNOWLEDGE BASE ---\n';
+                
+                for (const item of scrapedDataResult.rows) {
+                    const contentPreview = item.content.substring(0, 2000);
+                    knowledgeSection += `\n[Source: ${item.url}]\n[Title: ${item.title}]\n${contentPreview}${item.content.length > 2000 ? '...' : ''}\n`;
+                }
+                
+                knowledgeSection += '--- END KNOWLEDGE BASE ---\n';
+                finalPrompt += knowledgeSection;
+                includesScrapedData = true;
+            }
         }
 
-        // Update ElevenLabs agent with new prompt
+        // Mark all existing prompts as not current
+        await pool.query('UPDATE agent_prompts SET is_current = false');
+
+        // Insert new prompt
+        await pool.query(
+            `INSERT INTO agent_prompts (system_prompt, first_message, includes_scraped_data, is_current) 
+             VALUES ($1, $2, $3, true)`,
+            [finalPrompt, first_message, includesScrapedData]
+        );
+
+        // Update ElevenLabs agent if configured
         try {
-            await updateElevenLabsPrompt(system_prompt, first_message);
-            console.log('✅ ElevenLabs agent prompt updated successfully');
-            
-            res.json({ 
-                success: true, 
-                message: 'Prompt updated successfully in both database and ElevenLabs'
-            });
+            if (ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID) {
+                await updateElevenLabsPrompt(finalPrompt, first_message);
+                console.log('✅ ElevenLabs agent prompt updated');
+            }
         } catch (elevenLabsError) {
-            console.error('⚠️ Failed to update ElevenLabs prompt:', elevenLabsError.message);
-            
-            res.json({ 
-                success: true, 
-                message: 'Prompt saved to database, but failed to update ElevenLabs. Please check your API credentials.',
-                warning: elevenLabsError.message
-            });
+            console.error('❌ Failed to update ElevenLabs prompt:', elevenLabsError);
+            // Don't fail the whole request if ElevenLabs update fails
         }
+
+        res.json({ 
+            success: true, 
+            message: 'Prompt updated successfully',
+            includes_scraped_data: includesScrapedData,
+            prompt_length: finalPrompt.length
+        });
 
     } catch (error) {
-        console.error('Failed to update prompt:', error);
+        console.error('Error updating prompt:', error);
         res.status(500).json({ 
             error: 'Failed to update prompt', 
             details: error.message 
-        });
-    }
-});
-
-// API endpoint to sync prompt from ElevenLabs
-app.get('/api/prompt/sync', async (req, res) => {
-    try {
-        const agentData = await getElevenLabsAgent();
-        
-        // Update local database with ElevenLabs data
-        const existingPrompt = await pool.query('SELECT id FROM prompts ORDER BY updated_at DESC LIMIT 1');
-        
-        if (existingPrompt.rows.length > 0) {
-            await pool.query(`
-                UPDATE prompts SET 
-                system_prompt = $1, 
-                first_message = $2, 
-                updated_at = NOW() 
-                WHERE id = $3
-            `, [agentData.system_prompt || '', agentData.first_message || '']);
-        }
-
-        res.json({
-            success: true,
-            message: 'Prompt synced from ElevenLabs successfully',
-            system_prompt: agentData.system_prompt,
-            first_message: agentData.first_message
-        });
-    } catch (error) {
-        console.error('Failed to sync prompt:', error);
-        res.status(500).json({
-            error: 'Failed to sync prompt from ElevenLabs',
-            details: error.message
         });
     }
 });
@@ -825,9 +996,9 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
         }
 
         const csvContent = req.file.buffer.toString('utf-8');
-        const contacts = parseCSV(csvContent);
+        const phoneNumbers = parseCSV(csvContent);
 
-        if (contacts.length === 0) {
+        if (phoneNumbers.length === 0) {
             return res.status(400).json({ error: 'No valid phone numbers found in CSV' });
         }
 
@@ -837,23 +1008,23 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
 
         await pool.query(
             'INSERT INTO batches (id, name, total_calls) VALUES ($1, $2, $3)',
-            [batchId, batchName, contacts.length]
+            [batchId, batchName, phoneNumbers.length]
         );
 
         // Create batch call records
-        for (const contact of contacts) {
+        for (const phoneNumber of phoneNumbers) {
             const batchCallId = `bc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             await pool.query(
-                'INSERT INTO batch_calls (id, batch_id, phone_number, first_name, last_name, company) VALUES ($1, $2, $3, $4, $5, $6)',
-                [batchCallId, batchId, contact.phone_number, contact.first_name, contact.last_name, contact.company]
+                'INSERT INTO batch_calls (id, batch_id, phone_number) VALUES ($1, $2, $3)',
+                [batchCallId, batchId, phoneNumber]
             );
         }
 
         res.json({
             success: true,
-            message: `Batch created with ${contacts.length} contacts`,
+            message: `Batch created with ${phoneNumbers.length} phone numbers`,
             batchId: batchId,
-            totalCalls: contacts.length
+            totalCalls: phoneNumbers.length
         });
 
     } catch (error) {
@@ -935,8 +1106,7 @@ app.get('/api/batches', async (req, res) => {
 
 // Webhook endpoint - ElevenLabs will POST here
 app.post('/webhook', async (req, res) => {
-    console.log('Webhook received from ElevenLabs');
-    console.log('🔍 Full webhook data:', JSON.stringify(req.body, null, 2));
+    console.log('📞 Webhook received from ElevenLabs');
     
     const webhookData = req.body;
     
@@ -1017,7 +1187,7 @@ app.post('/webhook', async (req, res) => {
             }
         }
     } catch (error) {
-        console.error('Database error:', error);
+        console.error('❌ Database error:', error);
     }
     
     res.status(200).json({ success: true, message: 'Webhook received' });
@@ -1038,14 +1208,19 @@ app.get('/api/calls', async (req, res) => {
 app.get('/health', async (req, res) => {
     try {
         const result = await pool.query('SELECT COUNT(*) FROM calls');
+        const scrapedResult = await pool.query('SELECT COUNT(*) FROM scraped_data WHERE status = $1', ['active']);
+        
         res.json({ 
             status: 'healthy', 
             uptime: process.uptime(),
             callCount: result.rows[0].count,
+            scrapedDataCount: scrapedResult.rows[0].count,
             emailNotifications: emailConfig.enabled,
             elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID),
             currentBatch: currentBatch,
             queueLength: batchQueue.length,
+            scrapingQueueLength: scrapingQueue.length,
+            activeScrapes: activeScrapes,
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -1117,6 +1292,34 @@ app.get('/test-elevenlabs', async (req, res) => {
     }
 });
 
+// Test web scraping endpoint
+app.post('/test-scraping', async (req, res) => {
+    const testUrl = req.body.url || 'https://example.com';
+    
+    try {
+        console.log(`🧪 Testing scraping with: ${testUrl}`);
+        const result = await queueScrape(testUrl);
+        
+        res.json({
+            success: true,
+            message: 'Scraping test successful',
+            url: testUrl,
+            method: result.method,
+            contentLength: result.contentLength,
+            title: result.title,
+            preview: result.content.substring(0, 200) + (result.content.length > 200 ? '...' : '')
+        });
+
+    } catch (error) {
+        console.error('Scraping test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            url: testUrl
+        });
+    }
+});
+
 // Test email endpoint
 app.post('/test-email', async (req, res) => {
     const testCallData = {
@@ -1141,47 +1344,75 @@ app.post('/test-email', async (req, res) => {
 
 // Socket.io connection handling
 io.on('connection', async (socket) => {
-    console.log('Client connected');
+    console.log('🔌 Client connected');
     
     try {
+        // Send call history
         const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
         socket.emit('callHistory', result.rows);
         
-        // Send current batches
+        // Send batch history
         const batches = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 5');
         socket.emit('batchHistory', batches.rows);
+        
+        // Send scraped data
+        const scrapedData = await pool.query('SELECT * FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 20', ['active']);
+        socket.emit('scrapedData', scrapedData.rows);
+        
     } catch (error) {
-        console.error('Error sending call history:', error);
+        console.error('Error sending initial data:', error);
     }
     
     socket.on('disconnect', () => {
-        console.log('Client disconnected');
+        console.log('🔌 Client disconnected');
     });
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+    console.log('\n🛑 Graceful shutdown initiated...');
+    
+    try {
+        // Close database connections
+        await pool.end();
+        console.log('✅ Database connections closed');
+        
+        // Close server
+        server.close(() => {
+            console.log('✅ HTTP server closed');
+            process.exit(0);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error during shutdown:', error);
+        process.exit(1);
+    }
 });
 
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log(`✅ SkyIQ Dashboard Server running on port ${PORT}`);
+    console.log(`\n🚀 SkyIQ Server running on port ${PORT}`);
     console.log(`📡 Webhook endpoint: http://localhost:${PORT}/webhook`);
     console.log(`📊 Dashboard: http://localhost:${PORT}`);
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
+    console.log(`🕷️  Web scraping: POST http://localhost:${PORT}/api/scrape`);
     console.log(`📁 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
-    console.log(`✏️ Prompt management:`);
-    console.log(`   GET  http://localhost:${PORT}/api/prompt - Get current prompt`);
-    console.log(`   POST http://localhost:${PORT}/api/prompt - Update prompt`);
-    console.log(`   GET  http://localhost:${PORT}/api/prompt/sync - Sync from ElevenLabs`);
-    console.log(`🧪 Test endpoints:`);
-    console.log(`   POST http://localhost:${PORT}/test-email - Test email notifications`);
-    console.log(`   GET  http://localhost:${PORT}/test-elevenlabs - Test ElevenLabs API`);
+    console.log(`🤖 Update prompt: POST http://localhost:${PORT}/api/prompt`);
+    console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
+    console.log(`🧪 Test scraping: POST http://localhost:${PORT}/test-scraping`);
     console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
-    console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
+    console.log(`\n📊 System Status:`);
+    console.log(`🗃️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
     console.log(`📧 Email notifications: ${emailConfig.enabled ? 'Enabled (inbound only)' : 'Disabled'}`);
     console.log(`🤖 ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
+    console.log(`🕷️  Web Scraping: Enabled (Max concurrent: ${scrapingConfig.maxConcurrentScrapes})`);
+    
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
         console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
-    console.log(`🎙️ Prompt management: Available via dashboard and API`);
+    
+    console.log(`\n✨ SkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
 });
