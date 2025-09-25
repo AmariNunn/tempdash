@@ -7,7 +7,7 @@ const { Pool } = require('pg');
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend");
 const multer = require('multer');
 const cheerio = require('cheerio');
-const puppeteer = require('puppeteer');
+//const puppeteer = require('puppeteer');
 
 const app = express();
 const server = http.createServer(app);
