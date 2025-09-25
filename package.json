@@ -1,7 +1,7 @@
 {
   "name": "elevenlabs-webhook-dashboard",
   "version": "1.0.0",
-  "description": "Real-time ElevenLabs call history dashboard with webhook support and batch outbound calling",
+  "description": "Real-time ElevenLabs call history dashboard with webhook support, batch outbound calling, and web scraping for AI agent enhancement",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,7 +13,9 @@
     "socket.io": "^4.7.2",
     "pg": "^8.11.3",
     "mailersend": "^2.2.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "cheerio": "^1.0.0-rc.12",
+    "puppeteer": "^21.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
@@ -28,6 +30,10 @@
     "voice-ai",
     "outbound-calls",
     "batch-calling",
-    "sales-automation"
+    "sales-automation",
+    "web-scraping",
+    "skyiq",
+    "ai-agent",
+    "knowledge-base"
   ]
 }
