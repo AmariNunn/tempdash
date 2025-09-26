@@ -10,7 +10,7 @@ const cheerio = require('cheerio');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const fs = require('fs');
-const puppeteer = require('puppeteer');
+const { chromium } = require('playwright');
 
 const app = express();
 const server = http.createServer(app);
@@ -359,7 +359,7 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
     }
 }
 
-// Web scraping function
+// Web scraping function with Playwright
 async function scrapeWebsite(url) {
     console.log(`Starting scrape for: ${url}`);
     
@@ -405,38 +405,20 @@ async function scrapeWebsite(url) {
                 };
             }
             
-            console.log(`Attempt ${attempt}: Using Puppeteer for ${url}`);
+            console.log(`Attempt ${attempt}: Using Playwright for ${url}`);
             
-            browser = await puppeteer.launch({
+            browser = await chromium.launch({
                 headless: true,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu'
-                ]
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
             });
             
             const page = await browser.newPage();
             await page.setUserAgent(scrapingConfig.userAgent);
-            await page.setViewport({ width: 1366, height: 768 });
             
-            await page.setRequestInterception(true);
-            page.on('request', (req) => {
-                const resourceType = req.resourceType();
-                if (['image', 'font', 'media'].includes(resourceType)) {
-                    req.abort();
-                } else {
-                    req.continue();
-                }
+            await page.goto(url, { 
+                waitUntil: 'networkidle',
+                timeout: scrapingConfig.timeout 
             });
-            
-            await page.goto(url, {
-                waitUntil: 'networkidle0',
-                timeout: scrapingConfig.timeout
-            });
-            
-            await page.waitForTimeout(2000);
             
             const result = await page.evaluate(() => {
                 const unwantedSelectors = [
@@ -445,8 +427,7 @@ async function scrapeWebsite(url) {
                 ];
                 
                 unwantedSelectors.forEach(selector => {
-                    const elements = document.querySelectorAll(selector);
-                    elements.forEach(el => el.remove());
+                    document.querySelectorAll(selector).forEach(el => el.remove());
                 });
                 
                 const contentSelectors = [
@@ -481,10 +462,10 @@ async function scrapeWebsite(url) {
                 throw new Error('Extracted content too short');
             }
             
-            console.log(`Successfully scraped ${url} with Puppeteer (${cleanedContent.length} chars)`);
+            console.log(`Successfully scraped ${url} with Playwright (${cleanedContent.length} chars)`);
             return {
                 content: cleanedContent,
-                method: 'puppeteer',
+                method: 'playwright',
                 contentLength: cleanedContent.length,
                 title: result.title
             };
@@ -536,7 +517,9 @@ function queueScrape(url) {
         scrapingQueue.push({ url, resolve, reject });
         processScrapeQueue();
     });
-}// Email notification function
+}
+
+// Email notification function
 async function sendCallNotification(callData) {
     if (!emailConfig.enabled || !emailConfig.toEmail || !process.env.MAILERSEND_API_KEY || callData.call_type === 'outbound') {
         return;
@@ -1520,6 +1503,7 @@ server.listen(PORT, () => {
     console.log(`Email notifications: ${emailConfig.enabled ? 'Enabled' : 'Disabled'}`);
     console.log(`ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
     console.log(`Document Parsing: Enabled (${Object.keys(documentConfig.supportedTypes).join(', ')})`);
+    console.log(`Web Scraping: Enabled with Playwright fallback`);
     
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
         console.log(`Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable calling`);
