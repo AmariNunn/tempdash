@@ -105,26 +105,38 @@
                             <div class="prompt-templates">
                                 <button class="template-btn" onclick="loadTemplate('sales')">
                                     <span class="template-icon">🎯</span>
-                                    Sales
+                                    Sales (Alex)
                                 </button>
                                 <button class="template-btn" onclick="loadTemplate('support')">
                                     <span class="template-icon">🛠️</span>
-                                    Support
+                                    Support (Sam)
                                 </button>
                                 <button class="template-btn" onclick="loadTemplate('appointment')">
                                     <span class="template-icon">📅</span>
-                                    Appointments
+                                    Scheduler (Jordan)
                                 </button>
                                 <button class="template-btn" onclick="loadTemplate('receptionist')">
                                     <span class="template-icon">📋</span>
-                                    Receptionist
+                                    Receptionist (Casey)
                                 </button>
+                            </div>
+                            
+                            <div class="prompt-preview" id="promptPreview" style="display: none;">
+                                <div class="preview-header">
+                                    <strong>Template Preview:</strong>
+                                    <span id="templateName"></span>
+                                </div>
+                                <div class="preview-details">
+                                    <div><strong>Name:</strong> <span id="agentName"></span></div>
+                                    <div><strong>Role:</strong> <span id="agentRole"></span></div>
+                                    <div><strong>Company:</strong> <span id="agentCompany"></span></div>
+                                </div>
                             </div>
                             
                             <textarea 
                                 id="promptEditor" 
                                 class="prompt-editor"
-                                placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
+                                placeholder="Enter your AI agent's instructions here. Click a template above to get started with pre-built prompts for different roles."
                             ></textarea>
                             
                             <div class="prompt-actions">
@@ -135,6 +147,10 @@
                                 <button class="btn secondary" onclick="loadCurrentPrompt()">
                                     <span class="btn-icon">🔄</span>
                                     Reload Current
+                                </button>
+                                <button class="btn secondary" onclick="clearPrompt()">
+                                    <span class="btn-icon">🗑️</span>
+                                    Clear
                                 </button>
                             </div>
                             
@@ -151,7 +167,7 @@
                                 <div class="empty-state">
                                     <div class="empty-icon">📚</div>
                                     <div class="empty-title">No Knowledge Data</div>
-                                    <div class="empty-subtitle">Scrape websites or upload documents to build your agent's knowledge base</div>
+                                    <div class="empty-subtitle">Feature coming soon: Upload documents and scrape websites to enhance your agent's capabilities</div>
                                 </div>
                             </div>
                             
@@ -244,6 +260,10 @@
                 <button class="btn secondary" onclick="viewAllCalls()">
                     <span class="btn-icon">📋</span>
                     View All Calls
+                </button>
+                <button class="btn secondary" onclick="testCall()">
+                    <span class="btn-icon">🧪</span>
+                    Test Call
                 </button>
             </div>
 
