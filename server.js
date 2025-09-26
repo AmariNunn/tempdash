@@ -10,7 +10,6 @@ const cheerio = require('cheerio');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const fs = require('fs');
-const path = require('path');
 //const puppeteer = require('puppeteer');
 
 const app = express();
@@ -1644,3 +1643,4 @@ server.listen(PORT, () => {
     
     console.log(`\n✨ SkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
 });
+
