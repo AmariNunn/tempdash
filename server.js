@@ -19,7 +19,7 @@ const io = socketIo(server);
 // Configure multer for file uploads
 const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for documents
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // ElevenLabs API configuration
@@ -45,16 +45,16 @@ const emailConfig = {
 
 // Web scraping configuration
 const scrapingConfig = {
-    maxContentLength: 50000, // Maximum content length per URL
-    timeout: 30000, // 30 second timeout
-    maxConcurrentScrapes: 3, // Maximum concurrent scraping operations
+    maxContentLength: 50000,
+    timeout: 30000,
+    maxConcurrentScrapes: 3,
     userAgent: 'SkyIQ-Bot/1.0 (+https://skyiq.ai/bot)',
     retryAttempts: 2
 };
 
 // Document parsing configuration
 const documentConfig = {
-    maxContentLength: 100000, // Maximum content length per document
+    maxContentLength: 100000,
     supportedTypes: {
         'application/pdf': 'pdf',
         'text/plain': 'txt',
@@ -63,7 +63,7 @@ const documentConfig = {
         'application/rtf': 'rtf',
         'text/markdown': 'md'
     },
-    maxFileSize: 10 * 1024 * 1024 // 10MB
+    maxFileSize: 10 * 1024 * 1024
 };
 
 // Middleware
@@ -83,7 +83,7 @@ let batchQueue = [];
 let scrapingQueue = [];
 let activeScrapes = 0;
 
-// Helper function for duration formatting
+// Helper functions
 function formatDuration(seconds) {
     if (!seconds || seconds === 0) return '0m 0s';
     const hours = Math.floor(seconds / 3600);
@@ -97,32 +97,21 @@ function formatDuration(seconds) {
     }
 }
 
-// Text cleaning and extraction utilities
 function cleanText(text) {
     return text
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .replace(/\n\s*\n/g, '\n') // Remove empty lines
-        .replace(/[^\w\s\.,!?;:()\-'"]/g, '') // Remove special characters except basic punctuation
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n')
+        .replace(/[^\w\s\.,!?;:()\-'"]/g, '')
         .trim()
         .substring(0, scrapingConfig.maxContentLength);
 }
 
 function extractMainContent($) {
-    // Remove unwanted elements
     $('script, style, nav, header, footer, aside, .advertisement, .ad, .sidebar, .menu').remove();
     
-    // Try to find main content areas
     const contentSelectors = [
-        'main',
-        '[role="main"]',
-        '.main-content',
-        '.content',
-        'article',
-        '.post-content',
-        '.entry-content',
-        '.page-content',
-        '#content',
-        '#main'
+        'main', '[role="main"]', '.main-content', '.content', 'article',
+        '.post-content', '.entry-content', '.page-content', '#content', '#main'
     ];
     
     for (const selector of contentSelectors) {
@@ -132,21 +121,20 @@ function extractMainContent($) {
         }
     }
     
-    // Fallback to body content
     return cleanText($('body').text());
 }
 
-// Enhanced document parsing functions with better error handling
+// Enhanced document parsing function
 async function parseDocument(file) {
-    console.log(`📄 Parsing document: ${file.originalname} (${file.mimetype})`);
+    console.log(`Document parsing: ${file.originalname} (${file.mimetype})`);
     
     const fileType = documentConfig.supportedTypes[file.mimetype];
     if (!fileType) {
-        throw new Error(`Unsupported file type: ${file.mimetype}. Supported types: ${Object.keys(documentConfig.supportedTypes).join(', ')}`);
+        throw new Error(`Unsupported file type: ${file.mimetype}`);
     }
 
     if (file.size > documentConfig.maxFileSize) {
-        throw new Error(`File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB (max: ${documentConfig.maxFileSize / (1024 * 1024)}MB)`);
+        throw new Error(`File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
     }
 
     let content = '';
@@ -156,143 +144,78 @@ async function parseDocument(file) {
     try {
         switch (fileType) {
             case 'pdf':
-                try {
-                    const pdfData = await pdf(file.buffer, {
-                        max: 50, // Maximum pages to parse
-                        version: 'v2.0.550' // Specify PDF.js version
-                    });
-                    content = pdfData.text;
-                    title = pdfData.info?.Title || pdfData.info?.title || file.originalname;
-                    metadata = {
-                        pages: pdfData.numpages,
-                        info: pdfData.info,
-                        author: pdfData.info?.Author || pdfData.info?.author
-                    };
-                    
-                    if (!content || content.trim().length === 0) {
-                        throw new Error('PDF appears to contain no readable text content');
-                    }
-                } catch (pdfError) {
-                    throw new Error(`PDF parsing failed: ${pdfError.message}. The PDF may be corrupted, password-protected, or contain only images.`);
+                const pdfData = await pdf(file.buffer);
+                content = pdfData.text;
+                title = pdfData.info?.Title || file.originalname;
+                metadata = { pages: pdfData.numpages };
+                
+                if (!content || content.trim().length === 0) {
+                    throw new Error('PDF contains no readable text');
                 }
                 break;
 
             case 'txt':
             case 'md':
-                try {
-                    content = file.buffer.toString('utf-8');
-                    if (!content || content.trim().length === 0) {
-                        // Try different encodings
-                        const encodings = ['latin1', 'ascii', 'utf16le'];
-                        for (const encoding of encodings) {
-                            try {
-                                content = file.buffer.toString(encoding);
-                                if (content && content.trim().length > 0) break;
-                            } catch (e) {
-                                continue;
-                            }
-                        }
-                    }
-                } catch (textError) {
-                    throw new Error(`Text file parsing failed: ${textError.message}`);
+                content = file.buffer.toString('utf-8');
+                if (!content || content.trim().length === 0) {
+                    content = file.buffer.toString('latin1');
                 }
                 break;
 
             case 'docx':
-                try {
-                    const docxResult = await mammoth.extractRawText({ 
-                        buffer: file.buffer,
-                        options: {
-                            includeDefaultStyleMap: true,
-                            includeEmbeddedStyleMap: true
-                        }
-                    });
-                    content = docxResult.value;
-                    
-                    // Extract title from document properties if available
-                    try {
-                        const docProperties = await mammoth.extractRawText({ 
-                            buffer: file.buffer,
-                            options: { extractRawText: false }
-                        });
-                        // This is a simplified extraction - mammoth doesn't easily expose document properties
-                        title = file.originalname; // Fallback to filename
-                    } catch (propError) {
-                        // Ignore property extraction errors
-                    }
-                    
-                    if (docxResult.messages && docxResult.messages.length > 0) {
-                        console.log('Document parsing warnings:', docxResult.messages);
-                        metadata.warnings = docxResult.messages;
-                    }
-                    
-                    if (!content || content.trim().length === 0) {
-                        throw new Error('DOCX appears to contain no readable text content');
-                    }
-                } catch (docxError) {
-                    throw new Error(`DOCX parsing failed: ${docxError.message}. The document may be corrupted or password-protected.`);
+                const docxResult = await mammoth.extractRawText({ buffer: file.buffer });
+                content = docxResult.value;
+                if (docxResult.messages && docxResult.messages.length > 0) {
+                    metadata.warnings = docxResult.messages;
+                }
+                
+                if (!content || content.trim().length === 0) {
+                    throw new Error('DOCX contains no readable text');
                 }
                 break;
 
             case 'doc':
-                try {
-                    // For legacy .doc files, we need a more sophisticated approach
-                    // This is a basic text extraction that may not work for all .doc files
-                    content = file.buffer.toString('utf-8');
-                    
-                    // Remove common binary patterns and control characters
-                    content = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ');
-                    content = content.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
-                    content = content.replace(/\s+/g, ' ').trim();
-                    
-                    // Try to extract readable sentences (basic heuristic)
-                    const sentences = content.split(/[.!?]+/).filter(sentence => {
-                        const trimmed = sentence.trim();
-                        return trimmed.length > 10 && /[a-zA-Z]/.test(trimmed);
-                    });
-                    
-                    content = sentences.join('. ').trim();
-                    
-                    if (!content || content.length < 50) {
-                        throw new Error('Could not extract readable text from legacy DOC file. Consider converting to DOCX format.');
-                    }
-                    
-                    metadata.note = 'Legacy DOC format - text extraction may be incomplete';
-                } catch (docError) {
-                    throw new Error(`DOC parsing failed: ${docError.message}. Legacy DOC files may not parse correctly - consider converting to DOCX.`);
+                content = file.buffer.toString('utf-8');
+                content = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ');
+                content = content.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+                content = content.replace(/\s+/g, ' ').trim();
+                
+                const sentences = content.split(/[.!?]+/).filter(sentence => {
+                    const trimmed = sentence.trim();
+                    return trimmed.length > 10 && /[a-zA-Z]/.test(trimmed);
+                });
+                
+                content = sentences.join('. ').trim();
+                
+                if (!content || content.length < 50) {
+                    throw new Error('Could not extract readable text from DOC file');
                 }
+                
+                metadata.note = 'Legacy DOC format - text extraction may be incomplete';
                 break;
 
             case 'rtf':
-                try {
-                    content = file.buffer.toString('utf-8');
-                    
-                    // More sophisticated RTF parsing
-                    // Remove RTF control words and formatting
-                    content = content.replace(/\{\\[^}]*\}/g, ''); // Remove formatting groups
-                    content = content.replace(/\\[a-z]+\d*\s?/gi, ' '); // Remove control words
-                    content = content.replace(/\{|\}/g, ''); // Remove remaining braces
-                    content = content.replace(/\s+/g, ' ').trim();
-                    
-                    if (!content || content.length < 10) {
-                        throw new Error('Could not extract readable text from RTF file');
-                    }
-                    
-                    metadata.note = 'RTF format - formatting has been stripped';
-                } catch (rtfError) {
-                    throw new Error(`RTF parsing failed: ${rtfError.message}`);
+                content = file.buffer.toString('utf-8');
+                content = content.replace(/\{\\[^}]*\}/g, '');
+                content = content.replace(/\\[a-z]+\d*\s?/gi, ' ');
+                content = content.replace(/\{|\}/g, '');
+                content = content.replace(/\s+/g, ' ').trim();
+                
+                if (!content || content.length < 10) {
+                    throw new Error('Could not extract readable text from RTF file');
                 }
+                
+                metadata.note = 'RTF format - formatting stripped';
                 break;
 
             default:
                 throw new Error(`Unsupported file type: ${fileType}`);
         }
 
-        // Clean and validate content
         content = cleanText(content);
         
         if (!content || content.length < 10) {
-            throw new Error('Document appears to be empty or contains very little readable text');
+            throw new Error('Document appears to be empty');
         }
 
         if (content.length > documentConfig.maxContentLength) {
@@ -301,7 +224,9 @@ async function parseDocument(file) {
             content = content.substring(0, documentConfig.maxContentLength) + '...';
         }
 
-        const result = {
+        console.log(`Successfully parsed ${file.originalname} (${content.length} characters)`);
+        
+        return {
             content,
             title: title || file.originalname,
             contentLength: content.length,
@@ -310,33 +235,15 @@ async function parseDocument(file) {
             metadata
         };
 
-        console.log(`✅ Successfully parsed ${file.originalname} (${content.length} characters)`);
-        return result;
-
     } catch (error) {
-        console.error(`❌ Error parsing ${file.originalname}:`, error);
-        
-        // Provide more helpful error messages
-        let errorMessage = error.message;
-        if (error.message.includes('Cannot read properties')) {
-            errorMessage = 'File appears to be corrupted or not a valid document';
-        } else if (error.message.includes('pdf-parse')) {
-            errorMessage = 'PDF parsing failed - file may be corrupted, encrypted, or contain only images';
-        }
-        
-        throw new Error(`Failed to parse document: ${errorMessage}`);
+        console.error(`Error parsing ${file.originalname}:`, error);
+        throw new Error(`Failed to parse document: ${error.message}`);
     }
 }
 
-// Enhanced prompt update function with better scraped data integration
+// Enhanced prompt update function
 async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includeScrapedData = false, includeDocuments = false) {
-    console.log('🔄 Updating agent prompt with data integration:', {
-        hasSystemPrompt: !!systemPrompt,
-        firstMessage: !!firstMessage,
-        includeScrapedData,
-        includeDocuments,
-        promptLength: systemPrompt?.length || 0
-    });
+    console.log('Updating agent prompt with data integration');
 
     if (!systemPrompt) {
         throw new Error('System prompt is required');
@@ -351,12 +258,10 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
             totalCharacters: 0
         };
 
-        // Build knowledge base section
         if (includeScrapedData || includeDocuments) {
             let knowledgeSection = '\n\n=== KNOWLEDGE BASE ===\n';
-            knowledgeSection += 'Use the following information to answer questions and provide relevant details:\n\n';
+            knowledgeSection += 'Use the following information to answer questions:\n\n';
 
-            // Add scraped website data
             if (includeScrapedData) {
                 const scrapedDataResult = await pool.query(
                     'SELECT url, title, content, scraped_at FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 10',
@@ -370,7 +275,6 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
                         const contentPreview = item.content.substring(0, 3000);
                         knowledgeSection += `\n[SOURCE: ${item.url}]\n`;
                         knowledgeSection += `[TITLE: ${item.title || 'Untitled'}]\n`;
-                        knowledgeSection += `[SCRAPED: ${new Date(item.scraped_at).toLocaleDateString()}]\n`;
                         knowledgeSection += `${contentPreview}${item.content.length > 3000 ? '...\n' : '\n'}`;
                         knowledgeSection += '---\n';
                         
@@ -380,7 +284,6 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
                 }
             }
             
-            // Add parsed document data
             if (includeDocuments) {
                 const parsedDocsResult = await pool.query(
                     'SELECT original_name, title, content, parsed_at, file_type FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 10',
@@ -395,7 +298,6 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
                         knowledgeSection += `\n[DOCUMENT: ${item.original_name}]\n`;
                         knowledgeSection += `[TITLE: ${item.title || 'Untitled'}]\n`;
                         knowledgeSection += `[TYPE: ${item.file_type?.toUpperCase() || 'Unknown'}]\n`;
-                        knowledgeSection += `[PARSED: ${new Date(item.parsed_at).toLocaleDateString()}]\n`;
                         knowledgeSection += `${contentPreview}${item.content.length > 3000 ? '...\n' : '\n'}`;
                         knowledgeSection += '---\n';
                         
@@ -407,31 +309,25 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
 
             if (knowledgeStats.scrapedSites > 0 || knowledgeStats.documents > 0) {
                 knowledgeSection += '\n=== END KNOWLEDGE BASE ===\n';
-                knowledgeSection += `\nIMPORTANT: Use this knowledge base to provide accurate, up-to-date information. `;
-                knowledgeSection += `Always cite sources when using this information (e.g., "According to [document name]" or "Based on [website]").`;
+                knowledgeSection += '\nIMPORTANT: Use this knowledge base to provide accurate information. Always cite sources when using this information.';
                 
                 finalPrompt += knowledgeSection;
                 includesExternalData = true;
             }
         }
 
-        // Check final prompt length (ElevenLabs has limits)
         if (finalPrompt.length > 50000) {
-            console.log('⚠️ Prompt is very long, truncating to fit limits');
+            console.log('Prompt is very long, truncating to fit limits');
             finalPrompt = finalPrompt.substring(0, 50000) + '\n\n[Note: Knowledge base was truncated due to length limits]';
         }
 
-        // Mark all existing prompts as not current
         await pool.query('UPDATE agent_prompts SET is_current = false');
 
-        // Insert new prompt
         const insertResult = await pool.query(
-            `INSERT INTO agent_prompts (system_prompt, first_message, includes_scraped_data, is_current) 
-             VALUES ($1, $2, $3, true) RETURNING id`,
+            'INSERT INTO agent_prompts (system_prompt, first_message, includes_scraped_data, is_current) VALUES ($1, $2, $3, true) RETURNING id',
             [finalPrompt, firstMessage, includesExternalData]
         );
 
-        // Update ElevenLabs agent if configured
         let elevenLabsSuccess = false;
         let elevenLabsError = null;
         
@@ -439,14 +335,14 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
             if (ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID) {
                 await updateElevenLabsPrompt(finalPrompt, firstMessage);
                 elevenLabsSuccess = true;
-                console.log('✅ ElevenLabs agent prompt updated');
+                console.log('ElevenLabs agent prompt updated');
             }
         } catch (error) {
             elevenLabsError = error.message;
-            console.error('❌ Failed to update ElevenLabs prompt:', error);
+            console.error('Failed to update ElevenLabs prompt:', error);
         }
 
-        const result = {
+        return {
             success: true,
             message: 'Prompt updated successfully',
             promptId: insertResult.rows[0].id,
@@ -454,18 +350,8 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
             prompt_length: finalPrompt.length,
             knowledge_stats: knowledgeStats,
             elevenlabs_updated: elevenLabsSuccess,
-            elevenlabs_error: elevenLabsError,
-            final_prompt_preview: finalPrompt.substring(0, 500) + (finalPrompt.length > 500 ? '...' : '')
+            elevenlabs_error: elevenLabsError
         };
-
-        console.log('✅ Prompt updated successfully:', {
-            finalPromptLength: finalPrompt.length,
-            includesExternalData: includesExternalData,
-            originalPromptLength: systemPrompt.length,
-            knowledgeStats
-        });
-
-        return result;
 
     } catch (error) {
         console.error('Error updating prompt:', error);
@@ -473,18 +359,17 @@ async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includ
     }
 }
 
-// Web scraping function with multiple strategies
+// Web scraping function
 async function scrapeWebsite(url) {
-    console.log(`🕷️ Starting scrape for: ${url}`);
+    console.log(`Starting scrape for: ${url}`);
     
     let browser;
     let lastError;
     
     for (let attempt = 1; attempt <= scrapingConfig.retryAttempts; attempt++) {
         try {
-            // Strategy 1: Try simple fetch with Cheerio first
             if (attempt === 1) {
-                console.log(`🔍 Attempt ${attempt}: Using fetch + Cheerio for ${url}`);
+                console.log(`Attempt ${attempt}: Using fetch + Cheerio for ${url}`);
                 
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), scrapingConfig.timeout);
@@ -492,14 +377,9 @@ async function scrapeWebsite(url) {
                 const response = await fetch(url, {
                     headers: {
                         'User-Agent': scrapingConfig.userAgent,
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.5',
-                        'Accept-Encoding': 'gzip, deflate',
-                        'Connection': 'keep-alive',
-                        'Upgrade-Insecure-Requests': '1'
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
                     },
-                    signal: controller.signal,
-                    timeout: scrapingConfig.timeout
+                    signal: controller.signal
                 });
                 
                 clearTimeout(timeoutId);
@@ -516,7 +396,7 @@ async function scrapeWebsite(url) {
                     throw new Error('Content too short, trying browser method');
                 }
                 
-                console.log(`✅ Successfully scraped ${url} with Cheerio (${content.length} chars)`);
+                console.log(`Successfully scraped ${url} with Cheerio (${content.length} chars)`);
                 return {
                     content,
                     method: 'cheerio',
@@ -525,8 +405,7 @@ async function scrapeWebsite(url) {
                 };
             }
             
-            // Strategy 2: Use Puppeteer for JavaScript-heavy sites
-            console.log(`🤖 Attempt ${attempt}: Using Puppeteer for ${url}`);
+            console.log(`Attempt ${attempt}: Using Puppeteer for ${url}`);
             
             browser = await puppeteer.launch({
                 headless: true,
@@ -534,21 +413,14 @@ async function scrapeWebsite(url) {
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--single-process',
                     '--disable-gpu'
                 ]
             });
             
             const page = await browser.newPage();
-            
-            // Set user agent and viewport
             await page.setUserAgent(scrapingConfig.userAgent);
             await page.setViewport({ width: 1366, height: 768 });
             
-            // Block unnecessary resources to speed up loading
             await page.setRequestInterception(true);
             page.on('request', (req) => {
                 const resourceType = req.resourceType();
@@ -559,22 +431,17 @@ async function scrapeWebsite(url) {
                 }
             });
             
-            // Navigate to the page
             await page.goto(url, {
                 waitUntil: 'networkidle0',
                 timeout: scrapingConfig.timeout
             });
             
-            // Wait a bit for dynamic content to load
             await page.waitForTimeout(2000);
             
-            // Extract content
             const result = await page.evaluate(() => {
-                // Remove unwanted elements
                 const unwantedSelectors = [
                     'script', 'style', 'nav', 'header', 'footer', 'aside',
-                    '.advertisement', '.ad', '.sidebar', '.menu', '.popup',
-                    '.modal', '.overlay', '.cookie-banner'
+                    '.advertisement', '.ad', '.sidebar', '.menu'
                 ];
                 
                 unwantedSelectors.forEach(selector => {
@@ -582,11 +449,9 @@ async function scrapeWebsite(url) {
                     elements.forEach(el => el.remove());
                 });
                 
-                // Try to find main content
                 const contentSelectors = [
                     'main', '[role="main"]', '.main-content', '.content',
-                    'article', '.post-content', '.entry-content', '.page-content',
-                    '#content', '#main'
+                    'article', '.post-content', '#content', '#main'
                 ];
                 
                 let content = '';
@@ -600,7 +465,6 @@ async function scrapeWebsite(url) {
                     }
                 }
                 
-                // Fallback to body content
                 if (!content) {
                     content = document.body.innerText.trim();
                 }
@@ -617,7 +481,7 @@ async function scrapeWebsite(url) {
                 throw new Error('Extracted content too short');
             }
             
-            console.log(`✅ Successfully scraped ${url} with Puppeteer (${cleanedContent.length} chars)`);
+            console.log(`Successfully scraped ${url} with Puppeteer (${cleanedContent.length} chars)`);
             return {
                 content: cleanedContent,
                 method: 'puppeteer',
@@ -627,7 +491,7 @@ async function scrapeWebsite(url) {
             
         } catch (error) {
             lastError = error;
-            console.log(`❌ Attempt ${attempt} failed for ${url}: ${error.message}`);
+            console.log(`Attempt ${attempt} failed for ${url}: ${error.message}`);
             
             if (browser) {
                 try {
@@ -639,7 +503,6 @@ async function scrapeWebsite(url) {
             }
             
             if (attempt < scrapingConfig.retryAttempts) {
-                console.log(`⏳ Waiting before retry ${attempt + 1}...`);
                 await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
             }
         }
@@ -648,7 +511,7 @@ async function scrapeWebsite(url) {
     throw new Error(`Failed to scrape ${url} after ${scrapingConfig.retryAttempts} attempts. Last error: ${lastError.message}`);
 }
 
-// Queue-based scraping to prevent overload
+// Queue-based scraping
 async function processScrapeQueue() {
     while (scrapingQueue.length > 0 && activeScrapes < scrapingConfig.maxConcurrentScrapes) {
         const { url, resolve, reject } = scrapingQueue.shift();
@@ -658,12 +521,12 @@ async function processScrapeQueue() {
             .then(result => {
                 activeScrapes--;
                 resolve(result);
-                processScrapeQueue(); // Process next in queue
+                processScrapeQueue();
             })
             .catch(error => {
                 activeScrapes--;
                 reject(error);
-                processScrapeQueue(); // Process next in queue
+                processScrapeQueue();
             });
     }
 }
@@ -675,7 +538,7 @@ function queueScrape(url) {
     });
 }
 
-// Email notification function using MailerSend (updated with SkyIQ branding)
+// Email notification function
 async function sendCallNotification(callData) {
     if (!emailConfig.enabled || !emailConfig.toEmail || !process.env.MAILERSEND_API_KEY || callData.call_type === 'outbound') {
         return;
@@ -687,57 +550,31 @@ async function sendCallNotification(callData) {
     const emailParams = new EmailParams()
         .setFrom(sentFrom)
         .setTo(recipients)
-        .setSubject(`📞 Inbound Call - ${callData.caller_number} - SkyIQ`)
+        .setSubject(`New Inbound Call - ${callData.caller_number} - SkyIQ`)
         .setHtml(`
-            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-                <div style="background: linear-gradient(135deg, #009AEE, #0080CC); padding: 30px 20px; text-align: center; color: white; border-radius: 12px 12px 0 0;">
-                    <div style="display: inline-block; background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; margin-bottom: 15px; font-size: 24px;">📞</div>
-                    <h1 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700;">New Inbound Call</h1>
-                    <p style="margin: 0; opacity: 0.9; font-size: 16px;">SkyIQ Dashboard Notification</p>
-                </div>
-                
-                <div style="padding: 30px 20px; background: #f8fafc;">
-                    <h2 style="color: #1e293b; margin: 0 0 20px 0; font-size: 20px; font-weight: 600;">📋 Call Details</h2>
-                    
-                    <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td style="padding: 12px 0; font-weight: 600; color: #009AEE; width: 130px; vertical-align: top;">📞 Phone:</td>
-                                <td style="padding: 12px 0; font-family: 'SF Mono', Monaco, monospace; font-size: 16px; color: #1e293b;">${callData.caller_number}</td>
-                            </tr>
-                            <tr style="border-top: 1px solid #e2e8f0;">
-                                <td style="padding: 12px 0; font-weight: 600; color: #009AEE; vertical-align: top;">📅 Date:</td>
-                                <td style="padding: 12px 0; color: #1e293b;">${new Date(callData.timestamp).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
-                            </tr>
-                            <tr style="border-top: 1px solid #e2e8f0;">
-                                <td style="padding: 12px 0; font-weight: 600; color: #009AEE; vertical-align: top;">⏱️ Duration:</td>
-                                <td style="padding: 12px 0; color: #1e293b;">${formatDuration(callData.duration)}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <div style="text-align: center; margin-top: 30px;">
-                        <a href="${process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'}" 
-                           style="display: inline-block; background: linear-gradient(135deg, #009AEE, #0080CC); color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(0, 154, 238, 0.3);">
-                            🖥️ View Dashboard
-                        </a>
-                    </div>
-                </div>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>New Inbound Call</h2>
+                <p><strong>Phone:</strong> ${callData.caller_number}</p>
+                <p><strong>Duration:</strong> ${formatDuration(callData.duration)}</p>
+                <p><strong>Date:</strong> ${new Date(callData.timestamp).toLocaleDateString()}</p>
+                <a href="${process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'}" 
+                   style="background: #009AEE; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                    View Dashboard
+                </a>
             </div>
         `);
 
     try {
         await mailerSend.email.send(emailParams);
-        console.log('📧 Email notification sent successfully');
+        console.log('Email notification sent successfully');
     } catch (error) {
-        console.error('❌ Email notification failed:', error.message);
+        console.error('Email notification failed:', error.message);
     }
 }
 
-// Initialize database tables
+// Initialize database
 async function initializeDatabase() {
     try {
-        // Create calls table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS calls (
                 id VARCHAR(255) PRIMARY KEY,
@@ -753,7 +590,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Create scraped_data table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS scraped_data (
                 id VARCHAR(255) PRIMARY KEY,
@@ -769,7 +605,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Create parsed_documents table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS parsed_documents (
                 id VARCHAR(255) PRIMARY KEY,
@@ -787,7 +622,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Create agent_prompts table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS agent_prompts (
                 id SERIAL PRIMARY KEY,
@@ -800,7 +634,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Create batches table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS batches (
                 id VARCHAR(255) PRIMARY KEY,
@@ -814,7 +647,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Create batch_calls table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS batch_calls (
                 id VARCHAR(255) PRIMARY KEY,
@@ -828,9 +660,9 @@ async function initializeDatabase() {
             )
         `);
 
-        console.log('✅ Database tables initialized successfully');
+        console.log('Database tables initialized successfully');
     } catch (error) {
-        console.error('❌ Database initialization error:', error);
+        console.error('Database initialization error:', error);
     }
 }
 
@@ -863,19 +695,19 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage = '') {
         }
 
         const result = await response.json();
-        console.log('✅ ElevenLabs agent prompt updated successfully');
+        console.log('ElevenLabs agent prompt updated successfully');
         return result;
 
     } catch (error) {
-        console.error('❌ Failed to update ElevenLabs prompt:', error);
+        console.error('Failed to update ElevenLabs prompt:', error);
         throw error;
     }
 }
 
-// Function to initiate outbound call via ElevenLabs API
+// Function to initiate outbound call
 async function initiateOutboundCall(phoneNumber) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
-        throw new Error('ElevenLabs configuration incomplete. Please set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables.');
+        throw new Error('ElevenLabs configuration incomplete');
     }
 
     try {
@@ -913,18 +745,13 @@ async function initiateOutboundCall(phoneNumber) {
     }
 }
 
-// Process batch calls sequentially
+// Batch processing functions
 async function processBatch(batchId) {
     try {
-        console.log(`📞 Starting batch processing for batch: ${batchId}`);
+        console.log(`Starting batch processing for batch: ${batchId}`);
         
-        // Update batch status to processing
-        await pool.query(
-            'UPDATE batches SET status = $1 WHERE id = $2',
-            ['processing', batchId]
-        );
+        await pool.query('UPDATE batches SET status = $1 WHERE id = $2', ['processing', batchId]);
 
-        // Get all pending calls for this batch
         const batchCalls = await pool.query(
             'SELECT * FROM batch_calls WHERE batch_id = $1 AND status = $2 ORDER BY created_at',
             [batchId, 'pending']
@@ -932,25 +759,18 @@ async function processBatch(batchId) {
 
         for (const batchCall of batchCalls.rows) {
             try {
-                console.log(`📞 Calling ${batchCall.phone_number}...`);
+                console.log(`Calling ${batchCall.phone_number}...`);
                 
-                // Update call status to processing
-                await pool.query(
-                    'UPDATE batch_calls SET status = $1 WHERE id = $2',
-                    ['processing', batchCall.id]
-                );
+                await pool.query('UPDATE batch_calls SET status = $1 WHERE id = $2', ['processing', batchCall.id]);
 
-                // Broadcast progress update
                 io.emit('batchProgress', {
                     batchId: batchId,
                     currentCall: batchCall.phone_number,
                     progress: await getBatchProgress(batchId)
                 });
 
-                // Initiate the call
                 const callResult = await initiateOutboundCall(batchCall.phone_number);
                 
-                // Create call record
                 const callData = {
                     id: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     timestamp: new Date().toISOString(),
@@ -963,82 +783,44 @@ async function processBatch(batchId) {
                     conversation_id: callResult.conversation_id
                 };
 
-                // Save call to database
                 await pool.query(`
                     INSERT INTO calls (id, timestamp, caller_number, called_number, duration, status, call_type, transcript, conversation_id)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 `, [callData.id, callData.timestamp, callData.caller_number, callData.called_number, 
                     callData.duration, callData.status, callData.call_type, callData.transcript, callData.conversation_id]);
 
-                // Update batch call status
                 await pool.query(
                     'UPDATE batch_calls SET status = $1, call_id = $2, completed_at = NOW() WHERE id = $3',
                     ['completed', callData.id, batchCall.id]
                 );
 
-                // Update batch counters
-                await pool.query(
-                    'UPDATE batches SET completed_calls = completed_calls + 1, successful_calls = successful_calls + 1 WHERE id = $1',
-                    [batchId]
-                );
-
-                // Broadcast new call
-                io.emit('newCall', callData);
-
-                console.log(`✅ Call initiated successfully to ${batchCall.phone_number}`);
-
-                // Wait 2 seconds between calls to be respectful
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-            } catch (error) {
-                console.error(`❌ Failed to call ${batchCall.phone_number}:`, error.message);
-                
-                // Update batch call with error
-                await pool.query(
-                    'UPDATE batch_calls SET status = $1, error_message = $2, completed_at = NOW() WHERE id = $3',
-                    ['failed', error.message, batchCall.id]
-                );
-
-                // Update batch counters
                 await pool.query(
                     'UPDATE batches SET completed_calls = completed_calls + 1, failed_calls = failed_calls + 1 WHERE id = $1',
                     [batchId]
                 );
 
-                // Continue with next call
                 continue;
             }
         }
 
-        // Mark batch as completed
-        await pool.query(
-            'UPDATE batches SET status = $1 WHERE id = $2',
-            ['completed', batchId]
-        );
+        await pool.query('UPDATE batches SET status = $1 WHERE id = $2', ['completed', batchId]);
 
-        // Broadcast batch completion
         const finalProgress = await getBatchProgress(batchId);
         io.emit('batchCompleted', {
             batchId: batchId,
             progress: finalProgress
         });
 
-        console.log(`🎉 Batch ${batchId} completed!`);
+        console.log(`Batch ${batchId} completed!`);
 
     } catch (error) {
-        console.error(`💥 Batch processing failed for ${batchId}:`, error);
+        console.error(`Batch processing failed for ${batchId}:`, error);
         
-        // Mark batch as failed
-        await pool.query(
-            'UPDATE batches SET status = $1 WHERE id = $2',
-            ['failed', batchId]
-        );
+        await pool.query('UPDATE batches SET status = $1 WHERE id = $2', ['failed', batchId]);
     }
 
-    // Clear current batch
     currentBatch = null;
     
-    // Process next batch in queue if any
     if (batchQueue.length > 0) {
         const nextBatchId = batchQueue.shift();
         currentBatch = nextBatchId;
@@ -1046,27 +828,20 @@ async function processBatch(batchId) {
     }
 }
 
-// Get batch progress
 async function getBatchProgress(batchId) {
-    const result = await pool.query(
-        'SELECT * FROM batches WHERE id = $1',
-        [batchId]
-    );
+    const result = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
     return result.rows[0];
 }
 
-// Parse CSV content
 function parseCSV(csvContent) {
     const lines = csvContent.trim().split('\n');
     const phoneNumbers = [];
     
-    // Skip header row if it exists
     const startIndex = lines[0].toLowerCase().includes('phone') ? 1 : 0;
     
     for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i].trim();
         if (line) {
-            // Extract phone number (first column)
             const phoneNumber = line.split(',')[0].trim().replace(/['"]/g, '');
             if (phoneNumber && phoneNumber.length >= 10) {
                 phoneNumbers.push(phoneNumber);
@@ -1091,22 +866,20 @@ app.post('/api/scrape', async (req, res) => {
     }
 
     try {
-        // Validate URL
         const urlObj = new URL(url);
         if (!['http:', 'https:'].includes(urlObj.protocol)) {
             return res.status(400).json({ error: 'Only HTTP and HTTPS URLs are supported' });
         }
 
-        console.log(`🕷️ Scraping request for: ${url}`);
+        console.log(`Scraping request for: ${url}`);
 
-        // Check if URL was recently scraped
         const existingScrape = await pool.query(
             'SELECT * FROM scraped_data WHERE url = $1 AND scraped_at > NOW() - INTERVAL \'1 hour\' ORDER BY scraped_at DESC LIMIT 1',
             [url]
         );
 
         if (existingScrape.rows.length > 0) {
-            console.log(`📋 Using cached data for: ${url}`);
+            console.log(`Using cached data for: ${url}`);
             return res.json({
                 success: true,
                 data: existingScrape.rows[0].content,
@@ -1117,18 +890,15 @@ app.post('/api/scrape', async (req, res) => {
             });
         }
 
-        // Perform scraping
         const result = await queueScrape(url);
         
-        // Store in database
         const scrapeId = `scrape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await pool.query(
-            `INSERT INTO scraped_data (id, url, title, content, content_length, scraping_method) 
-             VALUES ($1, $2, $3, $4, $5, $6)`,
+            'INSERT INTO scraped_data (id, url, title, content, content_length, scraping_method) VALUES ($1, $2, $3, $4, $5, $6)',
             [scrapeId, url, result.title, result.content, result.contentLength, result.method]
         );
 
-        console.log(`✅ Scraping completed for: ${url} (${result.contentLength} characters)`);
+        console.log(`Scraping completed for: ${url} (${result.contentLength} characters)`);
 
         res.json({
             success: true,
@@ -1141,14 +911,12 @@ app.post('/api/scrape', async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`❌ Scraping failed for ${url}:`, error);
+        console.error(`Scraping failed for ${url}:`, error);
         
-        // Store error in database
         try {
             const scrapeId = `scrape-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             await pool.query(
-                `INSERT INTO scraped_data (id, url, content, status, error_message) 
-                 VALUES ($1, $2, $3, $4, $5)`,
+                'INSERT INTO scraped_data (id, url, content, status, error_message) VALUES ($1, $2, $3, $4, $5)',
                 [scrapeId, url, '', 'error', error.message]
             );
         } catch (dbError) {
@@ -1194,7 +962,7 @@ app.delete('/api/scraped-data/:id', async (req, res) => {
     }
 });
 
-// Enhanced document parsing endpoint
+// Document parsing endpoint
 app.post('/api/parse-document', upload.single('document'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ 
@@ -1204,21 +972,17 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
     }
 
     try {
-        console.log(`📄 Document upload request: ${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})`);
+        console.log(`Document upload request: ${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})`);
 
-        // Parse the document
         const result = await parseDocument(req.file);
         
-        // Store in database
         const docId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await pool.query(
-            `INSERT INTO parsed_documents (id, filename, original_name, title, content, content_length, file_type, file_size) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            'INSERT INTO parsed_documents (id, filename, original_name, title, content, content_length, file_type, file_size) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
             [docId, req.file.originalname, req.file.originalname, result.title, result.content, 
              result.contentLength, result.fileType, req.file.size]
         );
 
-        // Broadcast to connected clients
         io.emit('documentParsed', {
             id: docId,
             original_name: req.file.originalname,
@@ -1228,7 +992,7 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
             parsed_at: new Date().toISOString()
         });
 
-        console.log(`✅ Document stored successfully: ${req.file.originalname} (${result.contentLength} characters)`);
+        console.log(`Document stored successfully: ${req.file.originalname} (${result.contentLength} characters)`);
 
         res.json({
             success: true,
@@ -1245,14 +1009,12 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`❌ Document parsing failed for ${req.file?.originalname}:`, error);
+        console.error(`Document parsing failed for ${req.file?.originalname}:`, error);
         
-        // Store error in database
         try {
             const docId = `doc-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             await pool.query(
-                `INSERT INTO parsed_documents (id, filename, original_name, content, status, error_message) 
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                'INSERT INTO parsed_documents (id, filename, original_name, content, status, error_message) VALUES ($1, $2, $3, $4, $5, $6)',
                 [docId, req.file?.originalname || 'unknown', req.file?.originalname || 'unknown', '', 'error', error.message]
             );
         } catch (dbError) {
@@ -1298,7 +1060,7 @@ app.delete('/api/parsed-documents/:id', async (req, res) => {
     }
 });
 
-// Enhanced prompt retrieval endpoint
+// Get current agent prompt
 app.get('/api/prompt', async (req, res) => {
     try {
         const result = await pool.query(
@@ -1308,7 +1070,6 @@ app.get('/api/prompt', async (req, res) => {
         if (result.rows.length > 0) {
             const prompt = result.rows[0];
             
-            // Get knowledge base statistics
             const scrapedCount = await pool.query('SELECT COUNT(*) FROM scraped_data WHERE status = $1', ['active']);
             const docsCount = await pool.query('SELECT COUNT(*) FROM parsed_documents WHERE status = $1', ['active']);
             
@@ -1325,7 +1086,6 @@ app.get('/api/prompt', async (req, res) => {
                 }
             });
         } else {
-            // Return default prompt if none exists
             res.json({
                 success: true,
                 system_prompt: 'You are a helpful AI assistant for SkyIQ. Please assist callers professionally and courteously.',
@@ -1347,20 +1107,19 @@ app.get('/api/prompt', async (req, res) => {
     }
 });
 
-// Enhanced prompt update endpoint with better data integration
+// Update agent prompt
 app.post('/api/prompt', async (req, res) => {
     const { 
         system_prompt, 
         first_message = '', 
         include_scraped_data = false, 
         include_documents = false,
-        auto_include_scraped_data // Legacy support
+        auto_include_scraped_data 
     } = req.body;
     
-    // Handle legacy parameter name
     const includeScrapedData = include_scraped_data || auto_include_scraped_data || false;
 
-    console.log('🔄 Prompt update request received:', {
+    console.log('Prompt update request received:', {
         hasSystemPrompt: !!system_prompt,
         firstMessage: !!first_message,
         includeScrapedData,
@@ -1383,7 +1142,6 @@ app.post('/api/prompt', async (req, res) => {
             include_documents
         );
 
-        // Broadcast prompt update to connected clients
         io.emit('promptUpdated', {
             includes_external_data: result.includes_external_data,
             prompt_length: result.prompt_length,
@@ -1411,7 +1169,6 @@ app.post('/api/calls/initiate', async (req, res) => {
         return res.status(400).json({ error: 'Phone number is required' });
     }
 
-    // Validate phone number format
     const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)\.]{7,15}$/;
     const cleanedPhone = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
     
@@ -1419,7 +1176,6 @@ app.post('/api/calls/initiate', async (req, res) => {
         return res.status(400).json({ error: 'Invalid phone number format' });
     }
 
-    // Format phone number
     let formattedPhone = cleanedPhone;
     if (!formattedPhone.startsWith('+')) {
         if (formattedPhone.length === 10) {
@@ -1484,7 +1240,6 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
             return res.status(400).json({ error: 'No valid phone numbers found in CSV' });
         }
 
-        // Create batch record
         const batchId = `batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const batchName = req.body.batchName || `Batch ${new Date().toLocaleDateString()}`;
 
@@ -1493,7 +1248,6 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
             [batchId, batchName, phoneNumbers.length]
         );
 
-        // Create batch call records
         for (const phoneNumber of phoneNumbers) {
             const batchCallId = `bc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             await pool.query(
@@ -1520,7 +1274,38 @@ app.post('/api/batch/:batchId/start', async (req, res) => {
     const { batchId } = req.params;
 
     try {
-        // Check if batch exists
+        const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
+        if (batch.rows.length === 0) {
+            return res.status(404).json({ error: 'Batch not found' });
+        }
+
+        if (batch.rows[0].status !== 'pending') {
+            return res.status(400).json({ error: 'Batch has already been processed' });
+        }
+
+        if (currentBatch === null) {
+            currentBatch = batchId;
+            processBatch(batchId);
+        } else {
+            batchQueue.push(batchId);
+        }
+
+        res.json({ 
+            success: true, 
+            message: currentBatch === batchId ? 'Batch processing started' : 'Batch added to queue'
+        });
+
+    } catch (error) {
+        console.error('Batch start error:', error);
+        res.status(500).json({ error: 'Failed to start batch processing' });
+    }
+});
+
+// API endpoint to get batch status
+app.get('/api/batch/:batchId', async (req, res) => {
+    const { batchId } = req.params;
+
+    try {
         const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
         if (batch.rows.length === 0) {
             return res.status(404).json({ error: 'Batch not found' });
@@ -1553,98 +1338,12 @@ app.get('/api/batches', async (req, res) => {
     }
 });
 
-// Test document parsing endpoint
-app.post('/api/test-document-parsing', upload.single('testDocument'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ 
-            success: false,
-            error: 'No test document uploaded' 
-        });
-    }
-
-    try {
-        console.log(`🧪 Testing document parsing: ${req.file.originalname}`);
-        
-        // Parse without saving to database
-        const result = await parseDocument(req.file);
-        
-        res.json({
-            success: true,
-            message: 'Document parsing test successful',
-            filename: req.file.originalname,
-            fileType: result.fileType,
-            contentLength: result.contentLength,
-            title: result.title,
-            preview: result.content.substring(0, 500) + (result.content.length > 500 ? '...' : ''),
-            metadata: result.metadata
-        });
-
-    } catch (error) {
-        console.error('Document parsing test failed:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-            filename: req.file?.originalname
-        });
-    }
-});
-
-// Get knowledge base summary
-app.get('/api/knowledge-base/summary', async (req, res) => {
-    try {
-        const scrapedData = await pool.query(
-            'SELECT COUNT(*) as count, MAX(scraped_at) as latest FROM scraped_data WHERE status = $1',
-            ['active']
-        );
-        
-        const documents = await pool.query(
-            'SELECT COUNT(*) as count, MAX(parsed_at) as latest FROM parsed_documents WHERE status = $1',
-            ['active']
-        );
-
-        const totalContentLength = await pool.query(`
-            SELECT 
-                COALESCE(SUM(s.content_length), 0) as scraped_chars,
-                COALESCE(SUM(d.content_length), 0) as document_chars
-            FROM 
-                (SELECT SUM(content_length) as content_length FROM scraped_data WHERE status = 'active') s,
-                (SELECT SUM(content_length) as content_length FROM parsed_documents WHERE status = 'active') d
-        `);
-
-        res.json({
-            success: true,
-            summary: {
-                scraped_sites: {
-                    count: parseInt(scrapedData.rows[0].count),
-                    latest: scrapedData.rows[0].latest,
-                    total_characters: parseInt(totalContentLength.rows[0].scraped_chars) || 0
-                },
-                documents: {
-                    count: parseInt(documents.rows[0].count),
-                    latest: documents.rows[0].latest,
-                    total_characters: parseInt(totalContentLength.rows[0].document_chars) || 0
-                },
-                total_knowledge_base_size: (parseInt(totalContentLength.rows[0].scraped_chars) || 0) + 
-                                          (parseInt(totalContentLength.rows[0].document_chars) || 0)
-            }
-        });
-
-    } catch (error) {
-        console.error('Error getting knowledge base summary:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get knowledge base summary'
-        });
-    }
-});
-
 // Webhook endpoint - ElevenLabs will POST here
 app.post('/webhook', async (req, res) => {
-    console.log('📞 Webhook received from ElevenLabs');
+    console.log('Webhook received from ElevenLabs');
     
     const webhookData = req.body;
     
-    // Extract transcript from the webhook
     let transcript = '';
     if (webhookData.data?.transcript && Array.isArray(webhookData.data.transcript)) {
         transcript = webhookData.data.transcript
@@ -1652,19 +1351,12 @@ app.post('/webhook', async (req, res) => {
             .join('\n');
     }
     
-    // Extract call data
     const callData = {
         id: webhookData.data?.conversation_id || Date.now().toString(),
         timestamp: new Date().toISOString(),
-        caller_number: webhookData.data?.metadata?.phone_call?.external_number || 
-                      webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__caller_id || 
-                      'Unknown',
-        called_number: webhookData.data?.metadata?.phone_call?.agent_number || 
-                      webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__called_number || 
-                      'Unknown',
-        duration: webhookData.data?.metadata?.call_duration_secs || 
-                 webhookData.data?.conversation_initiation_client_data?.dynamic_variables?.system__call_duration_secs || 
-                 0,
+        caller_number: webhookData.data?.metadata?.phone_call?.external_number || 'Unknown',
+        called_number: webhookData.data?.metadata?.phone_call?.agent_number || 'Unknown',
+        duration: webhookData.data?.metadata?.call_duration_secs || 0,
         status: 'completed',
         call_type: 'inbound',
         transcript: transcript || '',
@@ -1672,14 +1364,12 @@ app.post('/webhook', async (req, res) => {
     };
     
     try {
-        // Check if this is an outbound call we initiated
         const outboundCall = await pool.query(
             'SELECT * FROM calls WHERE conversation_id = $1 AND call_type = $2', 
             [callData.conversation_id, 'outbound']
         );
         
         if (outboundCall.rows.length > 0) {
-            // Update existing outbound call
             await pool.query(`
                 UPDATE calls 
                 SET duration = $2, status = $3, transcript = $4, timestamp = $5
@@ -1691,7 +1381,6 @@ app.post('/webhook', async (req, res) => {
                 io.emit('updateCall', updatedCall.rows[0]);
             }
         } else {
-            // Handle inbound call
             const existingCall = await pool.query('SELECT id FROM calls WHERE id = $1', [callData.id]);
             
             if (existingCall.rows.length > 0) {
@@ -1721,7 +1410,7 @@ app.post('/webhook', async (req, res) => {
             }
         }
     } catch (error) {
-        console.error('❌ Database error:', error);
+        console.error('Database error:', error);
     }
     
     res.status(200).json({ success: true, message: 'Webhook received' });
@@ -1755,10 +1444,6 @@ app.get('/health', async (req, res) => {
             elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID),
             currentBatch: currentBatch,
             queueLength: batchQueue.length,
-            scrapingQueueLength: scrapingQueue.length,
-            activeScrapes: activeScrapes,
-            documentParsingEnabled: true,
-            supportedDocumentTypes: Object.keys(documentConfig.supportedTypes),
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -1784,7 +1469,6 @@ app.get('/test-elevenlabs', async (req, res) => {
             });
         }
 
-        // Test API key by making a simple request to get voice models
         const response = await fetch('https://api.elevenlabs.io/v1/models', {
             headers: {
                 'xi-api-key': ELEVENLABS_API_KEY
@@ -1796,12 +1480,7 @@ app.get('/test-elevenlabs', async (req, res) => {
             return res.status(response.status).json({
                 error: 'ElevenLabs API test failed',
                 status: response.status,
-                details: errorData,
-                configured: {
-                    apiKey: !!ELEVENLABS_API_KEY,
-                    agentId: !!ELEVENLABS_AGENT_ID,
-                    phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-                }
+                details: errorData
             });
         }
 
@@ -1820,84 +1499,25 @@ app.get('/test-elevenlabs', async (req, res) => {
     } catch (error) {
         res.status(500).json({
             error: 'Failed to test ElevenLabs API',
-            details: error.message,
-            configured: {
-                apiKey: !!ELEVENLABS_API_KEY,
-                agentId: !!ELEVENLABS_AGENT_ID,
-                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-            }
+            details: error.message
         });
-    }
-});
-
-// Test web scraping endpoint
-app.post('/test-scraping', async (req, res) => {
-    const testUrl = req.body.url || 'https://example.com';
-    
-    try {
-        console.log(`🧪 Testing scraping with: ${testUrl}`);
-        const result = await queueScrape(testUrl);
-        
-        res.json({
-            success: true,
-            message: 'Scraping test successful',
-            url: testUrl,
-            method: result.method,
-            contentLength: result.contentLength,
-            title: result.title,
-            preview: result.content.substring(0, 200) + (result.content.length > 200 ? '...' : '')
-        });
-
-    } catch (error) {
-        console.error('Scraping test failed:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-            url: testUrl
-        });
-    }
-});
-
-// Test email endpoint
-app.post('/test-email', async (req, res) => {
-    const testCallData = {
-        id: 'test-' + Date.now(),
-        timestamp: new Date().toISOString(),
-        caller_number: '+1 (555) 123-4567',
-        called_number: '+1 (555) 987-6543',
-        duration: 180,
-        status: 'completed',
-        call_type: 'inbound',
-        transcript: 'This is a test call to verify email notifications are working properly.'
-    };
-    
-    try {
-        await sendCallNotification(testCallData);
-        res.json({ success: true, message: 'Test email sent successfully' });
-    } catch (error) {
-        console.error('Test email failed:', error);
-        res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // Socket.io connection handling
 io.on('connection', async (socket) => {
-    console.log('🔌 Client connected');
+    console.log('Client connected');
     
     try {
-        // Send call history
         const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
         socket.emit('callHistory', result.rows);
         
-        // Send batch history
         const batches = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 5');
         socket.emit('batchHistory', batches.rows);
         
-        // Send scraped data
         const scrapedData = await pool.query('SELECT * FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 20', ['active']);
         socket.emit('scrapedData', scrapedData.rows);
         
-        // Send parsed documents
         const parsedDocs = await pool.query('SELECT * FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 20', ['active']);
         socket.emit('parsedDocuments', parsedDocs.rows);
         
@@ -1906,27 +1526,25 @@ io.on('connection', async (socket) => {
     }
     
     socket.on('disconnect', () => {
-        console.log('🔌 Client disconnected');
+        console.log('Client disconnected');
     });
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-    console.log('\n🛑 Graceful shutdown initiated...');
+    console.log('\nGraceful shutdown initiated...');
     
     try {
-        // Close database connections
         await pool.end();
-        console.log('✅ Database connections closed');
+        console.log('Database connections closed');
         
-        // Close server
         server.close(() => {
-            console.log('✅ HTTP server closed');
+            console.log('HTTP server closed');
             process.exit(0);
         });
         
     } catch (error) {
-        console.error('❌ Error during shutdown:', error);
+        console.error('Error during shutdown:', error);
         process.exit(1);
     }
 });
@@ -1934,54 +1552,39 @@ process.on('SIGINT', async () => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-    console.log(`\n🚀 SkyIQ Server running on port ${PORT}`);
-    console.log(`📡 Webhook endpoint: http://localhost:${PORT}/webhook`);
-    console.log(`📊 Dashboard: http://localhost:${PORT}`);
-    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-    console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
-    console.log(`🕷️ Web scraping: POST http://localhost:${PORT}/api/scrape`);
-    console.log(`📄 Document parsing: POST http://localhost:${PORT}/api/parse-document`);
-    console.log(`📝 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
-    console.log(`🤖 Update prompt: POST http://localhost:${PORT}/api/prompt`);
-    console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
-    console.log(`🧪 Test scraping: POST http://localhost:${PORT}/test-scraping`);
-    console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
+    console.log(`\nSkyIQ Server running on port ${PORT}`);
+    console.log(`Webhook endpoint: http://localhost:${PORT}/webhook`);
+    console.log(`Dashboard: http://localhost:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`\nConfigure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
-    console.log(`\n📊 System Status:`);
-    console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
-    console.log(`📧 Email notifications: ${emailConfig.enabled ? 'Enabled (inbound only)' : 'Disabled'}`);
-    console.log(`🤖 ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
-    console.log(`🕷️ Web Scraping: Enabled (Max concurrent: ${scrapingConfig.maxConcurrentScrapes})`);
-    console.log(`📄 Document Parsing: Enabled (Max file size: ${documentConfig.maxFileSize / (1024 * 1024)}MB)`);
-    console.log(`📋 Supported formats: ${Object.keys(documentConfig.supportedTypes).join(', ')}`);
+    console.log(`\nSystem Status:`);
+    console.log(`Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
+    console.log(`Email notifications: ${emailConfig.enabled ? 'Enabled' : 'Disabled'}`);
+    console.log(`ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
+    console.log(`Document Parsing: Enabled (${Object.keys(documentConfig.supportedTypes).join(', ')})`);
     
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
-        console.log(`⚠️ Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
+        console.log(`Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable calling`);
     }
     
-    console.log(`\n✨ SkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
-});(404).json({ error: 'Batch not found' });
-        }
+    console.log(`\nSkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
+}); = completed_calls + 1, successful_calls = successful_calls + 1 WHERE id = $1',
+                    [batchId]
+                );
 
-        if (batch.rows[0].status !== 'pending') {
-            return res.status(400).json({ error: 'Batch has already been processed' });
-        }
+                io.emit('newCall', callData);
+                console.log(`Call initiated successfully to ${batchCall.phone_number}`);
 
-        // Add to queue or start immediately
-        if (currentBatch === null) {
-            currentBatch = batchId;
-            processBatch(batchId);
-        } else {
-            batchQueue.push(batchId);
-        }
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
-        res.json({ 
-            success: true, 
-            message: currentBatch === batchId ? 'Batch processing started' : 'Batch added to queue'
-        });
+            } catch (error) {
+                console.error(`Failed to call ${batchCall.phone_number}:`, error.message);
+                
+                await pool.query(
+                    'UPDATE batch_calls SET status = $1, error_message = $2, completed_at = NOW() WHERE id = $3',
+                    ['failed', error.message, batchCall.id]
+                );
 
-    } catch (error) {
-        console.error('Batch start error:', error);
-        res.status(500).json({ error: 'Failed to start batch processing' });
-    }
-});
+                await pool.query(
+                    'UPDATE batches SET completed_calls
