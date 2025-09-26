@@ -19,7 +19,7 @@ const io = socketIo(server);
 // Configure multer for file uploads
 const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+    limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 // ElevenLabs API configuration
@@ -77,7 +77,7 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Global batch processing state
+// Global state
 let currentBatch = null;
 let batchQueue = [];
 let scrapingQueue = [];
@@ -124,7 +124,7 @@ function extractMainContent($) {
     return cleanText($('body').text());
 }
 
-// Enhanced document parsing function
+// Document parsing function
 async function parseDocument(file) {
     console.log(`Document parsing: ${file.originalname} (${file.mimetype})`);
     
@@ -536,35 +536,33 @@ function queueScrape(url) {
         scrapingQueue.push({ url, resolve, reject });
         processScrapeQueue();
     });
-}
-
-// Email notification function
+}// Email notification function
 async function sendCallNotification(callData) {
     if (!emailConfig.enabled || !emailConfig.toEmail || !process.env.MAILERSEND_API_KEY || callData.call_type === 'outbound') {
         return;
     }
 
-    const sentFrom = new Sender(emailConfig.fromEmail, emailConfig.fromName);
-    const recipients = [new Recipient(emailConfig.toEmail, emailConfig.toName)];
-
-    const emailParams = new EmailParams()
-        .setFrom(sentFrom)
-        .setTo(recipients)
-        .setSubject(`New Inbound Call - ${callData.caller_number} - SkyIQ`)
-        .setHtml(`
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2>New Inbound Call</h2>
-                <p><strong>Phone:</strong> ${callData.caller_number}</p>
-                <p><strong>Duration:</strong> ${formatDuration(callData.duration)}</p>
-                <p><strong>Date:</strong> ${new Date(callData.timestamp).toLocaleDateString()}</p>
-                <a href="${process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'}" 
-                   style="background: #009AEE; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-                    View Dashboard
-                </a>
-            </div>
-        `);
-
     try {
+        const sentFrom = new Sender(emailConfig.fromEmail, emailConfig.fromName);
+        const recipients = [new Recipient(emailConfig.toEmail, emailConfig.toName)];
+
+        const emailParams = new EmailParams()
+            .setFrom(sentFrom)
+            .setTo(recipients)
+            .setSubject(`New Inbound Call - ${callData.caller_number} - SkyIQ`)
+            .setHtml(`
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2>New Inbound Call</h2>
+                    <p><strong>Phone:</strong> ${callData.caller_number}</p>
+                    <p><strong>Duration:</strong> ${formatDuration(callData.duration)}</p>
+                    <p><strong>Date:</strong> ${new Date(callData.timestamp).toLocaleDateString()}</p>
+                    <a href="${process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000'}" 
+                       style="background: #009AEE; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                        View Dashboard
+                    </a>
+                </div>
+            `);
+
         await mailerSend.email.send(emailParams);
         console.log('Email notification sent successfully');
     } catch (error) {
@@ -668,7 +666,7 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
-// Function to update ElevenLabs agent prompt
+// ElevenLabs functions
 async function updateElevenLabsPrompt(systemPrompt, firstMessage = '') {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID) {
         throw new Error('ElevenLabs configuration incomplete');
@@ -704,7 +702,6 @@ async function updateElevenLabsPrompt(systemPrompt, firstMessage = '') {
     }
 }
 
-// Function to initiate outbound call
 async function initiateOutboundCall(phoneNumber) {
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
         throw new Error('ElevenLabs configuration incomplete');
@@ -745,7 +742,7 @@ async function initiateOutboundCall(phoneNumber) {
     }
 }
 
-// Batch processing functions
+// Batch processing
 async function processBatch(batchId) {
     try {
         console.log(`Starting batch processing for batch: ${batchId}`);
@@ -792,6 +789,24 @@ async function processBatch(batchId) {
                 await pool.query(
                     'UPDATE batch_calls SET status = $1, call_id = $2, completed_at = NOW() WHERE id = $3',
                     ['completed', callData.id, batchCall.id]
+                );
+
+                await pool.query(
+                    'UPDATE batches SET completed_calls = completed_calls + 1, successful_calls = successful_calls + 1 WHERE id = $1',
+                    [batchId]
+                );
+
+                io.emit('newCall', callData);
+                console.log(`Call initiated successfully to ${batchCall.phone_number}`);
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+            } catch (error) {
+                console.error(`Failed to call ${batchCall.phone_number}:`, error.message);
+                
+                await pool.query(
+                    'UPDATE batch_calls SET status = $1, error_message = $2, completed_at = NOW() WHERE id = $3',
+                    ['failed', error.message, batchCall.id]
                 );
 
                 await pool.query(
@@ -852,12 +867,12 @@ function parseCSV(csvContent) {
     return phoneNumbers;
 }
 
-// Serve the main HTML page
+// ROUTES
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API endpoint for web scraping
+// Web scraping API
 app.post('/api/scrape', async (req, res) => {
     const { url } = req.body;
     
@@ -931,7 +946,6 @@ app.post('/api/scrape', async (req, res) => {
     }
 });
 
-// API endpoint to get scraped data
 app.get('/api/scraped-data', async (req, res) => {
     try {
         const result = await pool.query(
@@ -949,7 +963,6 @@ app.get('/api/scraped-data', async (req, res) => {
     }
 });
 
-// API endpoint to delete scraped data
 app.delete('/api/scraped-data/:id', async (req, res) => {
     const { id } = req.params;
     
@@ -962,7 +975,7 @@ app.delete('/api/scraped-data/:id', async (req, res) => {
     }
 });
 
-// Document parsing endpoint
+// Document parsing API
 app.post('/api/parse-document', upload.single('document'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ 
@@ -1029,7 +1042,6 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
     }
 });
 
-// API endpoint to get parsed documents
 app.get('/api/parsed-documents', async (req, res) => {
     try {
         const result = await pool.query(
@@ -1047,7 +1059,6 @@ app.get('/api/parsed-documents', async (req, res) => {
     }
 });
 
-// API endpoint to delete parsed document
 app.delete('/api/parsed-documents/:id', async (req, res) => {
     const { id } = req.params;
     
@@ -1060,7 +1071,7 @@ app.delete('/api/parsed-documents/:id', async (req, res) => {
     }
 });
 
-// Get current agent prompt
+// Prompt APIs
 app.get('/api/prompt', async (req, res) => {
     try {
         const result = await pool.query(
@@ -1107,7 +1118,6 @@ app.get('/api/prompt', async (req, res) => {
     }
 });
 
-// Update agent prompt
 app.post('/api/prompt', async (req, res) => {
     const { 
         system_prompt, 
@@ -1161,7 +1171,7 @@ app.post('/api/prompt', async (req, res) => {
     }
 });
 
-// API endpoint to initiate single outbound call
+// Call APIs
 app.post('/api/calls/initiate', async (req, res) => {
     const { phoneNumber } = req.body;
     
@@ -1226,7 +1236,17 @@ app.post('/api/calls/initiate', async (req, res) => {
     }
 });
 
-// API endpoint to upload CSV and create batch
+app.get('/api/calls', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
+        res.json({ calls: result.rows });
+    } catch (error) {
+        console.error('Database query error:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Batch APIs
 app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
     try {
         if (!req.file) {
@@ -1269,7 +1289,6 @@ app.post('/api/batch/upload', upload.single('csvFile'), async (req, res) => {
     }
 });
 
-// API endpoint to start batch processing
 app.post('/api/batch/:batchId/start', async (req, res) => {
     const { batchId } = req.params;
 
@@ -1301,7 +1320,6 @@ app.post('/api/batch/:batchId/start', async (req, res) => {
     }
 });
 
-// API endpoint to get batch status
 app.get('/api/batch/:batchId', async (req, res) => {
     const { batchId } = req.params;
 
@@ -1327,7 +1345,6 @@ app.get('/api/batch/:batchId', async (req, res) => {
     }
 });
 
-// API endpoint to get all batches
 app.get('/api/batches', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM batches ORDER BY created_at DESC LIMIT 10');
@@ -1338,7 +1355,7 @@ app.get('/api/batches', async (req, res) => {
     }
 });
 
-// Webhook endpoint - ElevenLabs will POST here
+// Webhook endpoint
 app.post('/webhook', async (req, res) => {
     console.log('Webhook received from ElevenLabs');
     
@@ -1416,18 +1433,7 @@ app.post('/webhook', async (req, res) => {
     res.status(200).json({ success: true, message: 'Webhook received' });
 });
 
-// API endpoint to get call history
-app.get('/api/calls', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM calls ORDER BY timestamp DESC LIMIT 50');
-        res.json({ calls: result.rows });
-    } catch (error) {
-        console.error('Database query error:', error);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
-
-// Health check endpoint
+// Health check
 app.get('/health', async (req, res) => {
     try {
         const result = await pool.query('SELECT COUNT(*) FROM calls');
@@ -1451,55 +1457,6 @@ app.get('/health', async (req, res) => {
             status: 'unhealthy', 
             error: error.message,
             timestamp: new Date().toISOString()
-        });
-    }
-});
-
-// Test ElevenLabs API connection
-app.get('/test-elevenlabs', async (req, res) => {
-    try {
-        if (!ELEVENLABS_API_KEY) {
-            return res.status(400).json({ 
-                error: 'ELEVENLABS_API_KEY not configured',
-                configured: {
-                    apiKey: false,
-                    agentId: !!ELEVENLABS_AGENT_ID,
-                    phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-                }
-            });
-        }
-
-        const response = await fetch('https://api.elevenlabs.io/v1/models', {
-            headers: {
-                'xi-api-key': ELEVENLABS_API_KEY
-            }
-        });
-
-        if (!response.ok) {
-            const errorData = await response.text();
-            return res.status(response.status).json({
-                error: 'ElevenLabs API test failed',
-                status: response.status,
-                details: errorData
-            });
-        }
-
-        const data = await response.json();
-        res.json({
-            success: true,
-            message: 'ElevenLabs API connection successful',
-            configured: {
-                apiKey: true,
-                agentId: !!ELEVENLABS_AGENT_ID,
-                phoneNumberId: !!ELEVENLABS_PHONE_NUMBER_ID
-            },
-            availableModels: data.length || 0
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            error: 'Failed to test ElevenLabs API',
-            details: error.message
         });
     }
 });
@@ -1569,22 +1526,4 @@ server.listen(PORT, () => {
     }
     
     console.log(`\nSkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
-}); = completed_calls + 1, successful_calls = successful_calls + 1 WHERE id = $1',
-                    [batchId]
-                );
-
-                io.emit('newCall', callData);
-                console.log(`Call initiated successfully to ${batchCall.phone_number}`);
-
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-            } catch (error) {
-                console.error(`Failed to call ${batchCall.phone_number}:`, error.message);
-                
-                await pool.query(
-                    'UPDATE batch_calls SET status = $1, error_message = $2, completed_at = NOW() WHERE id = $3',
-                    ['failed', error.message, batchCall.id]
-                );
-
-                await pool.query(
-                    'UPDATE batches SET completed_calls
+});
