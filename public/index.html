@@ -24,19 +24,51 @@
         <div class="content-area">
             <div class="connection-status">
                 <div class="status-dot"></div>
-                <span>Connected</span>
+                <span id="connectionStatus">Connected</span>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCalls">0</div>
+                    <div class="stat-label">Total Calls</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="inboundCalls">0</div>
+                    <div class="stat-label">Inbound Calls</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="outboundCalls">0</div>
+                    <div class="stat-label">Outbound Calls</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lastUpdate">Never</div>
+                    <div class="stat-label">Last Update</div>
+                </div>
             </div>
 
             <!-- Make Call Section -->
             <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">📞 Make Call</div>
+                    <div class="section-title">
+                        <span class="section-icon">📞</span>
+                        Make Call
+                    </div>
                     <div class="section-subtitle">Make individual calls directly from your dashboard</div>
                 </div>
                 <div class="section-content">
                     <div class="phone-input-group">
-                        <input type="tel" id="phoneInput" class="phone-input" placeholder="Enter phone number (e.g., +1-555-123-4567)" maxlength="20">
-                        <button id="callButton" class="call-btn" onclick="initiateCall()">📞 Start Call</button>
+                        <input 
+                            type="tel" 
+                            id="phoneInput" 
+                            class="phone-input" 
+                            placeholder="Enter phone number (e.g., +1-555-123-4567)"
+                            maxlength="20"
+                        >
+                        <button id="callButton" class="call-btn" onclick="initiateCall()">
+                            <span class="btn-icon">📞</span>
+                            Start Call
+                        </button>
                     </div>
                     <div id="callStatus" class="call-status"></div>
                 </div>
@@ -45,363 +77,216 @@
             <!-- AI Agent Configuration -->
             <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">🤖 AI Agent Configuration</div>
-                    <div class="section-subtitle">Customize your AI agent's behavior</div>
+                    <div class="section-title">
+                        <span class="section-icon">🤖</span>
+                        AI Agent Configuration
+                    </div>
+                    <div class="section-subtitle">Customize your AI agent's behavior and knowledge</div>
                 </div>
                 <div class="section-content">
                     <div class="tabs-container">
                         <div class="tabs">
-                            <button class="tab active" onclick="switchTab('prompt-tab', this)">✏️ Prompt Editor</button>
+                            <button class="tab active" onclick="switchTab('prompt-tab', this)">
+                                <span class="tab-icon">✏️</span>
+                                Prompt Editor
+                            </button>
+                            <button class="tab" onclick="switchTab('knowledge-tab', this)">
+                                <span class="tab-icon">📚</span>
+                                Knowledge Base
+                            </button>
+                            <button class="tab" onclick="switchTab('settings-tab', this)">
+                                <span class="tab-icon">⚙️</span>
+                                Settings
+                            </button>
                         </div>
 
+                        <!-- Prompt Editor Tab -->
                         <div id="prompt-tab" class="tab-content active">
                             <div class="prompt-templates">
-                                <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
-                                <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
-                                <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
-                                <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
+                                <button class="template-btn" onclick="loadTemplate('sales')">
+                                    <span class="template-icon">🎯</span>
+                                    Sales
+                                </button>
+                                <button class="template-btn" onclick="loadTemplate('support')">
+                                    <span class="template-icon">🛠️</span>
+                                    Support
+                                </button>
+                                <button class="template-btn" onclick="loadTemplate('appointment')">
+                                    <span class="template-icon">📅</span>
+                                    Appointments
+                                </button>
+                                <button class="template-btn" onclick="loadTemplate('receptionist')">
+                                    <span class="template-icon">📋</span>
+                                    Receptionist
+                                </button>
                             </div>
                             
-                            <textarea id="promptEditor" class="prompt-editor" placeholder="Enter your AI agent's instructions here..."></textarea>
+                            <textarea 
+                                id="promptEditor" 
+                                class="prompt-editor"
+                                placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
+                            ></textarea>
                             
                             <div class="prompt-actions">
-                                <button id="savePromptBtn" class="btn" onclick="savePrompt()">💾 Save Prompt</button>
-                                <button class="btn secondary" onclick="loadCurrentPrompt()">🔄 Reload Current</button>
+                                <button id="savePromptBtn" class="btn" onclick="savePrompt()">
+                                    <span class="btn-icon">💾</span>
+                                    Save Prompt
+                                </button>
+                                <button class="btn secondary" onclick="loadCurrentPrompt()">
+                                    <span class="btn-icon">🔄</span>
+                                    Reload Current
+                                </button>
                             </div>
                             
                             <div id="promptStatus" class="prompt-status"></div>
                         </div>
+
+                        <!-- Knowledge Base Tab -->
+                        <div id="knowledge-tab" class="tab-content">
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                View and manage scraped website data and processed documents that enhance your AI agent's knowledge
+                            </div>
+                            
+                            <div id="knowledgeBaseContent">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📚</div>
+                                    <div class="empty-title">No Knowledge Data</div>
+                                    <div class="empty-subtitle">Scrape websites or upload documents to build your agent's knowledge base</div>
+                                </div>
+                            </div>
+                            
+                            <div class="prompt-actions">
+                                <button class="btn secondary" onclick="exportKnowledgeBase()">
+                                    <span class="btn-icon">📥</span>
+                                    Export Data
+                                </button>
+                                <button class="btn secondary" onclick="clearKnowledgeBase()">
+                                    <span class="btn-icon">🗑️</span>
+                                    Clear All Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Settings Tab -->
+                        <div id="settings-tab" class="tab-content">
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                Configure your AI agent's behavior and response settings
+                            </div>
+                            
+                            <div class="settings-grid">
+                                <div class="setting-group">
+                                    <label class="setting-label">Response Speed</label>
+                                    <select id="responseSpeed" class="setting-input">
+                                        <option value="fast">Fast (Quick responses)</option>
+                                        <option value="balanced" selected>Balanced (Default)</option>
+                                        <option value="thoughtful">Thoughtful (More detailed)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="setting-group">
+                                    <label class="setting-label">Conversation Style</label>
+                                    <select id="conversationStyle" class="setting-input">
+                                        <option value="professional">Professional</option>
+                                        <option value="friendly" selected>Friendly</option>
+                                        <option value="casual">Casual</option>
+                                        <option value="formal">Formal</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="setting-group">
+                                    <label class="setting-label">Auto-Update Knowledge</label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="autoUpdateKnowledge" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <span>Automatically include new scraped data in agent prompts</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="setting-group">
+                                    <label class="setting-label">Max Knowledge Length</label>
+                                    <input 
+                                        type="range" 
+                                        id="maxKnowledgeLength" 
+                                        min="1000" 
+                                        max="10000" 
+                                        value="5000"
+                                        class="slider"
+                                    >
+                                    <div class="slider-labels">
+                                        <span>1K characters</span>
+                                        <span id="knowledgeLengthValue">5K characters</span>
+                                        <span>10K characters</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="prompt-actions">
+                                <button class="btn" onclick="saveSettings()">
+                                    <span class="btn-icon">💾</span>
+                                    Save Settings
+                                </button>
+                                <button class="btn secondary" onclick="resetSettings()">
+                                    <span class="btn-icon">🔄</span>
+                                    Reset to Default
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Call History -->
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn" onclick="refreshData()">
+                    <span class="btn-icon">🔄</span>
+                    Refresh Data
+                </button>
+                <button class="btn secondary" onclick="viewAllCalls()">
+                    <span class="btn-icon">📋</span>
+                    View All Calls
+                </button>
+            </div>
+
+            <!-- Recent Call Log -->
             <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">📞 Recent Calls</div>
+                    <div class="section-title">
+                        <span class="section-icon">📞</span>
+                        Recent Calls
+                    </div>
                     <div class="section-subtitle">Latest conversation activity</div>
                 </div>
-                <div class="controls">
-                    <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+                
+                <div id="callHistory">
+                    <div class="empty-state">
+                        <div class="empty-icon">📞</div>
+                        <div class="empty-title">Loading calls...</div>
+                        <div class="empty-subtitle">Your call data will appear here</div>
+                        <div class="webhook-url" id="webhookUrl">Webhook: /webhook</div>
+                    </div>
                 </div>
-                <div id="callHistory">Loading...</div>
             </div>
         </div>
     </div>
 
-    <div id="notification" class="notification">Notification</div>
+    <!-- Transcript Modal -->
+    <div id="transcriptModal" class="transcript-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Call Transcript</div>
+                <button class="close-btn" onclick="closeTranscriptModal()">&times;</button>
+            </div>
+            <div class="transcript-content" id="modalTranscript">
+                No transcript available
+            </div>
+        </div>
+    </div>
 
-    <script>
-        // Global variables
-        let calls = [];
-        
-        // Template data
-        const templates = {
-            sales: `You are a professional sales agent for our company. Your goal is to:
-- Greet callers warmly and professionally
-- Listen to their needs and understand their pain points
-- Present our solutions in a compelling way
-- Handle objections with empathy and expertise
-- Guide the conversation toward scheduling a demo or next steps
-- Always be helpful, knowledgeable, and customer-focused
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        New call received
+    </div>
 
-Keep responses concise and conversational. Ask qualifying questions to understand their business needs.`,
-            
-            support: `You are a helpful customer support agent. Your primary objectives are to:
-- Provide excellent customer service with patience and empathy
-- Listen carefully to customer issues and concerns
-- Offer clear, step-by-step solutions
-- Escalate complex technical issues when appropriate
-- Ensure customer satisfaction before ending the call
-- Document any issues for follow-up
-
-Always remain calm and professional, even with frustrated customers. Focus on resolving their problems efficiently.`,
-            
-            appointment: `You are an appointment scheduling specialist. Your role is to:
-- Greet callers professionally and understand their scheduling needs
-- Check availability and offer suitable time slots
-- Collect necessary information for the appointment
-- Confirm all details including date, time, and contact information
-- Send confirmation and any preparation instructions
-- Handle rescheduling requests professionally
-
-Be efficient but thorough. Always double-check appointment details before confirming.`,
-            
-            receptionist: `You are a friendly and professional receptionist. Your responsibilities include:
-- Greeting callers with warmth and professionalism
-- Directing calls to the appropriate department or person
-- Taking detailed messages when needed
-- Providing basic company information and hours
-- Handling general inquiries politely
-- Maintaining a helpful and courteous tone
-
-Always ask for the caller's name and reason for calling to provide the best assistance.`
-        };
-
-        // Tab switching
-        function switchTab(tabId, tabButton) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            tabButton.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // Template loading
-        function loadTemplate(templateName) {
-            if (templates[templateName]) {
-                document.getElementById('promptEditor').value = templates[templateName];
-                showNotification(`${templateName.charAt(0).toUpperCase() + templateName.slice(1)} template loaded`);
-            }
-        }
-
-        // Call initiation
-        async function initiateCall() {
-            const phoneNumber = document.getElementById('phoneInput').value.trim();
-            
-            if (!phoneNumber) {
-                showCallStatus('Please enter a phone number', 'error');
-                return;
-            }
-
-            try {
-                const callButton = document.getElementById('callButton');
-                callButton.disabled = true;
-                callButton.textContent = '📞 Initiating...';
-                showCallStatus('Initiating call...', 'loading');
-
-                const response = await fetch('/api/calls/initiate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showCallStatus(`Call initiated successfully to ${phoneNumber}`, 'success');
-                    document.getElementById('phoneInput').value = '';
-                    showNotification('Outbound call initiated successfully');
-                    setTimeout(refreshData, 1000);
-                } else {
-                    showCallStatus(result.error || 'Failed to initiate call', 'error');
-                }
-            } catch (error) {
-                console.error('Error initiating call:', error);
-                showCallStatus('Error initiating call. Please try again.', 'error');
-            } finally {
-                const callButton = document.getElementById('callButton');
-                callButton.disabled = false;
-                callButton.textContent = '📞 Start Call';
-                
-                setTimeout(() => {
-                    document.getElementById('callStatus').className = 'call-status';
-                }, 5000);
-            }
-        }
-
-        // Prompt management
-        async function loadCurrentPrompt() {
-            try {
-                showPromptStatus('Loading current prompt...', 'loading');
-                const response = await fetch('/api/prompt');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('promptEditor').value = data.prompt?.system_prompt || '';
-                    showPromptStatus('Prompt loaded successfully', 'success');
-                } else {
-                    showPromptStatus('Failed to load current prompt', 'error');
-                }
-            } catch (error) {
-                console.error('Error loading prompt:', error);
-                showPromptStatus('Error loading prompt', 'error');
-            } finally {
-                setTimeout(() => {
-                    document.getElementById('promptStatus').className = 'prompt-status';
-                }, 3000);
-            }
-        }
-
-        async function savePrompt() {
-            const prompt = document.getElementById('promptEditor').value.trim();
-            
-            if (!prompt) {
-                showPromptStatus('Please enter a prompt before saving', 'error');
-                return;
-            }
-
-            try {
-                const savePromptBtn = document.getElementById('savePromptBtn');
-                savePromptBtn.disabled = true;
-                savePromptBtn.textContent = '💾 Saving...';
-                showPromptStatus('Saving prompt...', 'loading');
-
-                const response = await fetch('/api/prompt', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ system_prompt: prompt, first_message: '' })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showPromptStatus('Prompt saved successfully!', 'success');
-                    showNotification('AI agent prompt updated successfully');
-                } else {
-                    showPromptStatus(result.error || 'Failed to save prompt', 'error');
-                }
-            } catch (error) {
-                console.error('Error saving prompt:', error);
-                showPromptStatus(`Error saving prompt: ${error.message}`, 'error');
-            } finally {
-                const savePromptBtn = document.getElementById('savePromptBtn');
-                savePromptBtn.disabled = false;
-                savePromptBtn.textContent = '💾 Save Prompt';
-                
-                setTimeout(() => {
-                    document.getElementById('promptStatus').className = 'prompt-status';
-                }, 5000);
-            }
-        }
-
-        // Data refresh
-        async function refreshData() {
-            try {
-                const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
-                if (refreshBtn) {
-                    refreshBtn.textContent = '🔄 Refreshing...';
-                    refreshBtn.disabled = true;
-                }
-                
-                const response = await fetch('/api/calls');
-                if (response.ok) {
-                    const data = await response.json();
-                    calls = data.calls || [];
-                    renderCallHistory();
-                    showNotification('Data refreshed successfully');
-                } else {
-                    showNotification('Failed to refresh data', true);
-                }
-            } catch (error) {
-                console.error('Error refreshing data:', error);
-                showNotification('Error refreshing data', true);
-            } finally {
-                const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
-                if (refreshBtn) {
-                    refreshBtn.textContent = '🔄 Refresh Data';
-                    refreshBtn.disabled = false;
-                }
-            }
-        }
-
-        // Render call history
-        function renderCallHistory() {
-            const callHistory = document.getElementById('callHistory');
-            
-            if (calls.length === 0) {
-                callHistory.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📞</div>
-                        <div class="empty-title">No calls yet</div>
-                        <div class="empty-subtitle">Your call data will appear here</div>
-                    </div>
-                `;
-                return;
-            }
-
-            const callsToShow = calls.slice(0, 10);
-            const cardsHTML = `
-                <div class="call-cards">
-                    ${callsToShow.map(call => `
-                        <div class="call-card">
-                            <div class="call-card-header">
-                                <div class="call-phone">${call.caller_number || 'Unknown'}</div>
-                                <div class="call-datetime">
-                                    <div class="call-date">${formatDate(call.timestamp)}</div>
-                                    <div class="call-time">${formatTime(call.timestamp)}</div>
-                                </div>
-                            </div>
-                            <div class="call-details">
-                                <div class="call-duration">${formatDuration(call.duration)}</div>
-                                <div class="call-type-badge call-type-${call.call_type || 'inbound'}">
-                                    ${call.call_type === 'outbound' ? '📤 Out' : '📥 In'}
-                                </div>
-                                <span class="status-badge status-${call.status || 'unknown'}">
-                                    ${call.status || 'Unknown'}
-                                </span>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            callHistory.innerHTML = cardsHTML;
-        }
-
-        // Utility functions
-        function showCallStatus(message, type) {
-            const callStatus = document.getElementById('callStatus');
-            callStatus.textContent = message;
-            callStatus.className = `call-status ${type}`;
-        }
-
-        function showPromptStatus(message, type) {
-            const promptStatus = document.getElementById('promptStatus');
-            promptStatus.textContent = message;
-            promptStatus.className = `prompt-status ${type}`;
-        }
-
-        function showNotification(message, isError = false) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.className = `notification ${isError ? 'error' : ''}`;
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 4000);
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return 'Unknown';
-            const date = new Date(dateString);
-            const today = new Date();
-            
-            if (date.toDateString() === today.toDateString()) {
-                return 'Today';
-            } else {
-                return date.toLocaleDateString();
-            }
-        }
-
-        function formatTime(dateString) {
-            if (!dateString) return 'Unknown';
-            return new Date(dateString).toLocaleTimeString([], {
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true
-            });
-        }
-
-        function formatDuration(seconds) {
-            if (!seconds || seconds === 0) return '0s';
-            const hours = Math.floor(seconds / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            
-            if (hours > 0) {
-                return `${hours}h ${mins}m`;
-            } else if (mins > 0) {
-                return `${mins}m ${secs}s`;
-            } else {
-                return `${secs}s`;
-            }
-        }
-
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', () => {
-            loadCurrentPrompt();
-            refreshData();
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
