@@ -173,6 +173,10 @@ async function loadCurrentPrompt() {
 async function savePrompt() {
     const prompt = document.getElementById('promptEditor').value.trim();
     
+    // DEBUG: Log what we're about to send
+    console.log('Prompt from textarea:', prompt);
+    console.log('Prompt length:', prompt.length);
+    
     if (!prompt) {
         showPromptStatus('Please enter a prompt before saving', 'error');
         return;
@@ -184,23 +188,32 @@ async function savePrompt() {
         savePromptBtn.innerHTML = '<span class="btn-icon">💾</span> Saving...';
         showPromptStatus('Saving prompt...', 'loading');
 
+        const requestBody = { system_prompt: prompt };
+        
+        // DEBUG: Log the exact request body
+        console.log('Request body:', requestBody);
+        console.log('JSON stringified:', JSON.stringify(requestBody));
+
         const response = await fetch('/api/prompt', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-                system_prompt: prompt, 
-                first_message: 'Hello! This is Andy from SkyIQ. How can I help you today?'
-            })
+            body: JSON.stringify(requestBody)
         });
+
+        // DEBUG: Log response details
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('Response error:', errorText);
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const result = await response.json();
+        console.log('Success response:', result);
 
         if (result.success) {
             showPromptStatus('Prompt saved successfully!', 'success');
@@ -221,7 +234,6 @@ async function savePrompt() {
         }, 5000);
     }
 }
-
 // Data refresh
 async function refreshData() {
     try {
