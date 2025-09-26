@@ -1,57 +1,42 @@
 const express = require('express');
 const router = express.Router();
 
-// Function to extract first message from structured prompt format
+// Smart first message extraction - handles any format
 function extractFirstMessageFromPrompt(systemPrompt) {
-    // Look for FIRST_MESSAGE: "greeting text"
-    const firstMessageMatch = systemPrompt.match(/FIRST_MESSAGE:\s*["']([^"']+)["']/i);
-    if (firstMessageMatch) {
-        return firstMessageMatch[1].trim();
+    const lines = systemPrompt.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    // Strategy 1: Look for explicit greeting patterns anywhere in the text
+    for (const line of lines) {
+        const cleaned = line.replace(/^[-*•"']\s*/, '').replace(/["']$/, '').trim();
+        
+        // Find lines that look like greetings
+        if (cleaned.match(/^(hello|hi|good\s+(morning|afternoon|evening)|thank\s+you\s+for\s+calling)/i) && cleaned.length < 200) {
+            return cleaned;
+        }
+        
+        // Find "This is..." introductions
+        if (cleaned.match(/^this\s+is\s+\w+/i) && cleaned.length < 150) {
+            return cleaned.startsWith('Hello') ? cleaned : `Hello! ${cleaned}`;
+        }
     }
     
-    // Look for GREETING: "greeting text"
-    const greetingMatch = systemPrompt.match(/GREETING:\s*["']([^"']+)["']/i);
-    if (greetingMatch) {
-        return greetingMatch[1].trim();
+    // Strategy 2: Extract from "You are [Name]" and build greeting
+    const nameCompanyMatch = systemPrompt.match(/you\s+are\s+(\w+).*?(?:from|at|for|work\s+for)\s+([^.!?\n]+)/i);
+    if (nameCompanyMatch) {
+        const name = nameCompanyMatch[1];
+        const company = nameCompanyMatch[2].replace(/[,.].*/, '').trim();
+        return `Hello! This is ${name} from ${company}. How can I help you today?`;
     }
     
-    // Look for OPENING: "greeting text"
-    const openingMatch = systemPrompt.match(/OPENING:\s*["']([^"']+)["']/i);
-    if (openingMatch) {
-        return openingMatch[1].trim();
+    // Strategy 3: Look for any name in the prompt
+    const simpleNameMatch = systemPrompt.match(/you\s+are\s+(\w+)/i);
+    if (simpleNameMatch) {
+        const name = simpleNameMatch[1];
+        return `Hello! This is ${name}. How can I help you today?`;
     }
     
     // Fallback
     return "Hello! How can I help you today?";
-}
-
-// Function to validate structured prompt format
-function validatePromptStructure(systemPrompt) {
-    const requiredSections = [
-        /FIRST_MESSAGE:\s*["'][^"']+["']/i,
-        /SYSTEM_PROMPT:/i
-    ];
-    
-    for (const section of requiredSections) {
-        if (!section.test(systemPrompt)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-// Function to format prompt into structured format
-function formatPromptStructure(systemPrompt, firstMessage) {
-    // If already structured, return as-is
-    if (validatePromptStructure(systemPrompt)) {
-        return systemPrompt;
-    }
-    
-    // Convert to structured format
-    return `FIRST_MESSAGE: "${firstMessage}"
-
-SYSTEM_PROMPT:
-${systemPrompt}`;
 }
 
 // Function to update ElevenLabs agent
@@ -104,40 +89,33 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Update prompt - structured format with automatic extraction
+// Update prompt - simple format, smart extraction
 router.put('/', async (req, res) => {
-    const { system_prompt, first_message } = req.body;
+    const { system_prompt } = req.body;
     
     if (!system_prompt) {
         return res.status(400).json({ error: 'system_prompt is required' });
     }
 
     try {
-        // Extract first message from structured prompt
-        let extractedFirstMessage = extractFirstMessageFromPrompt(system_prompt);
+        // Smart extraction of first message
+        const extractedFirstMessage = extractFirstMessageFromPrompt(system_prompt);
         
-        // Use provided first_message if available, otherwise use extracted
-        const finalFirstMessage = first_message || extractedFirstMessage;
-        
-        // Format prompt into structured format
-        const structuredPrompt = formatPromptStructure(system_prompt, finalFirstMessage);
-        
-        // Clear all old prompts and insert new one
+        // Clear old prompts and insert new one
         await req.appState.pool.query('DELETE FROM prompts');
         
         const result = await req.appState.pool.query(`
             INSERT INTO prompts (system_prompt, first_message, prompt, created_at, updated_at) 
             VALUES ($1, $2, $1, NOW(), NOW()) 
             RETURNING *
-        `, [structuredPrompt, finalFirstMessage]);
+        `, [system_prompt, extractedFirstMessage]);
 
         // Update ElevenLabs agent
         try {
-            await updateElevenLabsAgent(structuredPrompt, finalFirstMessage, req.appState.elevenLabsConfig);
-            console.log('ElevenLabs agent updated successfully');
+            await updateElevenLabsAgent(system_prompt, extractedFirstMessage, req.appState.elevenLabsConfig);
+            console.log(`ElevenLabs agent updated with greeting: "${extractedFirstMessage}"`);
         } catch (elevenLabsError) {
             console.error('Failed to update ElevenLabs agent:', elevenLabsError.message);
-            // Continue anyway - database update succeeded
         }
 
         // Emit update to connected clients
@@ -149,54 +127,10 @@ router.put('/', async (req, res) => {
             success: true, 
             message: 'Prompt updated successfully',
             prompt: result.rows[0],
-            extracted_first_message: finalFirstMessage,
-            is_structured: validatePromptStructure(structuredPrompt)
+            extracted_first_message: extractedFirstMessage
         });
     } catch (error) {
         console.error('Error updating prompt:', error);
-        res.status(500).json({ error: 'Database error' });
-    }
-});
-
-// Helper endpoint to convert existing prompt to structured format
-router.post('/convert', async (req, res) => {
-    const { system_prompt, first_message } = req.body;
-    
-    if (!system_prompt) {
-        return res.status(400).json({ error: 'system_prompt is required' });
-    }
-    
-    const finalFirstMessage = first_message || "Hello! How can I help you today?";
-    const structuredPrompt = formatPromptStructure(system_prompt, finalFirstMessage);
-    
-    res.json({
-        structured_prompt: structuredPrompt,
-        extracted_first_message: finalFirstMessage,
-        is_valid: validatePromptStructure(structuredPrompt)
-    });
-});
-
-// Get prompt in structured format
-router.get('/structured', async (req, res) => {
-    try {
-        const result = await req.appState.pool.query('SELECT * FROM prompts ORDER BY updated_at DESC LIMIT 1');
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'No prompts found' });
-        }
-        
-        const prompt = result.rows[0];
-        const structuredPrompt = formatPromptStructure(prompt.system_prompt, prompt.first_message);
-        
-        res.json({ 
-            prompt: {
-                ...prompt,
-                system_prompt: structuredPrompt
-            },
-            is_structured: validatePromptStructure(structuredPrompt)
-        });
-    } catch (error) {
-        console.error('Error fetching structured prompt:', error);
         res.status(500).json({ error: 'Database error' });
     }
 });
