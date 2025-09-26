@@ -103,34 +103,24 @@
                         <!-- Prompt Editor Tab -->
                         <div id="prompt-tab" class="tab-content active">
                             <div class="section-subtitle" style="margin-bottom: 16px;">
-                                Create your custom AI agent prompt using the structured format below
-                            </div>
-                            
-                            <div class="prompt-help" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                                <div style="font-weight: 600; color: #0369a1; margin-bottom: 8px;">Structured Format Required:</div>
-                                <code style="display: block; background: #e0f2fe; padding: 8px; border-radius: 4px; font-size: 0.875rem;">
-FIRST_MESSAGE: "Your greeting here"<br><br>
-SYSTEM_PROMPT:<br>
-Your detailed instructions for the AI agent...
-                                </code>
-                                <button class="btn secondary" onclick="showFormatHelp()" style="margin-top: 8px; font-size: 0.875rem; padding: 6px 12px;">
-                                    <span class="btn-icon">❓</span>
-                                    Show Example
-                                </button>
+                                Write your AI agent's instructions. The system will automatically detect and extract the greeting.
                             </div>
                             
                             <textarea 
                                 id="promptEditor" 
                                 class="prompt-editor"
-                                placeholder='Enter your AI agent prompt using this format:
+                                placeholder='Write your AI agent instructions here. For example:
 
-FIRST_MESSAGE: "Hello! This is [Name] from [Company]. How can I help you today?"
+You are Sarah, a customer service representative for Acme Corp. Always be helpful and professional.
 
-SYSTEM_PROMPT:
-You are [Name], a [role] for [Company].
-- Your specific instructions here
-- How to handle different situations
-- Your conversation style'
+Hello! This is Sarah from Acme Corp. How can I help you today?
+
+- Be patient with customers
+- Listen to their concerns  
+- Provide clear solutions
+- End calls on a positive note
+
+The system will automatically find "Hello! This is Sarah..." and use it as the greeting.'
                             ></textarea>
                             
                             <div class="prompt-actions">
