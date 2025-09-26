@@ -1405,45 +1405,59 @@ Always ask for the caller's name and reason for calling to provide the best assi
         // Socket connection
         let socket;
         if (config.socketEnabled && typeof io !== 'undefined') {
-            socket = io();
-            
-            socket.on('connect', () => {
-                updateConnectionStatus('Connected', '#22c55e');
-            });
+            try {
+                socket = io();
+                
+                socket.on('connect', () => {
+                    console.log('🔌 Socket.IO connected');
+                    updateConnectionStatus('Connected', '#22c55e');
+                });
 
-            socket.on('disconnect', () => {
-                updateConnectionStatus('Disconnected', '#dc2626');
-            });
+                socket.on('disconnect', () => {
+                    console.log('🔌 Socket.IO disconnected');
+                    updateConnectionStatus('Disconnected', '#dc2626');
+                });
 
-            socket.on('callHistory', (history) => {
-                calls = history;
-                renderCallHistory();
-            });
+                socket.on('connect_error', (error) => {
+                    console.error('🔌 Socket.IO connection error:', error);
+                    updateConnectionStatus('Connection Error', '#dc2626');
+                });
+            } catch (error) {
+                console.error('🔌 Failed to initialize Socket.IO:', error);
+                updateConnectionStatus('Socket Error', '#dc2626');
+            }
 
-            socket.on('newCall', (callData) => {
-                calls.unshift(callData);
-                renderCallHistory();
-                showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
-                updateStats();
-            });
-
-            socket.on('updateCall', (callData) => {
-                const index = calls.findIndex(call => call.id === callData.id);
-                if (index >= 0) {
-                    calls[index] = callData;
+            if (socket) {
+                socket.on('callHistory', (history) => {
+                    calls = history;
                     renderCallHistory();
-                    updateStats();
-                }
-            });
+                });
 
-            socket.on('scrapingComplete', (data) => {
-                updateUrlStatus(data.url, data.success ? 'success' : 'error');
-                if (data.success) {
-                    scrapedData.push(data);
-                    updateKnowledgeBase();
-                    showNotification('Website scraped successfully');
-                }
-            });
+                socket.on('newCall', (callData) => {
+                    calls.unshift(callData);
+                    renderCallHistory();
+                    showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
+                    updateStats();
+                });
+
+                socket.on('updateCall', (callData) => {
+                    const index = calls.findIndex(call => call.id === callData.id);
+                    if (index >= 0) {
+                        calls[index] = callData;
+                        renderCallHistory();
+                        updateStats();
+                    }
+                });
+
+                socket.on('scrapingComplete', (data) => {
+                    updateUrlStatus(data.url, data.success ? 'success' : 'error');
+                    if (data.success) {
+                        scrapedData.push(data);
+                        updateKnowledgeBase();
+                        showNotification('Website scraped successfully');
+                    }
+                });
+            }
         }
 
         // Initialize app
@@ -1467,6 +1481,12 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 const value = parseInt(e.target.value);
                 valueDisplay.textContent = `${Math.round(value/1000)}K characters`;
             });
+
+            // If Socket.IO is not available, refresh data manually
+            if (!socket) {
+                console.log('🔄 Socket.IO not available, refreshing data manually');
+                refreshData();
+            }
         }
 
         // Tab switching functionality
@@ -2073,6 +2093,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 savePromptBtn.textContent = '💾 Saving...';
                 showPromptStatus('Saving prompt...', 'loading');
 
+                console.log('Settings object:', settings);
                 console.log('Saving prompt with auto_include_scraped_data:', settings.autoUpdateKnowledge);
 
                 const response = await fetch('/api/prompt', {
@@ -2083,7 +2104,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                     body: JSON.stringify({ 
                         system_prompt: prompt, 
                         first_message: '',
-                        auto_include_scraped_data: settings.autoUpdateKnowledge
+                        auto_include_scraped_data: settings.autoUpdateKnowledge || false
                     })
                 });
 
