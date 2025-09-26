@@ -128,7 +128,34 @@ body {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
 }
+.prompt-preview {
+    background: #f0f9ff;
+    border: 1px solid #0ea5e9;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
 
+.preview-header {
+    font-size: 0.875rem;
+    color: #0369a1;
+    margin-bottom: 8px;
+}
+
+.preview-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    font-size: 0.875rem;
+}
+
+.preview-details div {
+    color: #475569;
+}
+
+.preview-details strong {
+    color: #1e293b;
+}
 .section-card {
     background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
     border-radius: 16px;
