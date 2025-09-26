@@ -193,19 +193,47 @@ function switchTab(tabId, tabButton) {
     document.getElementById(tabId).classList.add('active');
 }
 
-// Template loading functionality
+// Template loading functionality with preview
 function loadTemplate(templateName) {
     const template = promptTemplates[templateName];
     if (template) {
+        // Update the prompt editor
         document.getElementById('promptEditor').value = template.system_prompt;
-        showNotification(`${template.title} template loaded - ${template.name} from ${template.company}`);
         
-        // Update the first message field if it exists
-        const firstMessageField = document.getElementById('firstMessageEditor');
-        if (firstMessageField) {
-            firstMessageField.value = `Hello! This is ${template.name} from ${template.company}. How can I help you today?`;
+        // Show template preview
+        const preview = document.getElementById('promptPreview');
+        const templateNameEl = document.getElementById('templateName');
+        const agentName = document.getElementById('agentName');
+        const agentRole = document.getElementById('agentRole');
+        const agentCompany = document.getElementById('agentCompany');
+        
+        if (preview && templateNameEl && agentName && agentRole && agentCompany) {
+            templateNameEl.textContent = template.title;
+            agentName.textContent = template.name;
+            agentRole.textContent = template.role;
+            agentCompany.textContent = template.company;
+            preview.style.display = 'block';
         }
+        
+        showNotification(`${template.title} template loaded - ${template.name} from ${template.company}`);
     }
+}
+
+// Clear prompt function
+function clearPrompt() {
+    if (confirm('Are you sure you want to clear the current prompt?')) {
+        document.getElementById('promptEditor').value = '';
+        const preview = document.getElementById('promptPreview');
+        if (preview) {
+            preview.style.display = 'none';
+        }
+        showNotification('Prompt cleared');
+    }
+}
+
+// Test call function
+function testCall() {
+    showNotification('Test call feature coming soon');
 }
 
 // Call management
@@ -301,7 +329,6 @@ async function savePrompt() {
         savePromptBtn.innerHTML = '<span class="btn-icon">💾</span> Saving...';
         showPromptStatus('Saving prompt...', 'loading');
 
-        // Try with minimal required fields first
         const response = await fetch('/api/prompt', {
             method: 'PUT',
             headers: {
@@ -309,18 +336,17 @@ async function savePrompt() {
             },
             body: JSON.stringify({ 
                 system_prompt: prompt, 
-                first_message: "Hello! This is your AI assistant. How can I help you today?"
+                first_message: 'Hello! This is Andy from SkyIQ. How can I help you today?'
             })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('Server response:', errorText);
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const result = await response.json();
-        
+
         if (result.success) {
             showPromptStatus('Prompt saved successfully!', 'success');
             showNotification('AI agent prompt updated successfully');
