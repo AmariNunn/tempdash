@@ -31,24 +31,26 @@ router.put('/', async (req, res) => {
         
         let result;
         if (existingPrompt.rows.length > 0) {
-            // Update existing prompt
+            // Update existing prompt - CLEAR the old prompt field and update the new ones
             result = await req.appState.pool.query(`
                 UPDATE prompts 
-                SET system_prompt = $1, first_message = $2, updated_at = NOW() 
+                SET system_prompt = $1, first_message = $2, prompt = $1, updated_at = NOW() 
                 WHERE id = $3 
                 RETURNING *
             `, [system_prompt, first_message, existingPrompt.rows[0].id]);
         } else {
-            // Insert new prompt
+            // Insert new prompt - set both fields to the same value
             result = await req.appState.pool.query(`
-                INSERT INTO prompts (system_prompt, first_message) 
-                VALUES ($1, $2) 
+                INSERT INTO prompts (system_prompt, first_message, prompt) 
+                VALUES ($1, $2, $1) 
                 RETURNING *
             `, [system_prompt, first_message]);
         }
 
         // Emit update to all connected clients
-        req.appState.io.emit('promptUpdated', result.rows[0]);
+        if (req.appState.io) {
+            req.appState.io.emit('promptUpdated', result.rows[0]);
+        }
         
         res.json({ 
             success: true, 
