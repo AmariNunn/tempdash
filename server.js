@@ -10,7 +10,7 @@ const cheerio = require('cheerio');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const fs = require('fs');
-//const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const server = http.createServer(app);
@@ -134,6 +134,343 @@ function extractMainContent($) {
     
     // Fallback to body content
     return cleanText($('body').text());
+}
+
+// Enhanced document parsing functions with better error handling
+async function parseDocument(file) {
+    console.log(`📄 Parsing document: ${file.originalname} (${file.mimetype})`);
+    
+    const fileType = documentConfig.supportedTypes[file.mimetype];
+    if (!fileType) {
+        throw new Error(`Unsupported file type: ${file.mimetype}. Supported types: ${Object.keys(documentConfig.supportedTypes).join(', ')}`);
+    }
+
+    if (file.size > documentConfig.maxFileSize) {
+        throw new Error(`File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB (max: ${documentConfig.maxFileSize / (1024 * 1024)}MB)`);
+    }
+
+    let content = '';
+    let title = file.originalname;
+    let metadata = {};
+
+    try {
+        switch (fileType) {
+            case 'pdf':
+                try {
+                    const pdfData = await pdf(file.buffer, {
+                        max: 50, // Maximum pages to parse
+                        version: 'v2.0.550' // Specify PDF.js version
+                    });
+                    content = pdfData.text;
+                    title = pdfData.info?.Title || pdfData.info?.title || file.originalname;
+                    metadata = {
+                        pages: pdfData.numpages,
+                        info: pdfData.info,
+                        author: pdfData.info?.Author || pdfData.info?.author
+                    };
+                    
+                    if (!content || content.trim().length === 0) {
+                        throw new Error('PDF appears to contain no readable text content');
+                    }
+                } catch (pdfError) {
+                    throw new Error(`PDF parsing failed: ${pdfError.message}. The PDF may be corrupted, password-protected, or contain only images.`);
+                }
+                break;
+
+            case 'txt':
+            case 'md':
+                try {
+                    content = file.buffer.toString('utf-8');
+                    if (!content || content.trim().length === 0) {
+                        // Try different encodings
+                        const encodings = ['latin1', 'ascii', 'utf16le'];
+                        for (const encoding of encodings) {
+                            try {
+                                content = file.buffer.toString(encoding);
+                                if (content && content.trim().length > 0) break;
+                            } catch (e) {
+                                continue;
+                            }
+                        }
+                    }
+                } catch (textError) {
+                    throw new Error(`Text file parsing failed: ${textError.message}`);
+                }
+                break;
+
+            case 'docx':
+                try {
+                    const docxResult = await mammoth.extractRawText({ 
+                        buffer: file.buffer,
+                        options: {
+                            includeDefaultStyleMap: true,
+                            includeEmbeddedStyleMap: true
+                        }
+                    });
+                    content = docxResult.value;
+                    
+                    // Extract title from document properties if available
+                    try {
+                        const docProperties = await mammoth.extractRawText({ 
+                            buffer: file.buffer,
+                            options: { extractRawText: false }
+                        });
+                        // This is a simplified extraction - mammoth doesn't easily expose document properties
+                        title = file.originalname; // Fallback to filename
+                    } catch (propError) {
+                        // Ignore property extraction errors
+                    }
+                    
+                    if (docxResult.messages && docxResult.messages.length > 0) {
+                        console.log('Document parsing warnings:', docxResult.messages);
+                        metadata.warnings = docxResult.messages;
+                    }
+                    
+                    if (!content || content.trim().length === 0) {
+                        throw new Error('DOCX appears to contain no readable text content');
+                    }
+                } catch (docxError) {
+                    throw new Error(`DOCX parsing failed: ${docxError.message}. The document may be corrupted or password-protected.`);
+                }
+                break;
+
+            case 'doc':
+                try {
+                    // For legacy .doc files, we need a more sophisticated approach
+                    // This is a basic text extraction that may not work for all .doc files
+                    content = file.buffer.toString('utf-8');
+                    
+                    // Remove common binary patterns and control characters
+                    content = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, ' ');
+                    content = content.replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+                    content = content.replace(/\s+/g, ' ').trim();
+                    
+                    // Try to extract readable sentences (basic heuristic)
+                    const sentences = content.split(/[.!?]+/).filter(sentence => {
+                        const trimmed = sentence.trim();
+                        return trimmed.length > 10 && /[a-zA-Z]/.test(trimmed);
+                    });
+                    
+                    content = sentences.join('. ').trim();
+                    
+                    if (!content || content.length < 50) {
+                        throw new Error('Could not extract readable text from legacy DOC file. Consider converting to DOCX format.');
+                    }
+                    
+                    metadata.note = 'Legacy DOC format - text extraction may be incomplete';
+                } catch (docError) {
+                    throw new Error(`DOC parsing failed: ${docError.message}. Legacy DOC files may not parse correctly - consider converting to DOCX.`);
+                }
+                break;
+
+            case 'rtf':
+                try {
+                    content = file.buffer.toString('utf-8');
+                    
+                    // More sophisticated RTF parsing
+                    // Remove RTF control words and formatting
+                    content = content.replace(/\{\\[^}]*\}/g, ''); // Remove formatting groups
+                    content = content.replace(/\\[a-z]+\d*\s?/gi, ' '); // Remove control words
+                    content = content.replace(/\{|\}/g, ''); // Remove remaining braces
+                    content = content.replace(/\s+/g, ' ').trim();
+                    
+                    if (!content || content.length < 10) {
+                        throw new Error('Could not extract readable text from RTF file');
+                    }
+                    
+                    metadata.note = 'RTF format - formatting has been stripped';
+                } catch (rtfError) {
+                    throw new Error(`RTF parsing failed: ${rtfError.message}`);
+                }
+                break;
+
+            default:
+                throw new Error(`Unsupported file type: ${fileType}`);
+        }
+
+        // Clean and validate content
+        content = cleanText(content);
+        
+        if (!content || content.length < 10) {
+            throw new Error('Document appears to be empty or contains very little readable text');
+        }
+
+        if (content.length > documentConfig.maxContentLength) {
+            metadata.truncated = true;
+            metadata.originalLength = content.length;
+            content = content.substring(0, documentConfig.maxContentLength) + '...';
+        }
+
+        const result = {
+            content,
+            title: title || file.originalname,
+            contentLength: content.length,
+            fileType: fileType,
+            originalName: file.originalname,
+            metadata
+        };
+
+        console.log(`✅ Successfully parsed ${file.originalname} (${content.length} characters)`);
+        return result;
+
+    } catch (error) {
+        console.error(`❌ Error parsing ${file.originalname}:`, error);
+        
+        // Provide more helpful error messages
+        let errorMessage = error.message;
+        if (error.message.includes('Cannot read properties')) {
+            errorMessage = 'File appears to be corrupted or not a valid document';
+        } else if (error.message.includes('pdf-parse')) {
+            errorMessage = 'PDF parsing failed - file may be corrupted, encrypted, or contain only images';
+        }
+        
+        throw new Error(`Failed to parse document: ${errorMessage}`);
+    }
+}
+
+// Enhanced prompt update function with better scraped data integration
+async function updateAgentPromptWithData(systemPrompt, firstMessage = '', includeScrapedData = false, includeDocuments = false) {
+    console.log('🔄 Updating agent prompt with data integration:', {
+        hasSystemPrompt: !!systemPrompt,
+        firstMessage: !!firstMessage,
+        includeScrapedData,
+        includeDocuments,
+        promptLength: systemPrompt?.length || 0
+    });
+
+    if (!systemPrompt) {
+        throw new Error('System prompt is required');
+    }
+
+    try {
+        let finalPrompt = systemPrompt;
+        let includesExternalData = false;
+        let knowledgeStats = {
+            scrapedSites: 0,
+            documents: 0,
+            totalCharacters: 0
+        };
+
+        // Build knowledge base section
+        if (includeScrapedData || includeDocuments) {
+            let knowledgeSection = '\n\n=== KNOWLEDGE BASE ===\n';
+            knowledgeSection += 'Use the following information to answer questions and provide relevant details:\n\n';
+
+            // Add scraped website data
+            if (includeScrapedData) {
+                const scrapedDataResult = await pool.query(
+                    'SELECT url, title, content, scraped_at FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 10',
+                    ['active']
+                );
+
+                if (scrapedDataResult.rows.length > 0) {
+                    knowledgeSection += '--- WEB CONTENT ---\n';
+                    
+                    for (const item of scrapedDataResult.rows) {
+                        const contentPreview = item.content.substring(0, 3000);
+                        knowledgeSection += `\n[SOURCE: ${item.url}]\n`;
+                        knowledgeSection += `[TITLE: ${item.title || 'Untitled'}]\n`;
+                        knowledgeSection += `[SCRAPED: ${new Date(item.scraped_at).toLocaleDateString()}]\n`;
+                        knowledgeSection += `${contentPreview}${item.content.length > 3000 ? '...\n' : '\n'}`;
+                        knowledgeSection += '---\n';
+                        
+                        knowledgeStats.scrapedSites++;
+                        knowledgeStats.totalCharacters += contentPreview.length;
+                    }
+                }
+            }
+            
+            // Add parsed document data
+            if (includeDocuments) {
+                const parsedDocsResult = await pool.query(
+                    'SELECT original_name, title, content, parsed_at, file_type FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 10',
+                    ['active']
+                );
+
+                if (parsedDocsResult.rows.length > 0) {
+                    knowledgeSection += '\n--- DOCUMENTS ---\n';
+                    
+                    for (const item of parsedDocsResult.rows) {
+                        const contentPreview = item.content.substring(0, 3000);
+                        knowledgeSection += `\n[DOCUMENT: ${item.original_name}]\n`;
+                        knowledgeSection += `[TITLE: ${item.title || 'Untitled'}]\n`;
+                        knowledgeSection += `[TYPE: ${item.file_type?.toUpperCase() || 'Unknown'}]\n`;
+                        knowledgeSection += `[PARSED: ${new Date(item.parsed_at).toLocaleDateString()}]\n`;
+                        knowledgeSection += `${contentPreview}${item.content.length > 3000 ? '...\n' : '\n'}`;
+                        knowledgeSection += '---\n';
+                        
+                        knowledgeStats.documents++;
+                        knowledgeStats.totalCharacters += contentPreview.length;
+                    }
+                }
+            }
+
+            if (knowledgeStats.scrapedSites > 0 || knowledgeStats.documents > 0) {
+                knowledgeSection += '\n=== END KNOWLEDGE BASE ===\n';
+                knowledgeSection += `\nIMPORTANT: Use this knowledge base to provide accurate, up-to-date information. `;
+                knowledgeSection += `Always cite sources when using this information (e.g., "According to [document name]" or "Based on [website]").`;
+                
+                finalPrompt += knowledgeSection;
+                includesExternalData = true;
+            }
+        }
+
+        // Check final prompt length (ElevenLabs has limits)
+        if (finalPrompt.length > 50000) {
+            console.log('⚠️ Prompt is very long, truncating to fit limits');
+            finalPrompt = finalPrompt.substring(0, 50000) + '\n\n[Note: Knowledge base was truncated due to length limits]';
+        }
+
+        // Mark all existing prompts as not current
+        await pool.query('UPDATE agent_prompts SET is_current = false');
+
+        // Insert new prompt
+        const insertResult = await pool.query(
+            `INSERT INTO agent_prompts (system_prompt, first_message, includes_scraped_data, is_current) 
+             VALUES ($1, $2, $3, true) RETURNING id`,
+            [finalPrompt, firstMessage, includesExternalData]
+        );
+
+        // Update ElevenLabs agent if configured
+        let elevenLabsSuccess = false;
+        let elevenLabsError = null;
+        
+        try {
+            if (ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID) {
+                await updateElevenLabsPrompt(finalPrompt, firstMessage);
+                elevenLabsSuccess = true;
+                console.log('✅ ElevenLabs agent prompt updated');
+            }
+        } catch (error) {
+            elevenLabsError = error.message;
+            console.error('❌ Failed to update ElevenLabs prompt:', error);
+        }
+
+        const result = {
+            success: true,
+            message: 'Prompt updated successfully',
+            promptId: insertResult.rows[0].id,
+            includes_external_data: includesExternalData,
+            prompt_length: finalPrompt.length,
+            knowledge_stats: knowledgeStats,
+            elevenlabs_updated: elevenLabsSuccess,
+            elevenlabs_error: elevenLabsError,
+            final_prompt_preview: finalPrompt.substring(0, 500) + (finalPrompt.length > 500 ? '...' : '')
+        };
+
+        console.log('✅ Prompt updated successfully:', {
+            finalPromptLength: finalPrompt.length,
+            includesExternalData: includesExternalData,
+            originalPromptLength: systemPrompt.length,
+            knowledgeStats
+        });
+
+        return result;
+
+    } catch (error) {
+        console.error('Error updating prompt:', error);
+        throw new Error(`Failed to update prompt: ${error.message}`);
+    }
 }
 
 // Web scraping function with multiple strategies
@@ -336,88 +673,6 @@ function queueScrape(url) {
         scrapingQueue.push({ url, resolve, reject });
         processScrapeQueue();
     });
-}
-
-// Document parsing functions
-async function parseDocument(file) {
-    console.log(`📄 Parsing document: ${file.originalname} (${file.mimetype})`);
-    
-    const fileType = documentConfig.supportedTypes[file.mimetype];
-    if (!fileType) {
-        throw new Error(`Unsupported file type: ${file.mimetype}`);
-    }
-
-    if (file.size > documentConfig.maxFileSize) {
-        throw new Error(`File too large: ${file.size} bytes (max: ${documentConfig.maxFileSize})`);
-    }
-
-    let content = '';
-    let title = file.originalname;
-
-    try {
-        switch (fileType) {
-            case 'pdf':
-                const pdfData = await pdf(file.buffer);
-                content = pdfData.text;
-                title = pdfData.info?.Title || file.originalname;
-                break;
-
-            case 'txt':
-            case 'md':
-                content = file.buffer.toString('utf-8');
-                break;
-
-            case 'docx':
-                const docxResult = await mammoth.extractRawText({ buffer: file.buffer });
-                content = docxResult.value;
-                if (docxResult.messages.length > 0) {
-                    console.log('Mammoth warnings:', docxResult.messages);
-                }
-                break;
-
-            case 'doc':
-                // For .doc files, we'll try to extract as much as possible
-                // This is a basic implementation - you might want to use a more robust library
-                content = file.buffer.toString('utf-8');
-                // Remove binary data and extract readable text
-                content = content.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
-                break;
-
-            case 'rtf':
-                // Basic RTF parsing - remove RTF formatting codes
-                content = file.buffer.toString('utf-8');
-                content = content.replace(/\{[^}]*\}/g, '').replace(/\\[a-z]+\d*\s?/g, ' ').replace(/\s+/g, ' ').trim();
-                break;
-
-            default:
-                throw new Error(`Unsupported file type: ${fileType}`);
-        }
-
-        // Clean and validate content
-        content = cleanText(content);
-        
-        if (content.length < 50) {
-            throw new Error('Document appears to be empty or contains very little text');
-        }
-
-        if (content.length > documentConfig.maxContentLength) {
-            content = content.substring(0, documentConfig.maxContentLength) + '...';
-        }
-
-        console.log(`✅ Successfully parsed ${file.originalname} (${content.length} characters)`);
-        
-        return {
-            content,
-            title: title || file.originalname,
-            contentLength: content.length,
-            fileType: fileType,
-            originalName: file.originalname
-        };
-
-    } catch (error) {
-        console.error(`❌ Error parsing ${file.originalname}:`, error);
-        throw new Error(`Failed to parse document: ${error.message}`);
-    }
 }
 
 // Email notification function using MailerSend (updated with SkyIQ branding)
@@ -939,14 +1194,17 @@ app.delete('/api/scraped-data/:id', async (req, res) => {
     }
 });
 
-// API endpoint for document parsing
+// Enhanced document parsing endpoint
 app.post('/api/parse-document', upload.single('document'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ error: 'No document uploaded' });
+        return res.status(400).json({ 
+            success: false,
+            error: 'No document uploaded. Please select a file to upload.' 
+        });
     }
 
     try {
-        console.log(`📄 Document upload request: ${req.file.originalname} (${req.file.size} bytes)`);
+        console.log(`📄 Document upload request: ${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})`);
 
         // Parse the document
         const result = await parseDocument(req.file);
@@ -960,20 +1218,34 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
              result.contentLength, result.fileType, req.file.size]
         );
 
+        // Broadcast to connected clients
+        io.emit('documentParsed', {
+            id: docId,
+            original_name: req.file.originalname,
+            title: result.title,
+            content_length: result.contentLength,
+            file_type: result.fileType,
+            parsed_at: new Date().toISOString()
+        });
+
         console.log(`✅ Document stored successfully: ${req.file.originalname} (${result.contentLength} characters)`);
 
         res.json({
             success: true,
-            data: result.content,
-            title: result.title,
-            contentLength: result.contentLength,
-            fileType: result.fileType,
-            docId: docId,
-            parsedAt: new Date().toISOString()
+            message: 'Document parsed and stored successfully',
+            data: {
+                content: result.content,
+                title: result.title,
+                contentLength: result.contentLength,
+                fileType: result.fileType,
+                docId: docId,
+                parsedAt: new Date().toISOString(),
+                metadata: result.metadata
+            }
         });
 
     } catch (error) {
-        console.error(`❌ Document parsing failed for ${req.file.originalname}:`, error);
+        console.error(`❌ Document parsing failed for ${req.file?.originalname}:`, error);
         
         // Store error in database
         try {
@@ -981,7 +1253,7 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
             await pool.query(
                 `INSERT INTO parsed_documents (id, filename, original_name, content, status, error_message) 
                  VALUES ($1, $2, $3, $4, $5, $6)`,
-                [docId, req.file.originalname, req.file.originalname, '', 'error', error.message]
+                [docId, req.file?.originalname || 'unknown', req.file?.originalname || 'unknown', '', 'error', error.message]
             );
         } catch (dbError) {
             console.error('Error storing document error:', dbError);
@@ -990,7 +1262,7 @@ app.post('/api/parse-document', upload.single('document'), async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message,
-            filename: req.file.originalname
+            filename: req.file?.originalname || 'unknown'
         });
     }
 });
@@ -1026,7 +1298,7 @@ app.delete('/api/parsed-documents/:id', async (req, res) => {
     }
 });
 
-// API endpoint to get current agent prompt
+// Enhanced prompt retrieval endpoint
 app.get('/api/prompt', async (req, res) => {
     try {
         const result = await pool.query(
@@ -1034,117 +1306,97 @@ app.get('/api/prompt', async (req, res) => {
         );
         
         if (result.rows.length > 0) {
+            const prompt = result.rows[0];
+            
+            // Get knowledge base statistics
+            const scrapedCount = await pool.query('SELECT COUNT(*) FROM scraped_data WHERE status = $1', ['active']);
+            const docsCount = await pool.query('SELECT COUNT(*) FROM parsed_documents WHERE status = $1', ['active']);
+            
             res.json({
                 success: true,
-                system_prompt: result.rows[0].system_prompt,
-                first_message: result.rows[0].first_message,
-                includes_scraped_data: result.rows[0].includes_scraped_data
+                system_prompt: prompt.system_prompt,
+                first_message: prompt.first_message,
+                includes_scraped_data: prompt.includes_scraped_data,
+                created_at: prompt.created_at,
+                updated_at: prompt.updated_at,
+                knowledge_stats: {
+                    available_scraped_sites: parseInt(scrapedCount.rows[0].count),
+                    available_documents: parseInt(docsCount.rows[0].count)
+                }
             });
         } else {
             // Return default prompt if none exists
             res.json({
                 success: true,
                 system_prompt: 'You are a helpful AI assistant for SkyIQ. Please assist callers professionally and courteously.',
-                first_message: '',
-                includes_scraped_data: false
+                first_message: 'Hello! I\'m your SkyIQ assistant. How can I help you today?',
+                includes_scraped_data: false,
+                knowledge_stats: {
+                    available_scraped_sites: 0,
+                    available_documents: 0
+                }
             });
         }
     } catch (error) {
         console.error('Error fetching prompt:', error);
-        res.status(500).json({ error: 'Database error' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Database error',
+            details: error.message 
+        });
     }
 });
 
-// API endpoint to update agent prompt
+// Enhanced prompt update endpoint with better data integration
 app.post('/api/prompt', async (req, res) => {
-    console.log('📝 Prompt update request received:', {
-        hasSystemPrompt: !!req.body.system_prompt,
-        firstMessage: req.body.first_message,
-        autoIncludeScrapedData: req.body.auto_include_scraped_data,
-        promptLength: req.body.system_prompt?.length || 0
+    const { 
+        system_prompt, 
+        first_message = '', 
+        include_scraped_data = false, 
+        include_documents = false,
+        auto_include_scraped_data // Legacy support
+    } = req.body;
+    
+    // Handle legacy parameter name
+    const includeScrapedData = include_scraped_data || auto_include_scraped_data || false;
+
+    console.log('🔄 Prompt update request received:', {
+        hasSystemPrompt: !!system_prompt,
+        firstMessage: !!first_message,
+        includeScrapedData,
+        includeDocuments,
+        promptLength: system_prompt?.length || 0
     });
 
-    const { system_prompt, first_message = '', auto_include_scraped_data = false } = req.body;
-    
     if (!system_prompt) {
-        console.log('❌ No system prompt provided');
-        return res.status(400).json({ error: 'System prompt is required' });
+        return res.status(400).json({ 
+            success: false,
+            error: 'System prompt is required' 
+        });
     }
 
     try {
-        let finalPrompt = system_prompt;
-        let includesScrapedData = false;
-
-        // Auto-include scraped data and parsed documents if requested
-        if (auto_include_scraped_data) {
-            const scrapedDataResult = await pool.query(
-                'SELECT url, title, content FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 5',
-                ['active']
-            );
-
-            const parsedDocsResult = await pool.query(
-                'SELECT original_name, title, content FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 5',
-                ['active']
-            );
-
-            if (scrapedDataResult.rows.length > 0 || parsedDocsResult.rows.length > 0) {
-                let knowledgeSection = '\n\n--- KNOWLEDGE BASE ---\n';
-                
-                // Add scraped website data
-                for (const item of scrapedDataResult.rows) {
-                    const contentPreview = item.content.substring(0, 2000);
-                    knowledgeSection += `\n[Website: ${item.url}]\n[Title: ${item.title}]\n${contentPreview}${item.content.length > 2000 ? '...' : ''}\n`;
-                }
-                
-                // Add parsed document data
-                for (const item of parsedDocsResult.rows) {
-                    const contentPreview = item.content.substring(0, 2000);
-                    knowledgeSection += `\n[Document: ${item.original_name}]\n[Title: ${item.title}]\n${contentPreview}${item.content.length > 2000 ? '...' : ''}\n`;
-                }
-                
-                knowledgeSection += '--- END KNOWLEDGE BASE ---\n';
-                finalPrompt += knowledgeSection;
-                includesScrapedData = true;
-            }
-        }
-
-        // Mark all existing prompts as not current
-        await pool.query('UPDATE agent_prompts SET is_current = false');
-
-        // Insert new prompt
-        await pool.query(
-            `INSERT INTO agent_prompts (system_prompt, first_message, includes_scraped_data, is_current) 
-             VALUES ($1, $2, $3, true)`,
-            [finalPrompt, first_message, includesScrapedData]
+        const result = await updateAgentPromptWithData(
+            system_prompt, 
+            first_message, 
+            includeScrapedData, 
+            include_documents
         );
 
-        // Update ElevenLabs agent if configured
-        try {
-            if (ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID) {
-                await updateElevenLabsPrompt(finalPrompt, first_message);
-                console.log('✅ ElevenLabs agent prompt updated');
-            }
-        } catch (elevenLabsError) {
-            console.error('❌ Failed to update ElevenLabs prompt:', elevenLabsError);
-            // Don't fail the whole request if ElevenLabs update fails
-        }
-
-        console.log('✅ Prompt updated successfully:', {
-            finalPromptLength: finalPrompt.length,
-            includesScrapedData: includesScrapedData,
-            originalPromptLength: system_prompt.length
+        // Broadcast prompt update to connected clients
+        io.emit('promptUpdated', {
+            includes_external_data: result.includes_external_data,
+            prompt_length: result.prompt_length,
+            knowledge_stats: result.knowledge_stats,
+            updated_at: new Date().toISOString()
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Prompt updated successfully',
-            includes_scraped_data: includesScrapedData,
-            prompt_length: finalPrompt.length
-        });
+        res.json(result);
 
     } catch (error) {
         console.error('Error updating prompt:', error);
         res.status(500).json({ 
+            success: false,
             error: 'Failed to update prompt', 
             details: error.message 
         });
@@ -1274,39 +1526,6 @@ app.post('/api/batch/:batchId/start', async (req, res) => {
             return res.status(404).json({ error: 'Batch not found' });
         }
 
-        if (batch.rows[0].status !== 'pending') {
-            return res.status(400).json({ error: 'Batch has already been processed' });
-        }
-
-        // Add to queue or start immediately
-        if (currentBatch === null) {
-            currentBatch = batchId;
-            processBatch(batchId);
-        } else {
-            batchQueue.push(batchId);
-        }
-
-        res.json({ 
-            success: true, 
-            message: currentBatch === batchId ? 'Batch processing started' : 'Batch added to queue'
-        });
-
-    } catch (error) {
-        console.error('Batch start error:', error);
-        res.status(500).json({ error: 'Failed to start batch processing' });
-    }
-});
-
-// API endpoint to get batch status
-app.get('/api/batch/:batchId', async (req, res) => {
-    const { batchId } = req.params;
-
-    try {
-        const batch = await pool.query('SELECT * FROM batches WHERE id = $1', [batchId]);
-        if (batch.rows.length === 0) {
-            return res.status(404).json({ error: 'Batch not found' });
-        }
-
         const calls = await pool.query(
             'SELECT * FROM batch_calls WHERE batch_id = $1 ORDER BY created_at',
             [batchId]
@@ -1331,6 +1550,91 @@ app.get('/api/batches', async (req, res) => {
     } catch (error) {
         console.error('Batches query error:', error);
         res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Test document parsing endpoint
+app.post('/api/test-document-parsing', upload.single('testDocument'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ 
+            success: false,
+            error: 'No test document uploaded' 
+        });
+    }
+
+    try {
+        console.log(`🧪 Testing document parsing: ${req.file.originalname}`);
+        
+        // Parse without saving to database
+        const result = await parseDocument(req.file);
+        
+        res.json({
+            success: true,
+            message: 'Document parsing test successful',
+            filename: req.file.originalname,
+            fileType: result.fileType,
+            contentLength: result.contentLength,
+            title: result.title,
+            preview: result.content.substring(0, 500) + (result.content.length > 500 ? '...' : ''),
+            metadata: result.metadata
+        });
+
+    } catch (error) {
+        console.error('Document parsing test failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            filename: req.file?.originalname
+        });
+    }
+});
+
+// Get knowledge base summary
+app.get('/api/knowledge-base/summary', async (req, res) => {
+    try {
+        const scrapedData = await pool.query(
+            'SELECT COUNT(*) as count, MAX(scraped_at) as latest FROM scraped_data WHERE status = $1',
+            ['active']
+        );
+        
+        const documents = await pool.query(
+            'SELECT COUNT(*) as count, MAX(parsed_at) as latest FROM parsed_documents WHERE status = $1',
+            ['active']
+        );
+
+        const totalContentLength = await pool.query(`
+            SELECT 
+                COALESCE(SUM(s.content_length), 0) as scraped_chars,
+                COALESCE(SUM(d.content_length), 0) as document_chars
+            FROM 
+                (SELECT SUM(content_length) as content_length FROM scraped_data WHERE status = 'active') s,
+                (SELECT SUM(content_length) as content_length FROM parsed_documents WHERE status = 'active') d
+        `);
+
+        res.json({
+            success: true,
+            summary: {
+                scraped_sites: {
+                    count: parseInt(scrapedData.rows[0].count),
+                    latest: scrapedData.rows[0].latest,
+                    total_characters: parseInt(totalContentLength.rows[0].scraped_chars) || 0
+                },
+                documents: {
+                    count: parseInt(documents.rows[0].count),
+                    latest: documents.rows[0].latest,
+                    total_characters: parseInt(totalContentLength.rows[0].document_chars) || 0
+                },
+                total_knowledge_base_size: (parseInt(totalContentLength.rows[0].scraped_chars) || 0) + 
+                                          (parseInt(totalContentLength.rows[0].document_chars) || 0)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error getting knowledge base summary:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get knowledge base summary'
+        });
     }
 });
 
@@ -1635,25 +1939,49 @@ server.listen(PORT, () => {
     console.log(`📊 Dashboard: http://localhost:${PORT}`);
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
-    console.log(`🕷️  Web scraping: POST http://localhost:${PORT}/api/scrape`);
+    console.log(`🕷️ Web scraping: POST http://localhost:${PORT}/api/scrape`);
     console.log(`📄 Document parsing: POST http://localhost:${PORT}/api/parse-document`);
-    console.log(`📁 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
+    console.log(`📝 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
     console.log(`🤖 Update prompt: POST http://localhost:${PORT}/api/prompt`);
     console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
     console.log(`🧪 Test scraping: POST http://localhost:${PORT}/test-scraping`);
     console.log(`\n🎯 Configure this webhook URL in your ElevenLabs agent settings:`);
     console.log(`   ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`}/webhook`);
     console.log(`\n📊 System Status:`);
-    console.log(`🗃️  Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
+    console.log(`🗃️ Database: ${process.env.DATABASE_URL ? 'Connected' : 'Local/Test mode'}`);
     console.log(`📧 Email notifications: ${emailConfig.enabled ? 'Enabled (inbound only)' : 'Disabled'}`);
     console.log(`🤖 ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
-    console.log(`🕷️  Web Scraping: Enabled (Max concurrent: ${scrapingConfig.maxConcurrentScrapes})`);
+    console.log(`🕷️ Web Scraping: Enabled (Max concurrent: ${scrapingConfig.maxConcurrentScrapes})`);
     console.log(`📄 Document Parsing: Enabled (Max file size: ${documentConfig.maxFileSize / (1024 * 1024)}MB)`);
     console.log(`📋 Supported formats: ${Object.keys(documentConfig.supportedTypes).join(', ')}`);
     
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
-        console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
+        console.log(`⚠️ Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
     }
     
     console.log(`\n✨ SkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
+});(404).json({ error: 'Batch not found' });
+        }
+
+        if (batch.rows[0].status !== 'pending') {
+            return res.status(400).json({ error: 'Batch has already been processed' });
+        }
+
+        // Add to queue or start immediately
+        if (currentBatch === null) {
+            currentBatch = batchId;
+            processBatch(batchId);
+        } else {
+            batchQueue.push(batchId);
+        }
+
+        res.json({ 
+            success: true, 
+            message: currentBatch === batchId ? 'Batch processing started' : 'Batch added to queue'
+        });
+
+    } catch (error) {
+        console.error('Batch start error:', error);
+        res.status(500).json({ error: 'Failed to start batch processing' });
+    }
 });
