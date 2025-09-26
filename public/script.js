@@ -301,6 +301,7 @@ async function savePrompt() {
         savePromptBtn.innerHTML = '<span class="btn-icon">💾</span> Saving...';
         showPromptStatus('Saving prompt...', 'loading');
 
+        // Try with minimal required fields first
         const response = await fetch('/api/prompt', {
             method: 'PUT',
             headers: {
@@ -308,17 +309,18 @@ async function savePrompt() {
             },
             body: JSON.stringify({ 
                 system_prompt: prompt, 
-                first_message: 'Hello! This is Andy from SkyIQ. How can I help you today?'
+                first_message: "Hello! This is your AI assistant. How can I help you today?"
             })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('Server response:', errorText);
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const result = await response.json();
-
+        
         if (result.success) {
             showPromptStatus('Prompt saved successfully!', 'success');
             showNotification('AI agent prompt updated successfully');
