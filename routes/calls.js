@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
+const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend");
 
 // Helper function for duration formatting
 function formatDuration(seconds) {
@@ -176,7 +177,7 @@ router.post('/initiate', async (req, res) => {
         const callResult = await initiateOutboundCall(formattedPhone, req.appState.elevenLabsConfig);
         
         const callData = {
-            id: uuidv4(), // Use UUID instead of timestamp-based ID
+            id: uuidv4(),
             timestamp: new Date().toISOString(),
             caller_number: formattedPhone,
             called_number: 'Agent',
@@ -184,4 +185,35 @@ router.post('/initiate', async (req, res) => {
             status: 'initiated',
             call_type: 'outbound',
             transcript: '',
-            conversation_id
+            conversation_id: callResult.conversation_id
+        };
+
+        // Save call to database
+        await req.appState.pool.query(`
+            INSERT INTO calls (id, timestamp, caller_number, called_number, duration, status, call_type, transcript, conversation_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `, [callData.id, callData.timestamp, callData.caller_number, callData.called_number, 
+            callData.duration, callData.status, callData.call_type, callData.transcript, callData.conversation_id]);
+
+        // Emit new call event
+        if (req.appState.io) {
+            req.appState.io.emit('newCall', callData);
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Call initiated successfully',
+            callId: callData.id,
+            conversationId: callResult.conversation_id
+        });
+
+    } catch (error) {
+        console.error('Failed to initiate call:', error);
+        res.status(500).json({ 
+            error: 'Failed to initiate call', 
+            details: error.message 
+        });
+    }
+});
+
+module.exports = router;
