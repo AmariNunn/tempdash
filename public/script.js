@@ -193,10 +193,15 @@ function switchTab(tabId, tabButton) {
     document.getElementById(tabId).classList.add('active');
 }
 
+// Global variable to track current template
+let currentTemplate = null;
+
 // Template loading functionality with preview
 function loadTemplate(templateName) {
     const template = promptTemplates[templateName];
     if (template) {
+        currentTemplate = template; // Store the current template
+        
         // Update the prompt editor
         document.getElementById('promptEditor').value = template.system_prompt;
         
