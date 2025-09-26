@@ -2073,15 +2073,31 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 savePromptBtn.textContent = '💾 Saving...';
                 showPromptStatus('Saving prompt...', 'loading');
 
+                console.log('Saving prompt with auto_include_scraped_data:', settings.autoUpdateKnowledge);
+
                 const response = await fetch('/api/prompt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ system_prompt: prompt, first_message: '' })
+                    body: JSON.stringify({ 
+                        system_prompt: prompt, 
+                        first_message: '',
+                        auto_include_scraped_data: settings.autoUpdateKnowledge
+                    })
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const result = await response.json();
+                console.log('Server response:', result);
 
                 if (result.success) {
                     currentPrompt = prompt;
@@ -2092,7 +2108,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 }
             } catch (error) {
                 console.error('Error saving prompt:', error);
-                showPromptStatus('Error saving prompt. Please try again.', 'error');
+                showPromptStatus(`Error saving prompt: ${error.message}`, 'error');
             } finally {
                 const savePromptBtn = document.getElementById('savePromptBtn');
                 savePromptBtn.disabled = false;
