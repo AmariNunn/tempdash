@@ -401,7 +401,7 @@ body {
 }
 
 .call-btn, .btn {
-    background: #009AEE;
+    background: linear-gradient(135deg, #009AEE, #0080CC);
     color: white;
     border: none;
     padding: 12px 24px;
