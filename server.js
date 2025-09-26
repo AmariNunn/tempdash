@@ -7,6 +7,10 @@ const { Pool } = require('pg');
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend");
 const multer = require('multer');
 const cheerio = require('cheerio');
+const pdf = require('pdf-parse');
+const mammoth = require('mammoth');
+const fs = require('fs');
+const path = require('path');
 //const puppeteer = require('puppeteer');
 
 const app = express();
@@ -16,7 +20,7 @@ const io = socketIo(server);
 // Configure multer for file uploads
 const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit for documents
 });
 
 // ElevenLabs API configuration
@@ -47,6 +51,20 @@ const scrapingConfig = {
     maxConcurrentScrapes: 3, // Maximum concurrent scraping operations
     userAgent: 'SkyIQ-Bot/1.0 (+https://skyiq.ai/bot)',
     retryAttempts: 2
+};
+
+// Document parsing configuration
+const documentConfig = {
+    maxContentLength: 100000, // Maximum content length per document
+    supportedTypes: {
+        'application/pdf': 'pdf',
+        'text/plain': 'txt',
+        'application/msword': 'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+        'application/rtf': 'rtf',
+        'text/markdown': 'md'
+    },
+    maxFileSize: 10 * 1024 * 1024 // 10MB
 };
 
 // Middleware
@@ -321,6 +339,88 @@ function queueScrape(url) {
     });
 }
 
+// Document parsing functions
+async function parseDocument(file) {
+    console.log(`📄 Parsing document: ${file.originalname} (${file.mimetype})`);
+    
+    const fileType = documentConfig.supportedTypes[file.mimetype];
+    if (!fileType) {
+        throw new Error(`Unsupported file type: ${file.mimetype}`);
+    }
+
+    if (file.size > documentConfig.maxFileSize) {
+        throw new Error(`File too large: ${file.size} bytes (max: ${documentConfig.maxFileSize})`);
+    }
+
+    let content = '';
+    let title = file.originalname;
+
+    try {
+        switch (fileType) {
+            case 'pdf':
+                const pdfData = await pdf(file.buffer);
+                content = pdfData.text;
+                title = pdfData.info?.Title || file.originalname;
+                break;
+
+            case 'txt':
+            case 'md':
+                content = file.buffer.toString('utf-8');
+                break;
+
+            case 'docx':
+                const docxResult = await mammoth.extractRawText({ buffer: file.buffer });
+                content = docxResult.value;
+                if (docxResult.messages.length > 0) {
+                    console.log('Mammoth warnings:', docxResult.messages);
+                }
+                break;
+
+            case 'doc':
+                // For .doc files, we'll try to extract as much as possible
+                // This is a basic implementation - you might want to use a more robust library
+                content = file.buffer.toString('utf-8');
+                // Remove binary data and extract readable text
+                content = content.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+                break;
+
+            case 'rtf':
+                // Basic RTF parsing - remove RTF formatting codes
+                content = file.buffer.toString('utf-8');
+                content = content.replace(/\{[^}]*\}/g, '').replace(/\\[a-z]+\d*\s?/g, ' ').replace(/\s+/g, ' ').trim();
+                break;
+
+            default:
+                throw new Error(`Unsupported file type: ${fileType}`);
+        }
+
+        // Clean and validate content
+        content = cleanText(content);
+        
+        if (content.length < 50) {
+            throw new Error('Document appears to be empty or contains very little text');
+        }
+
+        if (content.length > documentConfig.maxContentLength) {
+            content = content.substring(0, documentConfig.maxContentLength) + '...';
+        }
+
+        console.log(`✅ Successfully parsed ${file.originalname} (${content.length} characters)`);
+        
+        return {
+            content,
+            title: title || file.originalname,
+            contentLength: content.length,
+            fileType: fileType,
+            originalName: file.originalname
+        };
+
+    } catch (error) {
+        console.error(`❌ Error parsing ${file.originalname}:`, error);
+        throw new Error(`Failed to parse document: ${error.message}`);
+    }
+}
+
 // Email notification function using MailerSend (updated with SkyIQ branding)
 async function sendCallNotification(callData) {
     if (!emailConfig.enabled || !emailConfig.toEmail || !process.env.MAILERSEND_API_KEY || callData.call_type === 'outbound') {
@@ -409,6 +509,24 @@ async function initializeDatabase() {
                 content_length INTEGER DEFAULT 0,
                 scraping_method VARCHAR(50),
                 scraped_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                status VARCHAR(50) DEFAULT 'active',
+                error_message TEXT
+            )
+        `);
+
+        // Create parsed_documents table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS parsed_documents (
+                id VARCHAR(255) PRIMARY KEY,
+                filename VARCHAR(500) NOT NULL,
+                original_name VARCHAR(500) NOT NULL,
+                title VARCHAR(500),
+                content TEXT NOT NULL,
+                content_length INTEGER DEFAULT 0,
+                file_type VARCHAR(50),
+                file_size INTEGER DEFAULT 0,
+                parsed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                 status VARCHAR(50) DEFAULT 'active',
                 error_message TEXT
@@ -822,6 +940,93 @@ app.delete('/api/scraped-data/:id', async (req, res) => {
     }
 });
 
+// API endpoint for document parsing
+app.post('/api/parse-document', upload.single('document'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No document uploaded' });
+    }
+
+    try {
+        console.log(`📄 Document upload request: ${req.file.originalname} (${req.file.size} bytes)`);
+
+        // Parse the document
+        const result = await parseDocument(req.file);
+        
+        // Store in database
+        const docId = `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        await pool.query(
+            `INSERT INTO parsed_documents (id, filename, original_name, title, content, content_length, file_type, file_size) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [docId, req.file.originalname, req.file.originalname, result.title, result.content, 
+             result.contentLength, result.fileType, req.file.size]
+        );
+
+        console.log(`✅ Document stored successfully: ${req.file.originalname} (${result.contentLength} characters)`);
+
+        res.json({
+            success: true,
+            data: result.content,
+            title: result.title,
+            contentLength: result.contentLength,
+            fileType: result.fileType,
+            docId: docId,
+            parsedAt: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error(`❌ Document parsing failed for ${req.file.originalname}:`, error);
+        
+        // Store error in database
+        try {
+            const docId = `doc-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            await pool.query(
+                `INSERT INTO parsed_documents (id, filename, original_name, content, status, error_message) 
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [docId, req.file.originalname, req.file.originalname, '', 'error', error.message]
+            );
+        } catch (dbError) {
+            console.error('Error storing document error:', dbError);
+        }
+
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            filename: req.file.originalname
+        });
+    }
+});
+
+// API endpoint to get parsed documents
+app.get('/api/parsed-documents', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 50',
+            ['active']
+        );
+        
+        res.json({
+            success: true,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching parsed documents:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// API endpoint to delete parsed document
+app.delete('/api/parsed-documents/:id', async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        await pool.query('DELETE FROM parsed_documents WHERE id = $1', [id]);
+        res.json({ success: true, message: 'Parsed document deleted' });
+    } catch (error) {
+        console.error('Error deleting parsed document:', error);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // API endpoint to get current agent prompt
 app.get('/api/prompt', async (req, res) => {
     try {
@@ -863,19 +1068,31 @@ app.post('/api/prompt', async (req, res) => {
         let finalPrompt = system_prompt;
         let includesScrapedData = false;
 
-        // Auto-include scraped data if requested
+        // Auto-include scraped data and parsed documents if requested
         if (auto_include_scraped_data) {
             const scrapedDataResult = await pool.query(
-                'SELECT url, title, content FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 10',
+                'SELECT url, title, content FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 5',
                 ['active']
             );
 
-            if (scrapedDataResult.rows.length > 0) {
-                let knowledgeSection = '\n\n--- WEBSITE KNOWLEDGE BASE ---\n';
+            const parsedDocsResult = await pool.query(
+                'SELECT original_name, title, content FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 5',
+                ['active']
+            );
+
+            if (scrapedDataResult.rows.length > 0 || parsedDocsResult.rows.length > 0) {
+                let knowledgeSection = '\n\n--- KNOWLEDGE BASE ---\n';
                 
+                // Add scraped website data
                 for (const item of scrapedDataResult.rows) {
                     const contentPreview = item.content.substring(0, 2000);
-                    knowledgeSection += `\n[Source: ${item.url}]\n[Title: ${item.title}]\n${contentPreview}${item.content.length > 2000 ? '...' : ''}\n`;
+                    knowledgeSection += `\n[Website: ${item.url}]\n[Title: ${item.title}]\n${contentPreview}${item.content.length > 2000 ? '...' : ''}\n`;
+                }
+                
+                // Add parsed document data
+                for (const item of parsedDocsResult.rows) {
+                    const contentPreview = item.content.substring(0, 2000);
+                    knowledgeSection += `\n[Document: ${item.original_name}]\n[Title: ${item.title}]\n${contentPreview}${item.content.length > 2000 ? '...' : ''}\n`;
                 }
                 
                 knowledgeSection += '--- END KNOWLEDGE BASE ---\n';
@@ -1209,18 +1426,22 @@ app.get('/health', async (req, res) => {
     try {
         const result = await pool.query('SELECT COUNT(*) FROM calls');
         const scrapedResult = await pool.query('SELECT COUNT(*) FROM scraped_data WHERE status = $1', ['active']);
+        const documentsResult = await pool.query('SELECT COUNT(*) FROM parsed_documents WHERE status = $1', ['active']);
         
         res.json({ 
             status: 'healthy', 
             uptime: process.uptime(),
             callCount: result.rows[0].count,
             scrapedDataCount: scrapedResult.rows[0].count,
+            parsedDocumentsCount: documentsResult.rows[0].count,
             emailNotifications: emailConfig.enabled,
             elevenLabsConfigured: !!(ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID),
             currentBatch: currentBatch,
             queueLength: batchQueue.length,
             scrapingQueueLength: scrapingQueue.length,
             activeScrapes: activeScrapes,
+            documentParsingEnabled: true,
+            supportedDocumentTypes: Object.keys(documentConfig.supportedTypes),
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -1359,6 +1580,10 @@ io.on('connection', async (socket) => {
         const scrapedData = await pool.query('SELECT * FROM scraped_data WHERE status = $1 ORDER BY scraped_at DESC LIMIT 20', ['active']);
         socket.emit('scrapedData', scrapedData.rows);
         
+        // Send parsed documents
+        const parsedDocs = await pool.query('SELECT * FROM parsed_documents WHERE status = $1 ORDER BY parsed_at DESC LIMIT 20', ['active']);
+        socket.emit('parsedDocuments', parsedDocs.rows);
+        
     } catch (error) {
         console.error('Error sending initial data:', error);
     }
@@ -1398,6 +1623,7 @@ server.listen(PORT, () => {
     console.log(`🏥 Health check: http://localhost:${PORT}/health`);
     console.log(`📞 Initiate call: POST http://localhost:${PORT}/api/calls/initiate`);
     console.log(`🕷️  Web scraping: POST http://localhost:${PORT}/api/scrape`);
+    console.log(`📄 Document parsing: POST http://localhost:${PORT}/api/parse-document`);
     console.log(`📁 Batch upload: POST http://localhost:${PORT}/api/batch/upload`);
     console.log(`🤖 Update prompt: POST http://localhost:${PORT}/api/prompt`);
     console.log(`🧪 Test email: POST http://localhost:${PORT}/test-email`);
@@ -1409,6 +1635,8 @@ server.listen(PORT, () => {
     console.log(`📧 Email notifications: ${emailConfig.enabled ? 'Enabled (inbound only)' : 'Disabled'}`);
     console.log(`🤖 ElevenLabs API: ${ELEVENLABS_API_KEY && ELEVENLABS_AGENT_ID && ELEVENLABS_PHONE_NUMBER_ID ? 'Configured' : 'Not configured'}`);
     console.log(`🕷️  Web Scraping: Enabled (Max concurrent: ${scrapingConfig.maxConcurrentScrapes})`);
+    console.log(`📄 Document Parsing: Enabled (Max file size: ${documentConfig.maxFileSize / (1024 * 1024)}MB)`);
+    console.log(`📋 Supported formats: ${Object.keys(documentConfig.supportedTypes).join(', ')}`);
     
     if (!ELEVENLABS_API_KEY || !ELEVENLABS_AGENT_ID || !ELEVENLABS_PHONE_NUMBER_ID) {
         console.log(`⚠️  Set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, and ELEVENLABS_PHONE_NUMBER_ID environment variables to enable outbound calling`);
