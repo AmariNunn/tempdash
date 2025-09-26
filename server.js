@@ -1057,9 +1057,17 @@ app.get('/api/prompt', async (req, res) => {
 
 // API endpoint to update agent prompt
 app.post('/api/prompt', async (req, res) => {
+    console.log('📝 Prompt update request received:', {
+        hasSystemPrompt: !!req.body.system_prompt,
+        firstMessage: req.body.first_message,
+        autoIncludeScrapedData: req.body.auto_include_scraped_data,
+        promptLength: req.body.system_prompt?.length || 0
+    });
+
     const { system_prompt, first_message = '', auto_include_scraped_data = false } = req.body;
     
     if (!system_prompt) {
+        console.log('❌ No system prompt provided');
         return res.status(400).json({ error: 'System prompt is required' });
     }
 
@@ -1120,6 +1128,12 @@ app.post('/api/prompt', async (req, res) => {
             console.error('❌ Failed to update ElevenLabs prompt:', elevenLabsError);
             // Don't fail the whole request if ElevenLabs update fails
         }
+
+        console.log('✅ Prompt updated successfully:', {
+            finalPromptLength: finalPrompt.length,
+            includesScrapedData: includesScrapedData,
+            originalPromptLength: system_prompt.length
+        });
 
         res.json({ 
             success: true, 
@@ -1643,4 +1657,3 @@ server.listen(PORT, () => {
     
     console.log(`\n✨ SkyIQ Dashboard Ready! Open http://localhost:${PORT} in your browser\n`);
 });
-
