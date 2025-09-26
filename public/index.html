@@ -102,41 +102,35 @@
 
                         <!-- Prompt Editor Tab -->
                         <div id="prompt-tab" class="tab-content active">
-                            <div class="prompt-templates">
-                                <button class="template-btn" onclick="loadTemplate('sales')">
-                                    <span class="template-icon">🎯</span>
-                                    Sales (Alex)
-                                </button>
-                                <button class="template-btn" onclick="loadTemplate('support')">
-                                    <span class="template-icon">🛠️</span>
-                                    Support (Sam)
-                                </button>
-                                <button class="template-btn" onclick="loadTemplate('appointment')">
-                                    <span class="template-icon">📅</span>
-                                    Scheduler (Jordan)
-                                </button>
-                                <button class="template-btn" onclick="loadTemplate('receptionist')">
-                                    <span class="template-icon">📋</span>
-                                    Receptionist (Casey)
-                                </button>
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                Create your custom AI agent prompt using the structured format below
                             </div>
                             
-                            <div class="prompt-preview" id="promptPreview" style="display: none;">
-                                <div class="preview-header">
-                                    <strong>Template Preview:</strong>
-                                    <span id="templateName"></span>
-                                </div>
-                                <div class="preview-details">
-                                    <div><strong>Name:</strong> <span id="agentName"></span></div>
-                                    <div><strong>Role:</strong> <span id="agentRole"></span></div>
-                                    <div><strong>Company:</strong> <span id="agentCompany"></span></div>
-                                </div>
+                            <div class="prompt-help" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                                <div style="font-weight: 600; color: #0369a1; margin-bottom: 8px;">Structured Format Required:</div>
+                                <code style="display: block; background: #e0f2fe; padding: 8px; border-radius: 4px; font-size: 0.875rem;">
+FIRST_MESSAGE: "Your greeting here"<br><br>
+SYSTEM_PROMPT:<br>
+Your detailed instructions for the AI agent...
+                                </code>
+                                <button class="btn secondary" onclick="showFormatHelp()" style="margin-top: 8px; font-size: 0.875rem; padding: 6px 12px;">
+                                    <span class="btn-icon">❓</span>
+                                    Show Example
+                                </button>
                             </div>
                             
                             <textarea 
                                 id="promptEditor" 
                                 class="prompt-editor"
-                                placeholder="Enter your AI agent's instructions here. Click a template above to get started with pre-built prompts for different roles."
+                                placeholder='Enter your AI agent prompt using this format:
+
+FIRST_MESSAGE: "Hello! This is [Name] from [Company]. How can I help you today?"
+
+SYSTEM_PROMPT:
+You are [Name], a [role] for [Company].
+- Your specific instructions here
+- How to handle different situations
+- Your conversation style'
                             ></textarea>
                             
                             <div class="prompt-actions">
