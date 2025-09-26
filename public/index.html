@@ -12,403 +12,91 @@
             <div class="header-left">
                 <div class="logo">
                     <div class="logo-icon"></div>
-                    <div class="logo-text" id="appName">SkyIQ</div>
+                    <div class="logo-text">SkyIQ</div>
                 </div>
-                <div class="header-title" id="companyName">AI Voice Dashboard</div>
+                <div class="header-title">AI Voice Dashboard</div>
             </div>
             <div class="user-profile">
-                <div class="profile-avatar" id="userInitials">--</div>
+                <div class="profile-avatar">SQ</div>
             </div>
         </div>
 
         <div class="content-area">
             <div class="connection-status">
                 <div class="status-dot"></div>
-                <span id="connectionStatus">Connected</span>
+                <span>Connected</span>
             </div>
 
-            <!-- Outbound Call Section -->
+            <!-- Make Call Section -->
             <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">
-                        <span class="section-icon">📞</span>
-                        Make Call
-                    </div>
+                    <div class="section-title">📞 Make Call</div>
                     <div class="section-subtitle">Make individual calls directly from your dashboard</div>
                 </div>
                 <div class="section-content">
                     <div class="phone-input-group">
-                        <input 
-                            type="tel" 
-                            id="phoneInput" 
-                            class="phone-input" 
-                            placeholder="Enter phone number (e.g., +1-555-123-4567)"
-                            maxlength="20"
-                        >
-                        <button id="callButton" class="call-btn" onclick="initiateCall()">
-                            <span class="btn-icon">📞</span>
-                            Start Call
-                        </button>
+                        <input type="tel" id="phoneInput" class="phone-input" placeholder="Enter phone number (e.g., +1-555-123-4567)" maxlength="20">
+                        <button id="callButton" class="call-btn" onclick="initiateCall()">📞 Start Call</button>
                     </div>
                     <div id="callStatus" class="call-status"></div>
-                </div>
-            </div>
-
-            <!-- Website Scraping Section -->
-            <div class="section-card">
-                <div class="section-header">
-                    <div class="section-title">
-                        <span class="section-icon">🌐</span>
-                        Website Data Scraper
-                    </div>
-                    <div class="section-subtitle">Add website URLs to scrape data and enhance your AI agent's knowledge</div>
-                </div>
-                <div class="section-content">
-                    <div class="url-input-group">
-                        <input 
-                            type="url" 
-                            id="urlInput" 
-                            class="url-input" 
-                            placeholder="Enter website URL (e.g., https://example.com)"
-                        >
-                        <button id="addUrlButton" class="btn" onclick="addUrl()">
-                            <span class="btn-icon">➕</span>
-                            Add URL
-                        </button>
-                    </div>
-                    
-                    <div id="urlList" class="url-list"></div>
-                    
-                    <div class="prompt-actions">
-                        <button id="scrapeAllButton" class="btn" onclick="scrapeAllUrls()">
-                            <span class="btn-icon">🕷️</span>
-                            Scrape All URLs
-                        </button>
-                        <button class="btn secondary" onclick="clearAllUrls()">
-                            <span class="btn-icon">🗑️</span>
-                            Clear All URLs
-                        </button>
-                    </div>
-                    
-                    <div id="scrapingStatus" class="scraping-status"></div>
-                    
-                    <div id="scrapedDataPreview" class="scraped-data-preview" style="display: none;">
-                        <strong>Scraped Data Preview:</strong>
-                        <div id="scrapedDataContent"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Document Parser Section -->
-            <div class="section-card">
-                <div class="section-header">
-                    <div class="section-title">
-                        <span class="section-icon">📄</span>
-                        Document Parser
-                    </div>
-                    <div class="section-subtitle">Upload documents to extract text and enhance your AI agent's knowledge base</div>
-                </div>
-                <div class="section-content">
-                    <div class="url-input-group">
-                        <input 
-                            type="file" 
-                            id="documentInput" 
-                            class="file-input" 
-                            accept=".pdf,.txt,.doc,.docx,.rtf,.md"
-                            multiple
-                        >
-                        <button id="uploadDocumentButton" class="btn" onclick="uploadDocuments()">
-                            <span class="btn-icon">📤</span>
-                            Upload Documents
-                        </button>
-                    </div>
-                    
-                    <div id="documentList" class="url-list"></div>
-                    
-                    <div class="prompt-actions">
-                        <button id="processAllButton" class="btn" onclick="processAllDocuments()">
-                            <span class="btn-icon">🔍</span>
-                            Process All Documents
-                        </button>
-                        <button class="btn secondary" onclick="clearAllDocuments()">
-                            <span class="btn-icon">🗑️</span>
-                            Clear All Documents
-                        </button>
-                    </div>
-                    
-                    <div id="processingStatus" class="scraping-status"></div>
-                    
-                    <div id="documentDataPreview" class="scraped-data-preview" style="display: none;">
-                        <strong>Document Content Preview:</strong>
-                        <div id="documentDataContent"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats Section -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalCalls">0</div>
-                    <div class="stat-label">Total Calls</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="inboundCalls">0</div>
-                    <div class="stat-label">Inbound Calls</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="transcriptCount">0</div>
-                    <div class="stat-label">With Transcripts</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="lastUpdate">Never</div>
-                    <div class="stat-label">Last Update</div>
-                </div>
-            </div>
-
-            <div class="controls">
-                <button class="btn" onclick="refreshData()">
-                    <span class="btn-icon">🔄</span>
-                    Refresh Data
-                </button>
-                <button class="btn secondary" onclick="viewAllCalls()">
-                    <span class="btn-icon">📋</span>
-                    View All Calls
-                </button>
-            </div>
-
-            <!-- Recent Call Log -->
-            <div class="section-card">
-                <div class="section-header">
-                    <div class="section-title">
-                        <span class="section-icon">📞</span>
-                        Recent Calls
-                    </div>
-                    <div class="section-subtitle">Latest conversation activity</div>
-                </div>
-                
-                <div id="callHistory">
-                    <div class="empty-state">
-                        <div class="empty-icon">📞</div>
-                        <div class="empty-title">Waiting for calls</div>
-                        <div class="empty-subtitle">Your live call data will appear here</div>
-                        <div class="webhook-url" id="webhookUrl">Loading webhook URL...</div>
-                    </div>
                 </div>
             </div>
 
             <!-- AI Agent Configuration -->
             <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">
-                        <span class="section-icon">🤖</span>
-                        AI Agent Configuration
-                    </div>
-                    <div class="section-subtitle">Customize your AI agent's behavior and knowledge</div>
+                    <div class="section-title">🤖 AI Agent Configuration</div>
+                    <div class="section-subtitle">Customize your AI agent's behavior</div>
                 </div>
                 <div class="section-content">
                     <div class="tabs-container">
                         <div class="tabs">
-                            <button class="tab active" onclick="switchTab('prompt-tab', this)">
-                                <span class="tab-icon">✏️</span>
-                                Prompt Editor
-                            </button>
-                            <button class="tab" onclick="switchTab('knowledge-tab', this)">
-                                <span class="tab-icon">📚</span>
-                                Knowledge Base
-                            </button>
-                            <button class="tab" onclick="switchTab('settings-tab', this)">
-                                <span class="tab-icon">⚙️</span>
-                                Settings
-                            </button>
+                            <button class="tab active" onclick="switchTab('prompt-tab', this)">✏️ Prompt Editor</button>
                         </div>
 
-                        <!-- Prompt Editor Tab -->
                         <div id="prompt-tab" class="tab-content active">
                             <div class="prompt-templates">
-                                <button class="template-btn" onclick="loadTemplate('sales')">
-                                    <span class="template-icon">🎯</span>
-                                    Sales
-                                </button>
-                                <button class="template-btn" onclick="loadTemplate('support')">
-                                    <span class="template-icon">🛠️</span>
-                                    Support
-                                </button>
-                                <button class="template-btn" onclick="loadTemplate('appointment')">
-                                    <span class="template-icon">📅</span>
-                                    Appointments
-                                </button>
-                                <button class="template-btn" onclick="loadTemplate('receptionist')">
-                                    <span class="template-icon">📋</span>
-                                    Receptionist
-                                </button>
+                                <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
+                                <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
+                                <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
+                                <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
                             </div>
                             
-                            <textarea 
-                                id="promptEditor" 
-                                class="prompt-editor"
-                                placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
-                            ></textarea>
+                            <textarea id="promptEditor" class="prompt-editor" placeholder="Enter your AI agent's instructions here..."></textarea>
                             
                             <div class="prompt-actions">
-                                <button id="savePromptBtn" class="btn" onclick="savePrompt()">
-                                    <span class="btn-icon">💾</span>
-                                    Save Prompt
-                                </button>
-                                <button class="btn secondary" onclick="loadCurrentPrompt()">
-                                    <span class="btn-icon">🔄</span>
-                                    Reload Current
-                                </button>
-                                <button class="btn secondary" onclick="insertScrapedData()">
-                                    <span class="btn-icon">📊</span>
-                                    Insert Knowledge Data
-                                </button>
+                                <button id="savePromptBtn" class="btn" onclick="savePrompt()">💾 Save Prompt</button>
+                                <button class="btn secondary" onclick="loadCurrentPrompt()">🔄 Reload Current</button>
                             </div>
                             
                             <div id="promptStatus" class="prompt-status"></div>
                         </div>
-
-                        <!-- Knowledge Base Tab -->
-                        <div id="knowledge-tab" class="tab-content">
-                            <div class="section-subtitle" style="margin-bottom: 16px;">
-                                View and manage scraped website data and processed documents that enhance your AI agent's knowledge
-                            </div>
-                            
-                            <div id="knowledgeBaseContent">
-                                <div class="empty-state">
-                                    <div class="empty-icon">📚</div>
-                                    <div class="empty-title">No Knowledge Data</div>
-                                    <div class="empty-subtitle">Scrape websites or upload documents to build your agent's knowledge base</div>
-                                </div>
-                            </div>
-                            
-                            <div class="prompt-actions">
-                                <button class="btn secondary" onclick="exportKnowledgeBase()">
-                                    <span class="btn-icon">📥</span>
-                                    Export Data
-                                </button>
-                                <button class="btn secondary" onclick="clearKnowledgeBase()">
-                                    <span class="btn-icon">🗑️</span>
-                                    Clear All Data
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Settings Tab -->
-                        <div id="settings-tab" class="tab-content">
-                            <div class="section-subtitle" style="margin-bottom: 16px;">
-                                Configure your AI agent's behavior and response settings
-                            </div>
-                            
-                            <div class="settings-grid">
-                                <div class="setting-group">
-                                    <label class="setting-label">Response Speed</label>
-                                    <select id="responseSpeed" class="setting-input">
-                                        <option value="fast">Fast (Quick responses)</option>
-                                        <option value="balanced" selected>Balanced (Default)</option>
-                                        <option value="thoughtful">Thoughtful (More detailed)</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="setting-group">
-                                    <label class="setting-label">Conversation Style</label>
-                                    <select id="conversationStyle" class="setting-input">
-                                        <option value="professional">Professional</option>
-                                        <option value="friendly" selected>Friendly</option>
-                                        <option value="casual">Casual</option>
-                                        <option value="formal">Formal</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="setting-group">
-                                    <label class="setting-label">Auto-Update Knowledge</label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="autoUpdateKnowledge" checked>
-                                        <span class="checkbox-custom"></span>
-                                        <span>Automatically include new scraped data in agent prompts</span>
-                                    </label>
-                                </div>
-                                
-                                <div class="setting-group">
-                                    <label class="setting-label">Max Knowledge Length</label>
-                                    <input 
-                                        type="range" 
-                                        id="maxKnowledgeLength" 
-                                        min="1000" 
-                                        max="10000" 
-                                        value="5000"
-                                        class="slider"
-                                    >
-                                    <div class="slider-labels">
-                                        <span>1K characters</span>
-                                        <span id="knowledgeLengthValue">5K characters</span>
-                                        <span>10K characters</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="prompt-actions">
-                                <button class="btn" onclick="saveSettings()">
-                                    <span class="btn-icon">💾</span>
-                                    Save Settings
-                                </button>
-                                <button class="btn secondary" onclick="resetSettings()">
-                                    <span class="btn-icon">🔄</span>
-                                    Reset to Default
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Call History -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">📞 Recent Calls</div>
+                    <div class="section-subtitle">Latest conversation activity</div>
+                </div>
+                <div class="controls">
+                    <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+                </div>
+                <div id="callHistory">Loading...</div>
+            </div>
         </div>
     </div>
 
-    <!-- Transcript Modal -->
-    <div id="transcriptModal" class="transcript-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Call Transcript</div>
-                <button class="close-btn" onclick="closeTranscriptModal()">&times;</button>
-            </div>
-            <div class="transcript-content" id="modalTranscript">
-                No transcript available
-            </div>
-        </div>
-    </div>
+    <div id="notification" class="notification">Notification</div>
 
-    <!-- Notification -->
-    <div id="notification" class="notification">
-        New call received
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Configuration
-        const config = {
-            appName: 'SkyIQ',
-            companyName: 'AI Voice Dashboard',
-            userInitials: 'SQ',
-            maxCallsToShow: 10,
-            autoRefreshInterval: 30000,
-            socketEnabled: true
-        };
-
         // Global variables
         let calls = [];
-        let currentPrompt = '';
-        let urlList = [];
-        let scrapedData = [];
-        let documentList = [];
-        let processedDocuments = [];
-        let settings = {
-            responseSpeed: 'balanced',
-            conversationStyle: 'friendly',
-            autoUpdateKnowledge: true,
-            maxKnowledgeLength: 5000
-        };
-
-        // Prompt templates
-        const promptTemplates = {
+        
+        // Template data
+        const templates = {
             sales: `You are a professional sales agent for our company. Your goal is to:
 - Greet callers warmly and professionally
 - Listen to their needs and understand their pain points
@@ -418,7 +106,7 @@
 - Always be helpful, knowledgeable, and customer-focused
 
 Keep responses concise and conversational. Ask qualifying questions to understand their business needs.`,
-
+            
             support: `You are a helpful customer support agent. Your primary objectives are to:
 - Provide excellent customer service with patience and empathy
 - Listen carefully to customer issues and concerns
@@ -428,7 +116,7 @@ Keep responses concise and conversational. Ask qualifying questions to understan
 - Document any issues for follow-up
 
 Always remain calm and professional, even with frustrated customers. Focus on resolving their problems efficiently.`,
-
+            
             appointment: `You are an appointment scheduling specialist. Your role is to:
 - Greet callers professionally and understand their scheduling needs
 - Check availability and offer suitable time slots
@@ -438,7 +126,7 @@ Always remain calm and professional, even with frustrated customers. Focus on re
 - Handle rescheduling requests professionally
 
 Be efficient but thorough. Always double-check appointment details before confirming.`,
-
+            
             receptionist: `You are a friendly and professional receptionist. Your responsibilities include:
 - Greeting callers with warmth and professionalism
 - Directing calls to the appropriate department or person
@@ -450,82 +138,7 @@ Be efficient but thorough. Always double-check appointment details before confir
 Always ask for the caller's name and reason for calling to provide the best assistance.`
         };
 
-        // Socket connection
-        let socket;
-        if (config.socketEnabled && typeof io !== 'undefined') {
-            try {
-                socket = io();
-                
-                socket.on('connect', () => {
-                    console.log('Socket.IO connected');
-                    updateConnectionStatus('Connected', '#22c55e');
-                });
-
-                socket.on('disconnect', () => {
-                    console.log('Socket.IO disconnected');
-                    updateConnectionStatus('Disconnected', '#dc2626');
-                });
-
-                socket.on('connect_error', (error) => {
-                    console.error('Socket.IO connection error:', error);
-                    updateConnectionStatus('Connection Error', '#dc2626');
-                });
-
-                socket.on('callHistory', (history) => {
-                    calls = history;
-                    renderCallHistory();
-                });
-
-                socket.on('newCall', (callData) => {
-                    calls.unshift(callData);
-                    renderCallHistory();
-                    showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
-                    updateStats();
-                });
-
-                socket.on('updateCall', (callData) => {
-                    const index = calls.findIndex(call => call.id === callData.id);
-                    if (index >= 0) {
-                        calls[index] = callData;
-                        renderCallHistory();
-                        updateStats();
-                    }
-                });
-            } catch (error) {
-                console.error('Failed to initialize Socket.IO:', error);
-                updateConnectionStatus('Socket Error', '#dc2626');
-            }
-        }
-
-        // Initialize app
-        function initializeApp() {
-            document.getElementById('appName').textContent = config.appName;
-            document.getElementById('companyName').textContent = config.companyName;
-            document.getElementById('userInitials').textContent = config.userInitials;
-            
-            const webhookUrl = document.getElementById('webhookUrl');
-            webhookUrl.textContent = `${window.location.origin}/webhook`;
-            
-            updateStats();
-            loadCurrentPrompt();
-            loadSettings();
-            
-            // Initialize knowledge length slider
-            const slider = document.getElementById('maxKnowledgeLength');
-            const valueDisplay = document.getElementById('knowledgeLengthValue');
-            
-            slider.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                valueDisplay.textContent = `${Math.round(value/1000)}K characters`;
-            });
-
-            if (!socket) {
-                console.log('Socket.IO not available, refreshing data manually');
-                refreshData();
-            }
-        }
-
-        // Tab switching functionality
+        // Tab switching
         function switchTab(tabId, tabButton) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -534,26 +147,20 @@ Always ask for the caller's name and reason for calling to provide the best assi
             document.getElementById(tabId).classList.add('active');
         }
 
-        // Template loading functionality
+        // Template loading
         function loadTemplate(templateName) {
-            if (promptTemplates[templateName]) {
-                document.getElementById('promptEditor').value = promptTemplates[templateName];
+            if (templates[templateName]) {
+                document.getElementById('promptEditor').value = templates[templateName];
                 showNotification(`${templateName.charAt(0).toUpperCase() + templateName.slice(1)} template loaded`);
             }
         }
 
-        // Call management
+        // Call initiation
         async function initiateCall() {
             const phoneNumber = document.getElementById('phoneInput').value.trim();
             
             if (!phoneNumber) {
                 showCallStatus('Please enter a phone number', 'error');
-                return;
-            }
-
-            const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)\.]{7,15}$/;
-            if (!phoneRegex.test(phoneNumber)) {
-                showCallStatus('Please enter a valid phone number', 'error');
                 return;
             }
 
@@ -565,9 +172,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
 
                 const response = await fetch('/api/calls/initiate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ phoneNumber })
                 });
 
@@ -577,10 +182,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                     showCallStatus(`Call initiated successfully to ${phoneNumber}`, 'success');
                     document.getElementById('phoneInput').value = '';
                     showNotification('Outbound call initiated successfully');
-                    
-                    setTimeout(() => {
-                        refreshData();
-                    }, 1000);
+                    setTimeout(refreshData, 1000);
                 } else {
                     showCallStatus(result.error || 'Failed to initiate call', 'error');
                 }
@@ -593,7 +195,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 callButton.textContent = '📞 Start Call';
                 
                 setTimeout(() => {
-                    hideCallStatus();
+                    document.getElementById('callStatus').className = 'call-status';
                 }, 5000);
             }
         }
@@ -606,8 +208,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('promptEditor').value = data.system_prompt || '';
-                    currentPrompt = data.system_prompt || '';
+                    document.getElementById('promptEditor').value = data.prompt?.system_prompt || '';
                     showPromptStatus('Prompt loaded successfully', 'success');
                 } else {
                     showPromptStatus('Failed to load current prompt', 'error');
@@ -617,7 +218,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 showPromptStatus('Error loading prompt', 'error');
             } finally {
                 setTimeout(() => {
-                    hidePromptStatus();
+                    document.getElementById('promptStatus').className = 'prompt-status';
                 }, 3000);
             }
         }
@@ -638,25 +239,13 @@ Always ask for the caller's name and reason for calling to provide the best assi
 
                 const response = await fetch('/api/prompt', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        system_prompt: prompt, 
-                        first_message: '',
-                        auto_include_scraped_data: settings.autoUpdateKnowledge || false
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ system_prompt: prompt, first_message: '' })
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
 
                 const result = await response.json();
 
                 if (result.success) {
-                    currentPrompt = prompt;
                     showPromptStatus('Prompt saved successfully!', 'success');
                     showNotification('AI agent prompt updated successfully');
                 } else {
@@ -671,331 +260,12 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 savePromptBtn.textContent = '💾 Save Prompt';
                 
                 setTimeout(() => {
-                    hidePromptStatus();
+                    document.getElementById('promptStatus').className = 'prompt-status';
                 }, 5000);
             }
         }
 
-        // URL management
-        function addUrl() {
-            const urlInput = document.getElementById('urlInput');
-            const url = urlInput.value.trim();
-            
-            if (!url) {
-                showNotification('Please enter a URL', true);
-                return;
-            }
-
-            try {
-                new URL(url);
-            } catch (e) {
-                showNotification('Please enter a valid URL', true);
-                return;
-            }
-
-            if (urlList.some(item => item.url === url)) {
-                showNotification('URL already added', true);
-                return;
-            }
-
-            urlList.push({
-                id: Date.now().toString(),
-                url: url,
-                status: 'pending',
-                data: null
-            });
-
-            urlInput.value = '';
-            renderUrlList();
-            showNotification('URL added successfully');
-        }
-
-        function clearAllUrls() {
-            urlList = [];
-            scrapedData = [];
-            renderUrlList();
-            updateKnowledgeBase();
-            showNotification('All URLs cleared');
-        }
-
-        function renderUrlList() {
-            const urlListContainer = document.getElementById('urlList');
-            
-            if (urlList.length === 0) {
-                urlListContainer.innerHTML = '';
-                return;
-            }
-
-            urlListContainer.innerHTML = urlList.map(item => `
-                <div class="url-item">
-                    <div class="url-text">${item.url}</div>
-                    <div class="url-status ${item.status}">${item.status}</div>
-                    <button class="remove-url-btn" onclick="removeUrl('${item.id}')">✕</button>
-                </div>
-            `).join('');
-        }
-
-        function removeUrl(urlId) {
-            urlList = urlList.filter(item => item.id !== urlId);
-            scrapedData = scrapedData.filter(item => item.id !== urlId);
-            renderUrlList();
-            updateKnowledgeBase();
-            showNotification('URL removed');
-        }
-
-        async function scrapeAllUrls() {
-            if (urlList.length === 0) {
-                showNotification('No URLs to scrape', true);
-                return;
-            }
-
-            showNotification('Web scraping feature not implemented yet', true);
-        }
-
-        // Document management
-        function uploadDocuments() {
-            showNotification('Document upload feature not implemented yet', true);
-        }
-
-        function clearAllDocuments() {
-            documentList = [];
-            processedDocuments = [];
-            showNotification('All documents cleared');
-        }
-
-        function processAllDocuments() {
-            showNotification('Document processing feature not implemented yet', true);
-        }
-
-        // Knowledge base management
-        function updateKnowledgeBase() {
-            const knowledgeContent = document.getElementById('knowledgeBaseContent');
-            const allKnowledgeData = [...scrapedData, ...processedDocuments];
-            
-            if (allKnowledgeData.length === 0) {
-                knowledgeContent.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📚</div>
-                        <div class="empty-title">No Knowledge Data</div>
-                        <div class="empty-subtitle">Scrape websites or upload documents to build your agent's knowledge base</div>
-                    </div>
-                `;
-                return;
-            }
-
-            knowledgeContent.innerHTML = allKnowledgeData.map(item => {
-                const isDocument = item.name;
-                const source = isDocument ? item.name : item.url;
-                const sourceType = isDocument ? 'Document' : 'Website';
-                const timestamp = item.timestamp;
-                
-                return `
-                    <div class="url-item" style="margin-bottom: 16px;">
-                        <div>
-                            <div class="url-text" style="font-weight: 600; color: #009AEE;">
-                                ${isDocument ? '📄' : '🌐'} ${source}
-                            </div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
-                                ${sourceType} • ${new Date(timestamp).toLocaleString()}
-                            </div>
-                            <div style="margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 0.875rem; line-height: 1.4; max-height: 120px; overflow-y: auto;">
-                                ${item.data.substring(0, 300)}${item.data.length > 300 ? '...' : ''}
-                            </div>
-                        </div>
-                        <button class="remove-url-btn" onclick="removeFromKnowledgeBase('${item.id}')">✕</button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function insertScrapedData() {
-            const allKnowledgeData = [...scrapedData, ...processedDocuments];
-            if (allKnowledgeData.length === 0) {
-                showNotification('No knowledge data available', true);
-                return;
-            }
-
-            const promptEditor = document.getElementById('promptEditor');
-            const maxLength = settings.maxKnowledgeLength;
-            
-            let knowledgeText = '\n\n--- KNOWLEDGE BASE ---\n';
-            let totalLength = 0;
-
-            for (const item of allKnowledgeData) {
-                const isDocument = item.name;
-                const source = isDocument ? item.name : item.url;
-                const sourceType = isDocument ? 'Document' : 'Website';
-                
-                const itemText = `\n[${sourceType}: ${source}]\n${item.data}\n`;
-                if (totalLength + itemText.length > maxLength) {
-                    const remainingLength = maxLength - totalLength;
-                    if (remainingLength > 100) {
-                        knowledgeText += itemText.substring(0, remainingLength) + '...\n';
-                    }
-                    break;
-                }
-                knowledgeText += itemText;
-                totalLength += itemText.length;
-            }
-
-            knowledgeText += '--- END KNOWLEDGE BASE ---\n';
-
-            promptEditor.value += knowledgeText;
-            showNotification('Knowledge data inserted into prompt');
-        }
-
-        function removeFromKnowledgeBase(itemId) {
-            scrapedData = scrapedData.filter(item => item.id !== itemId);
-            urlList = urlList.filter(item => item.id !== itemId);
-            processedDocuments = processedDocuments.filter(item => item.id !== itemId);
-            documentList = documentList.filter(item => item.id !== itemId);
-            
-            updateKnowledgeBase();
-            renderUrlList();
-            showNotification('Item removed from knowledge base');
-        }
-
-        function clearKnowledgeBase() {
-            if (confirm('Are you sure you want to clear all knowledge base data?')) {
-                scrapedData = [];
-                processedDocuments = [];
-                updateKnowledgeBase();
-                showNotification('Knowledge base cleared');
-            }
-        }
-
-        function exportKnowledgeBase() {
-            const allKnowledgeData = [...scrapedData, ...processedDocuments];
-            if (allKnowledgeData.length === 0) {
-                showNotification('No data to export', true);
-                return;
-            }
-
-            const dataStr = JSON.stringify(allKnowledgeData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `skyiq-knowledge-base-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            
-            showNotification('Knowledge base exported');
-        }
-
-        // Settings management
-        function loadSettings() {
-            document.getElementById('responseSpeed').value = settings.responseSpeed;
-            document.getElementById('conversationStyle').value = settings.conversationStyle;
-            document.getElementById('autoUpdateKnowledge').checked = settings.autoUpdateKnowledge;
-            document.getElementById('maxKnowledgeLength').value = settings.maxKnowledgeLength;
-            
-            const valueDisplay = document.getElementById('knowledgeLengthValue');
-            valueDisplay.textContent = `${Math.round(settings.maxKnowledgeLength/1000)}K characters`;
-        }
-
-        function saveSettings() {
-            settings.responseSpeed = document.getElementById('responseSpeed').value;
-            settings.conversationStyle = document.getElementById('conversationStyle').value;
-            settings.autoUpdateKnowledge = document.getElementById('autoUpdateKnowledge').checked;
-            settings.maxKnowledgeLength = parseInt(document.getElementById('maxKnowledgeLength').value);
-            
-            localStorage.setItem('skyiq-settings', JSON.stringify(settings));
-            showNotification('Settings saved successfully');
-        }
-
-        function resetSettings() {
-            settings = {
-                responseSpeed: 'balanced',
-                conversationStyle: 'friendly',
-                autoUpdateKnowledge: true,
-                maxKnowledgeLength: 5000
-            };
-            loadSettings();
-            localStorage.removeItem('skyiq-settings');
-            showNotification('Settings reset to default');
-        }
-
-        function loadStoredSettings() {
-            const stored = localStorage.getItem('skyiq-settings');
-            if (stored) {
-                try {
-                    settings = {...settings, ...JSON.parse(stored)};
-                } catch (e) {
-                    console.error('Error loading settings:', e);
-                }
-            }
-        }
-
-        // Call history and stats
-        function renderCallHistory() {
-            const callHistory = document.getElementById('callHistory');
-            
-            if (calls.length === 0) {
-                callHistory.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📞</div>
-                        <div class="empty-title">Waiting for calls</div>
-                        <div class="empty-subtitle">Your live call data will appear here</div>
-                        <div class="webhook-url">${window.location.origin}/webhook</div>
-                    </div>
-                `;
-                return;
-            }
-
-            const callsToShow = calls.slice(0, config.maxCallsToShow);
-            const cardsHTML = `
-                <div class="call-cards">
-                    ${callsToShow.map(call => `
-                        <div class="call-card">
-                            <div class="call-card-header">
-                                <div class="call-phone">${formatPhoneNumber(call.caller_number || call.phone || 'Unknown')}</div>
-                                <div class="call-datetime">
-                                    <div class="call-date">${formatDate(call.timestamp)}</div>
-                                    <div class="call-time">${formatTime(call.timestamp)}</div>
-                                </div>
-                            </div>
-                            <div class="call-details">
-                                <div class="call-duration">${formatDuration(call.duration)}</div>
-                                <div class="call-type-badge call-type-${call.call_type || 'inbound'}">
-                                    ${call.call_type === 'outbound' ? '📤 Out' : '📥 In'}
-                                </div>
-                                <span class="status-badge status-${getStatusClass(call.status)}">
-                                    ${call.status || 'Unknown'}
-                                </span>
-                            </div>
-                            <div class="call-actions">
-                                ${call.transcript ? 
-                                    `<button class="transcript-btn" onclick="showTranscript('${call.id}')">View Transcript</button>` : 
-                                    `<button class="transcript-btn" disabled>No Transcript</button>`
-                                }
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            callHistory.innerHTML = cardsHTML;
-            updateStats();
-        }
-
-        function updateStats() {
-            const totalCalls = document.getElementById('totalCalls');
-            const inboundCalls = document.getElementById('inboundCalls');
-            const transcriptCount = document.getElementById('transcriptCount');
-            const lastUpdate = document.getElementById('lastUpdate');
-            
-            totalCalls.textContent = calls.length;
-            
-            const inboundCallCount = calls.filter(call => call.call_type !== 'outbound').length;
-            inboundCalls.textContent = inboundCallCount;
-            
-            const callsWithTranscripts = calls.filter(call => 
-                call.transcript && call.transcript.length > 0
-            ).length;
-            transcriptCount.textContent = callsWithTranscripts;
-            
-            lastUpdate.textContent = new Date().toLocaleTimeString();
-        }
-
+        // Data refresh
         async function refreshData() {
             try {
                 const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
@@ -1009,7 +279,6 @@ Always ask for the caller's name and reason for calling to provide the best assi
                     const data = await response.json();
                     calls = data.calls || [];
                     renderCallHistory();
-                    updateStats();
                     showNotification('Data refreshed successfully');
                 } else {
                     showNotification('Failed to refresh data', true);
@@ -1026,53 +295,47 @@ Always ask for the caller's name and reason for calling to provide the best assi
             }
         }
 
-        function viewAllCalls() {
-            config.maxCallsToShow = calls.length;
-            renderCallHistory();
+        // Render call history
+        function renderCallHistory() {
+            const callHistory = document.getElementById('callHistory');
             
-            const viewBtn = document.querySelector('button[onclick="viewAllCalls()"]');
-            if (viewBtn) {
-                const originalText = viewBtn.textContent;
-                viewBtn.textContent = `✅ Showing All ${calls.length}`;
-                setTimeout(() => {
-                    viewBtn.textContent = originalText;
-                    config.maxCallsToShow = 10;
-                }, 2000);
+            if (calls.length === 0) {
+                callHistory.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📞</div>
+                        <div class="empty-title">No calls yet</div>
+                        <div class="empty-subtitle">Your call data will appear here</div>
+                    </div>
+                `;
+                return;
             }
-        }
 
-        // Modal management
-        function showTranscript(callId) {
-            const call = calls.find(c => c.id === callId);
-            if (call && call.transcript) {
-                const phoneNumber = formatPhoneNumber(call.caller_number || call.phone || 'Unknown');
-                const callDate = formatDate(call.timestamp);
-                const callTime = formatTime(call.timestamp);
-                
-                const modalTitle = document.getElementById('modalTitle');
-                const modalTranscript = document.getElementById('modalTranscript');
-                const transcriptModal = document.getElementById('transcriptModal');
-                
-                modalTitle.textContent = `Transcript - ${phoneNumber}`;
-                
-                const transcriptWithHeader = `Call Details:
-Phone: ${phoneNumber}
-Type: ${call.call_type === 'outbound' ? 'Outbound Call' : 'Inbound Call'}
-Date: ${callDate} at ${callTime}
-Duration: ${formatDuration(call.duration)}
-Status: ${call.status || 'Unknown'}
-
-Transcript:
-${call.transcript}`;
-                
-                modalTranscript.textContent = transcriptWithHeader;
-                transcriptModal.style.display = 'flex';
-            }
-        }
-
-        function closeTranscriptModal() {
-            const transcriptModal = document.getElementById('transcriptModal');
-            transcriptModal.style.display = 'none';
+            const callsToShow = calls.slice(0, 10);
+            const cardsHTML = `
+                <div class="call-cards">
+                    ${callsToShow.map(call => `
+                        <div class="call-card">
+                            <div class="call-card-header">
+                                <div class="call-phone">${call.caller_number || 'Unknown'}</div>
+                                <div class="call-datetime">
+                                    <div class="call-date">${formatDate(call.timestamp)}</div>
+                                    <div class="call-time">${formatTime(call.timestamp)}</div>
+                                </div>
+                            </div>
+                            <div class="call-details">
+                                <div class="call-duration">${formatDuration(call.duration)}</div>
+                                <div class="call-type-badge call-type-${call.call_type || 'inbound'}">
+                                    ${call.call_type === 'outbound' ? '📤 Out' : '📥 In'}
+                                </div>
+                                <span class="status-badge status-${call.status || 'unknown'}">
+                                    ${call.status || 'Unknown'}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            callHistory.innerHTML = cardsHTML;
         }
 
         // Utility functions
@@ -1082,29 +345,13 @@ ${call.transcript}`;
             callStatus.className = `call-status ${type}`;
         }
 
-        function hideCallStatus() {
-            const callStatus = document.getElementById('callStatus');
-            callStatus.className = 'call-status';
-        }
-
         function showPromptStatus(message, type) {
             const promptStatus = document.getElementById('promptStatus');
             promptStatus.textContent = message;
             promptStatus.className = `prompt-status ${type}`;
         }
 
-        function hidePromptStatus() {
-            const promptStatus = document.getElementById('promptStatus');
-            promptStatus.className = 'prompt-status';
-        }
-
-        function updateConnectionStatus(status, color) {
-            const connectionStatus = document.getElementById('connectionStatus');
-            connectionStatus.textContent = status;
-            connectionStatus.style.color = color;
-        }
-
-        function showNotification(message = 'New call received', isError = false) {
+        function showNotification(message, isError = false) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = `notification ${isError ? 'error' : ''}`;
@@ -1114,40 +361,13 @@ ${call.transcript}`;
             }, 4000);
         }
 
-        function getStatusClass(status) {
-            if (!status) return 'unknown';
-            const statusLower = status.toLowerCase();
-            if (statusLower.includes('complete') || statusLower === 'answered') return 'completed';
-            if (statusLower.includes('fail') || statusLower === 'busy') return 'failed';
-            if (statusLower.includes('initiat')) return 'initiated';
-            return statusLower.replace(/[^a-z0-9]/g, '-');
-        }
-
-        function formatPhoneNumber(phone) {
-            if (!phone || phone === 'Unknown') return phone;
-            
-            const cleaned = phone.replace(/\D/g, '');
-            
-            if (cleaned.length === 10) {
-                return `(${cleaned.substr(0, 3)}) ${cleaned.substr(3, 3)}-${cleaned.substr(6, 4)}`;
-            } else if (cleaned.length === 11 && cleaned.charAt(0) === '1') {
-                return `+1 (${cleaned.substr(1, 3)}) ${cleaned.substr(4, 3)}-${cleaned.substr(7, 4)}`;
-            }
-            
-            return phone;
-        }
-
         function formatDate(dateString) {
             if (!dateString) return 'Unknown';
             const date = new Date(dateString);
             const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
             
             if (date.toDateString() === today.toDateString()) {
                 return 'Today';
-            } else if (date.toDateString() === yesterday.toDateString()) {
-                return 'Yesterday';
             } else {
                 return date.toLocaleDateString();
             }
@@ -1177,60 +397,10 @@ ${call.transcript}`;
             }
         }
 
-        // Event listeners
+        // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
-            const phoneInput = document.getElementById('phoneInput');
-            const urlInput = document.getElementById('urlInput');
-            const transcriptModal = document.getElementById('transcriptModal');
-            
-            // Phone input formatting
-            phoneInput.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\D/g, '');
-                
-                if (value.length >= 10) {
-                    if (value.length === 10) {
-                        value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
-                    } else if (value.length === 11 && value.charAt(0) === '1') {
-                        value = `+1 (${value.substr(1, 3)}) ${value.substr(4, 3)}-${value.substr(7, 4)}`;
-                    }
-                }
-                
-                e.target.value = value;
-            });
-
-            phoneInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    initiateCall();
-                }
-            });
-
-            urlInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    addUrl();
-                }
-            });
-
-            // Modal event listeners
-            transcriptModal.addEventListener('click', (e) => {
-                if (e.target === transcriptModal) {
-                    closeTranscriptModal();
-                }
-            });
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && transcriptModal.style.display === 'flex') {
-                    closeTranscriptModal();
-                }
-                if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    refreshData();
-                }
-            });
-
-            // Initialize the app
-            loadStoredSettings();
-            initializeApp();
+            loadCurrentPrompt();
+            refreshData();
         });
     </script>
 </body>
