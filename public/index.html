@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,24 +13,21 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: #f8fafc;
             color: #1e293b;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            min-height: 100vh;
         }
         
         .main-content {
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
         
         .header {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 1.5rem;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -39,13 +36,13 @@
             top: 0;
             z-index: 100;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 12px;
         }
         
         .header-left {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 16px;
             flex: 1;
             min-width: 0;
         }
@@ -53,26 +50,25 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 10px;
             flex-shrink: 0;
         }
         
         .logo-icon {
-            width: 2.5rem;
-            height: 2.5rem;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%234f46e5;stop-opacity:1" /><stop offset="100%" style="stop-color:%2306b6d4;stop-opacity:1" /></linearGradient></defs><path d="M20 25 Q20 15 30 15 L70 15 Q80 15 80 25 L80 45 Q80 55 70 55 L55 55 L50 65 L45 55 L30 55 Q20 55 20 45 Z" fill="url(%23grad1)" stroke="white" stroke-width="2"/><path d="M30 70 Q30 60 40 60 L75 60 Q85 60 85 70 L85 85 Q85 95 75 95 L40 95 Q30 95 30 85 Z" fill="url(%23grad1)" opacity="0.7"/><path d="M35 25 L75 25 M35 35 L65 35 M35 45 L70 45" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>') center/contain no-repeat;
+            width: 36px;
+            height: 36px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23009AEE;stop-opacity:1" /><stop offset="100%" style="stop-color:%230080CC;stop-opacity:1" /></linearGradient></defs><path d="M20 25 Q20 15 30 15 L70 15 Q80 15 80 25 L80 45 Q80 55 70 55 L55 55 L50 65 L45 55 L30 55 Q20 55 20 45 Z" fill="url(%23grad1)" stroke="white" stroke-width="2"/><path d="M30 70 Q30 60 40 60 L75 60 Q85 60 85 70 L85 85 Q85 95 75 95 L40 95 Q30 95 30 85 Z" fill="url(%23grad1)" opacity="0.7"/><path d="M35 25 L75 25 M35 35 L65 35 M35 45 L70 45" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>') center/contain no-repeat;
             border-radius: 10px;
-            filter: drop-shadow(0 2px 4px rgba(79, 70, 229, 0.2));
+            filter: drop-shadow(0 2px 4px rgba(0, 154, 238, 0.2));
         }
         
         .logo-text {
             font-size: 1.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -0.025em;
         }
         
         .header-title {
@@ -83,57 +79,47 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            padding-left: 1rem;
-            border-left: 1px solid #e2e8f0;
         }
         
         .user-profile {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 8px;
             flex-shrink: 0;
         }
         
         .profile-avatar {
-            width: 2.5rem;
-            height: 2.5rem;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: 600;
-            font-size: 0.875rem;
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
-            transition: transform 0.2s ease;
-        }
-        
-        .profile-avatar:hover {
-            transform: scale(1.05);
+            font-size: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 154, 238, 0.3);
         }
         
         .content-area {
-            padding: 1.5rem;
+            padding: 16px;
             max-width: 1200px;
             margin: 0 auto;
-            width: 100%;
-            flex: 1;
         }
         
         .connection-status {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
+            gap: 8px;
+            padding: 10px 16px;
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
             border-radius: 20px;
-            margin-bottom: 1.5rem;
+            margin-bottom: 20px;
             color: #15803d;
             font-size: 0.875rem;
             font-weight: 500;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         
         .status-dot {
@@ -154,18 +140,12 @@
             border-radius: 16px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-            margin-bottom: 1.5rem;
+            margin-bottom: 24px;
             overflow: hidden;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .section-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
         }
         
         .section-header {
-            padding: 1.5rem;
+            padding: 20px 16px;
             border-bottom: 1px solid #e2e8f0;
             background: linear-gradient(135deg, #fafbff 0%, #f1f5f9 100%);
         }
@@ -173,12 +153,12 @@
         .section-title {
             font-size: 1.25rem;
             font-weight: 700;
-            margin-bottom: 0.25rem;
+            margin-bottom: 4px;
             color: #1e293b;
             letter-spacing: -0.025em;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
         }
         
         .section-subtitle {
@@ -188,20 +168,20 @@
         }
         
         .section-content {
-            padding: 1.5rem;
+            padding: 20px 16px;
         }
         
         .phone-input-group {
             display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
+            gap: 12px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
         
         .phone-input {
             flex: 1;
             min-width: 250px;
-            padding: 0.875rem 1rem;
+            padding: 12px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
             font-size: 1rem;
@@ -212,14 +192,205 @@
         
         .phone-input:focus {
             outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .url-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
+        }
+
+        .file-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            cursor: pointer;
+        }
+
+        .file-input:focus {
+            outline: none;
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
+        }
+
+        .file-input:hover {
+            border-color: #009AEE;
+        }
+
+        .url-list {
+            margin-bottom: 16px;
+        }
+
+        .url-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+
+        .url-text {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #475569;
+            word-break: break-all;
+        }
+
+        .url-status {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .url-status.pending {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .url-status.scraping {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .url-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .url-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .document-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            font-weight: 600;
+            color: #009AEE;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .document-meta {
+            font-size: 0.75rem;
+            color: #6b7280;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .document-status {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .document-status.pending {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .document-status.processing {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .document-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .document-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .remove-url-btn {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .remove-url-btn:hover {
+            background: #fef2f2;
+        }
+
+        .scraped-data-preview {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 0.875rem;
+            color: #475569;
+            line-height: 1.5;
         }
 
         .prompt-editor {
             width: 100%;
             min-height: 180px;
-            padding: 1rem;
+            padding: 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
             font-size: 0.875rem;
@@ -232,31 +403,31 @@
 
         .prompt-editor:focus {
             outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #009AEE;
+            box-shadow: 0 0 0 3px rgba(0, 154, 238, 0.1);
         }
 
         .prompt-actions {
             display: flex;
-            gap: 0.75rem;
-            margin-top: 1rem;
+            gap: 8px;
+            margin-top: 12px;
             flex-wrap: wrap;
         }
 
-        .prompt-status, .call-status {
-            padding: 0.875rem 1rem;
+        .prompt-status, .call-status, .scraping-status {
+            padding: 12px 16px;
             border-radius: 8px;
-            margin-top: 1rem;
+            margin-top: 12px;
             font-size: 0.875rem;
             font-weight: 500;
             display: none;
         }
         
         .call-btn, .btn {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             color: white;
             border: none;
-            padding: 0.875rem 1.5rem;
+            padding: 12px 24px;
             border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
@@ -264,10 +435,10 @@
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
             min-height: 48px;
             flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 154, 238, 0.3);
             justify-content: center;
         }
 
@@ -276,8 +447,8 @@
         }
         
         .btn:hover, .call-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(0, 154, 238, 0.4);
         }
         
         .btn:active, .call-btn:active {
@@ -293,31 +464,31 @@
 
         .btn.secondary {
             background: white;
-            color: #4f46e5;
+            color: #009AEE;
             border: 2px solid #e2e8f0;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .btn.secondary:hover {
-            border-color: #4f46e5;
-            background: #f8faff;
+            border-color: #009AEE;
+            background: #f0f9ff;
         }
         
-        .call-status.success, .prompt-status.success {
+        .call-status.success, .prompt-status.success, .scraping-status.success {
             background: #dcfce7;
             color: #166534;
             border: 1px solid #bbf7d0;
             display: block;
         }
         
-        .call-status.error, .prompt-status.error {
+        .call-status.error, .prompt-status.error, .scraping-status.error {
             background: #fef2f2;
             color: #dc2626;
             border: 1px solid #fecaca;
             display: block;
         }
         
-        .call-status.loading, .prompt-status.loading {
+        .call-status.loading, .prompt-status.loading, .scraping-status.loading {
             background: #dbeafe;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
@@ -327,13 +498,13 @@
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 16px;
+            margin-bottom: 24px;
         }
         
         .stat-card {
             background: linear-gradient(135deg, #ffffff 0%, #fafbff 100%);
-            padding: 1.5rem;
+            padding: 16px;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -343,11 +514,6 @@
             text-align: center;
         }
         
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-        }
-        
         .stat-card::before {
             content: '';
             position: absolute;
@@ -355,17 +521,17 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #4f46e5, #06b6d4);
+            background: linear-gradient(90deg, #009AEE, #0080CC);
         }
         
         .stat-value {
             font-size: 1.75rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            background: linear-gradient(135deg, #009AEE, #0080CC);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 0.25rem;
+            margin-bottom: 4px;
             line-height: 1.1;
         }
         
@@ -379,17 +545,17 @@
         
         .controls {
             display: flex;
-            gap: 0.75rem;
+            gap: 8px;
             justify-content: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
         
         .call-cards {
-            padding: 1rem;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 8px;
             max-height: 400px;
             overflow-y: auto;
         }
@@ -398,29 +564,28 @@
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 1rem;
+            padding: 12px;
             transition: all 0.2s ease;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         .call-card:hover {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transform: translateY(-1px);
         }
         
         .call-card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.5rem;
-            gap: 0.75rem;
+            margin-bottom: 8px;
+            gap: 12px;
         }
         
         .call-phone {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #4f46e5;
+            color: #009AEE;
             flex-shrink: 0;
         }
         
@@ -444,7 +609,7 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 6px;
             font-size: 0.75rem;
         }
         
@@ -454,7 +619,7 @@
         }
         
         .call-type-badge {
-            padding: 0.25rem 0.5rem;
+            padding: 2px 6px;
             border-radius: 10px;
             font-size: 0.6rem;
             font-weight: 600;
@@ -473,7 +638,7 @@
         }
         
         .status-badge {
-            padding: 0.25rem 0.5rem;
+            padding: 3px 8px;
             border-radius: 12px;
             font-size: 0.6rem;
             font-weight: 600;
@@ -499,14 +664,14 @@
         .call-actions {
             display: flex;
             justify-content: flex-end;
-            margin-top: 0.5rem;
+            margin-top: 8px;
         }
         
         .transcript-btn {
             background: none;
             border: 1px solid #e2e8f0;
-            color: #4f46e5;
-            padding: 0.375rem 0.75rem;
+            color: #009AEE;
+            padding: 4px 8px;
             border-radius: 4px;
             font-size: 0.7rem;
             font-weight: 500;
@@ -516,7 +681,7 @@
         
         .transcript-btn:hover {
             background: #f8fafc;
-            border-color: #4f46e5;
+            border-color: #009AEE;
         }
         
         .transcript-btn:disabled {
@@ -526,25 +691,25 @@
         
         .empty-state {
             text-align: center;
-            padding: 2.5rem 1.5rem;
+            padding: 40px 20px;
             color: #64748b;
         }
         
         .empty-icon {
             font-size: 2.5rem;
-            margin-bottom: 0.75rem;
+            margin-bottom: 12px;
             opacity: 0.5;
         }
         
         .empty-title {
             font-size: 1.125rem;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 6px;
             color: #475569;
         }
         
         .empty-subtitle {
-            margin-bottom: 1rem;
+            margin-bottom: 16px;
             font-size: 0.875rem;
         }
         
@@ -552,10 +717,10 @@
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             border-radius: 6px;
-            padding: 0.5rem 0.75rem;
+            padding: 8px 12px;
             font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.7rem;
-            color: #4f46e5;
+            color: #009AEE;
             word-break: break-all;
             max-width: 100%;
             margin: 0 auto;
@@ -563,11 +728,11 @@
         
         .notification {
             position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
+            top: 24px;
+            right: 24px;
             background: #22c55e;
             color: white;
-            padding: 1rem 1.5rem;
+            padding: 16px 24px;
             border-radius: 8px;
             font-weight: 500;
             transform: translateX(400px);
@@ -596,27 +761,26 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
+            padding: 16px;
         }
         
         .modal-content {
             background: white;
             border-radius: 16px;
-            padding: 1.5rem;
-            max-width: calc(100vw - 2rem);
+            padding: 20px;
+            max-width: calc(100vw - 32px);
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
         
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
-            gap: 1rem;
+            margin-bottom: 20px;
+            gap: 16px;
         }
         
         .modal-title {
@@ -632,7 +796,7 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: #64748b;
-            padding: 0.5rem;
+            padding: 8px;
             min-height: 44px;
             min-width: 44px;
             display: flex;
@@ -642,7 +806,6 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             flex-shrink: 0;
-            transition: background-color 0.2s ease;
         }
         
         .close-btn:hover {
@@ -653,7 +816,7 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 20px;
             font-family: system-ui, -apple-system, sans-serif;
             font-size: 0.875rem;
             line-height: 1.6;
@@ -666,8 +829,8 @@
 
         .prompt-templates {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
+            gap: 6px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
         }
 
@@ -675,7 +838,7 @@
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             color: #64748b;
-            padding: 0.5rem 0.75rem;
+            padding: 6px 12px;
             border-radius: 6px;
             font-size: 0.75rem;
             cursor: pointer;
@@ -684,7 +847,48 @@
 
         .template-btn:hover {
             background: #e2e8f0;
-            color: #4f46e5;
+            color: #009AEE;
+        }
+
+        .tabs-container {
+            margin-bottom: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .tab.active {
+            color: #009AEE;
+            border-bottom-color: #009AEE;
+        }
+
+        .tab:hover:not(.active) {
+            color: #475569;
+            background: #f8fafc;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
         
         /* Media Queries */
@@ -694,16 +898,16 @@
             }
             
             .content-area {
-                padding: 2rem;
+                padding: 24px;
             }
             
             .header {
-                padding: 1.25rem 2rem;
+                padding: 20px 32px;
             }
             
             .logo-icon {
-                width: 2.75rem;
-                height: 2.75rem;
+                width: 44px;
+                height: 44px;
             }
             
             .logo-text {
@@ -715,13 +919,17 @@
             }
             
             .profile-avatar {
-                width: 2.75rem;
-                height: 2.75rem;
+                width: 36px;
+                height: 36px;
                 font-size: 0.875rem;
             }
             
-            .phone-input-group {
+            .phone-input-group, .url-input-group {
                 flex-wrap: nowrap;
+            }
+            
+            .file-input {
+                min-width: 300px;
             }
         }
         
@@ -729,22 +937,12 @@
             .header {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 1rem;
-                padding: 1rem;
+                gap: 16px;
+                padding: 16px;
             }
             
             .header-left {
                 justify-content: center;
-                flex-direction: column;
-                text-align: center;
-                gap: 0.75rem;
-            }
-            
-            .header-title {
-                padding-left: 0;
-                border-left: none;
-                border-top: 1px solid #e2e8f0;
-                padding-top: 0.75rem;
             }
             
             .user-profile {
@@ -757,6 +955,7 @@
             
             .header-title {
                 font-size: 1rem;
+                text-align: center;
             }
             
             .stats-grid {
@@ -769,14 +968,14 @@
             
             .btn {
                 width: 100%;
-                padding: 1rem;
+                padding: 14px 16px;
             }
             
-            .phone-input-group {
+            .phone-input-group, .url-input-group {
                 flex-direction: column;
             }
             
-            .phone-input {
+            .phone-input, .url-input, .file-input {
                 min-width: 100%;
             }
 
@@ -787,9 +986,15 @@
             .prompt-templates {
                 justify-content: center;
             }
-            
-            .section-header, .section-content {
-                padding: 1.25rem;
+
+            .tabs {
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .tab {
+                padding: 8px 16px;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -802,7 +1007,7 @@
                     <div class="logo-icon"></div>
                     <div class="logo-text" id="appName">SkyIQ</div>
                 </div>
-                <div class="header-title" id="companyName">Inbound Dashboard</div>
+                <div class="header-title" id="companyName">AI Voice Dashboard</div>
             </div>
             <div class="user-profile">
                 <div class="profile-avatar" id="userInitials">--</div>
@@ -840,6 +1045,89 @@
                 </div>
             </div>
 
+            <!-- Website Scraping Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        🌐 Website Data Scraper
+                    </div>
+                    <div class="section-subtitle">Add website URLs to scrape data and enhance your AI agent's knowledge</div>
+                </div>
+                <div class="section-content">
+                    <div class="url-input-group">
+                        <input 
+                            type="url" 
+                            id="urlInput" 
+                            class="url-input" 
+                            placeholder="Enter website URL (e.g., https://example.com)"
+                        >
+                        <button id="addUrlButton" class="btn" onclick="addUrl()">
+                            ➕ Add URL
+                        </button>
+                    </div>
+                    
+                    <div id="urlList" class="url-list"></div>
+                    
+                    <div class="prompt-actions">
+                        <button id="scrapeAllButton" class="btn" onclick="scrapeAllUrls()">
+                            🕷️ Scrape All URLs
+                        </button>
+                        <button class="btn secondary" onclick="clearAllUrls()">
+                            🗑️ Clear All URLs
+                        </button>
+                    </div>
+                    
+                    <div id="scrapingStatus" class="scraping-status"></div>
+                    
+                    <div id="scrapedDataPreview" class="scraped-data-preview" style="display: none;">
+                        <strong>Scraped Data Preview:</strong>
+                        <div id="scrapedDataContent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Parser Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        📄 Document Parser
+                    </div>
+                    <div class="section-subtitle">Upload documents to extract text and enhance your AI agent's knowledge base</div>
+                </div>
+                <div class="section-content">
+                    <div class="url-input-group">
+                        <input 
+                            type="file" 
+                            id="documentInput" 
+                            class="file-input" 
+                            accept=".pdf,.txt,.doc,.docx,.rtf,.md"
+                            multiple
+                        >
+                        <button id="uploadDocumentButton" class="btn" onclick="uploadDocuments()">
+                            📤 Upload Documents
+                        </button>
+                    </div>
+                    
+                    <div id="documentList" class="url-list"></div>
+                    
+                    <div class="prompt-actions">
+                        <button id="processAllButton" class="btn" onclick="processAllDocuments()">
+                            🔍 Process All Documents
+                        </button>
+                        <button class="btn secondary" onclick="clearAllDocuments()">
+                            🗑️ Clear All Documents
+                        </button>
+                    </div>
+                    
+                    <div id="processingStatus" class="scraping-status"></div>
+                    
+                    <div id="documentDataPreview" class="scraped-data-preview" style="display: none;">
+                        <strong>Document Content Preview:</strong>
+                        <div id="documentDataContent"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Section -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -865,7 +1153,7 @@
                 <button class="btn secondary" onclick="viewAllCalls()">View All Calls</button>
             </div>
 
-            <!-- Compact Call Log -->
+            <!-- Recent Call Log -->
             <div class="section-card">
                 <div class="section-header">
                     <div class="section-title">Recent Calls</div>
@@ -882,43 +1170,152 @@
                 </div>
             </div>
 
-            <!-- Prompt Editor Section -->
+            <!-- AI Agent Configuration -->
             <div class="section-card">
                 <div class="section-header">
                     <div class="section-title">
-                        ✏️ Edit AI Agent Prompt
+                        🤖 AI Agent Configuration
                     </div>
-                    <div class="section-subtitle">Customize how your AI agent responds to calls</div>
+                    <div class="section-subtitle">Customize your AI agent's behavior and knowledge</div>
                 </div>
                 <div class="section-content">
-                    <div class="prompt-templates">
-                        <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
-                        <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
-                        <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
-                        <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
+                    <div class="tabs-container">
+                        <div class="tabs">
+                            <button class="tab active" onclick="switchTab('prompt-tab', this)">✏️ Prompt Editor</button>
+                            <button class="tab" onclick="switchTab('knowledge-tab', this)">📚 Knowledge Base</button>
+                            <button class="tab" onclick="switchTab('settings-tab', this)">⚙️ Settings</button>
+                        </div>
+
+                        <!-- Prompt Editor Tab -->
+                        <div id="prompt-tab" class="tab-content active">
+                            <div class="prompt-templates">
+                                <button class="template-btn" onclick="loadTemplate('sales')">🎯 Sales</button>
+                                <button class="template-btn" onclick="loadTemplate('support')">🛠️ Support</button>
+                                <button class="template-btn" onclick="loadTemplate('appointment')">📅 Appointments</button>
+                                <button class="template-btn" onclick="loadTemplate('receptionist')">📋 Receptionist</button>
+                            </div>
+                            
+                            <textarea 
+                                id="promptEditor" 
+                                class="prompt-editor"
+                                placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
+                            ></textarea>
+                            
+                            <div class="prompt-actions">
+                                <button id="savePromptBtn" class="btn" onclick="savePrompt()">
+                                    💾 Save Prompt
+                                </button>
+                                <button class="btn secondary" onclick="loadCurrentPrompt()">
+                                    🔄 Reload Current
+                                </button>
+                                <button class="btn secondary" onclick="insertScrapedData()">
+                                    📊 Insert Knowledge Data
+                                </button>
+                            </div>
+                            
+                            <div id="promptStatus" class="prompt-status"></div>
+                        </div>
+
+                        <!-- Knowledge Base Tab -->
+                        <div id="knowledge-tab" class="tab-content">
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                View and manage scraped website data and processed documents that enhance your AI agent's knowledge
+                            </div>
+                            
+                            <div id="knowledgeBaseContent">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📚</div>
+                                    <div class="empty-title">No Knowledge Data</div>
+                                    <div class="empty-subtitle">Scrape websites or upload documents to build your agent's knowledge base</div>
+                                </div>
+                            </div>
+                            
+                            <div class="prompt-actions">
+                                <button class="btn secondary" onclick="exportKnowledgeBase()">
+                                    📥 Export Data
+                                </button>
+                                <button class="btn secondary" onclick="clearKnowledgeBase()">
+                                    🗑️ Clear All Data
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Settings Tab -->
+                        <div id="settings-tab" class="tab-content">
+                            <div class="section-subtitle" style="margin-bottom: 16px;">
+                                Configure your AI agent's behavior and response settings
+                            </div>
+                            
+                            <div style="display: grid; gap: 16px;">
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Response Speed
+                                    </label>
+                                    <select id="responseSpeed" class="url-input" style="min-width: 200px;">
+                                        <option value="fast">Fast (Quick responses)</option>
+                                        <option value="balanced" selected>Balanced (Default)</option>
+                                        <option value="thoughtful">Thoughtful (More detailed)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Conversation Style
+                                    </label>
+                                    <select id="conversationStyle" class="url-input" style="min-width: 200px;">
+                                        <option value="professional">Professional</option>
+                                        <option value="friendly" selected>Friendly</option>
+                                        <option value="casual">Casual</option>
+                                        <option value="formal">Formal</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Auto-Update Knowledge
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="autoUpdateKnowledge" checked>
+                                        <span>Automatically include new scraped data in agent prompts</span>
+                                    </label>
+                                </div>
+                                
+                                <div>
+                                    <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151;">
+                                        Max Knowledge Length
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="maxKnowledgeLength" 
+                                        min="1000" 
+                                        max="10000" 
+                                        value="5000"
+                                        style="width: 100%;"
+                                    >
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #6b7280;">
+                                        <span>1K characters</span>
+                                        <span id="knowledgeLengthValue">5K characters</span>
+                                        <span>10K characters</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="prompt-actions">
+                                <button class="btn" onclick="saveSettings()">
+                                    💾 Save Settings
+                                </button>
+                                <button class="btn secondary" onclick="resetSettings()">
+                                    🔄 Reset to Default
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <textarea 
-                        id="promptEditor" 
-                        class="prompt-editor"
-                        placeholder="Enter your AI agent's instructions here. This will determine how the agent behaves during calls..."
-                    ></textarea>
-                    
-                    <div class="prompt-actions">
-                        <button id="savePromptBtn" class="btn" onclick="savePrompt()">
-                            💾 Save Prompt
-                        </button>
-                        <button class="btn secondary" onclick="loadCurrentPrompt()">
-                            🔄 Reload Current
-                        </button>
-                    </div>
-                    
-                    <div id="promptStatus" class="prompt-status"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Transcript Modal -->
     <div id="transcriptModal" class="transcript-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -931,6 +1328,7 @@
         </div>
     </div>
 
+    <!-- Notification -->
     <div id="notification" class="notification">
         New call received
     </div>
@@ -940,8 +1338,8 @@
         // Configuration object
         const config = {
             appName: 'SkyIQ',
-            companyName: 'Inbound Dashboard',
-            userInitials: 'RP',
+            companyName: 'AI Voice Dashboard',
+            userInitials: 'SQ',
             maxCallsToShow: 10,
             autoRefreshInterval: 30000,
             socketEnabled: true
@@ -950,6 +1348,16 @@
         // Global variables
         let calls = [];
         let currentPrompt = '';
+        let urlList = [];
+        let scrapedData = [];
+        let documentList = [];
+        let processedDocuments = [];
+        let settings = {
+            responseSpeed: 'balanced',
+            conversationStyle: 'friendly',
+            autoUpdateKnowledge: true,
+            maxKnowledgeLength: 5000
+        };
 
         // Prompt templates
         const promptTemplates = {
@@ -997,55 +1405,60 @@ Always ask for the caller's name and reason for calling to provide the best assi
         // Socket connection
         let socket;
         if (config.socketEnabled && typeof io !== 'undefined') {
-            socket = io();
-            
-            socket.on('connect', () => {
-                updateConnectionStatus('Connected', '#22c55e');
-            });
+            try {
+                socket = io();
+                
+                socket.on('connect', () => {
+                    console.log('🔌 Socket.IO connected');
+                    updateConnectionStatus('Connected', '#22c55e');
+                });
 
-            socket.on('disconnect', () => {
-                updateConnectionStatus('Disconnected', '#dc2626');
-            });
+                socket.on('disconnect', () => {
+                    console.log('🔌 Socket.IO disconnected');
+                    updateConnectionStatus('Disconnected', '#dc2626');
+                });
 
-            socket.on('callHistory', (history) => {
-                calls = history;
-                renderCallHistory();
-            });
+                socket.on('connect_error', (error) => {
+                    console.error('🔌 Socket.IO connection error:', error);
+                    updateConnectionStatus('Connection Error', '#dc2626');
+                });
+            } catch (error) {
+                console.error('🔌 Failed to initialize Socket.IO:', error);
+                updateConnectionStatus('Socket Error', '#dc2626');
+            }
 
-            socket.on('newCall', (callData) => {
-                calls.unshift(callData);
-                renderCallHistory();
-                showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
-                updateStats();
-            });
-
-            socket.on('updateCall', (callData) => {
-                const index = calls.findIndex(call => call.id === callData.id);
-                if (index >= 0) {
-                    calls[index] = callData;
+            if (socket) {
+                socket.on('callHistory', (history) => {
+                    calls = history;
                     renderCallHistory();
-                    updateStats();
-                }
-            });
-        }
+                });
 
-        // DOM elements
-        const callHistory = document.getElementById('callHistory');
-        const totalCalls = document.getElementById('totalCalls');
-        const inboundCalls = document.getElementById('inboundCalls');
-        const transcriptCount = document.getElementById('transcriptCount');
-        const lastUpdate = document.getElementById('lastUpdate');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const notification = document.getElementById('notification');
-        const transcriptModal = document.getElementById('transcriptModal');
-        const modalTranscript = document.getElementById('modalTranscript');
-        const modalTitle = document.getElementById('modalTitle');
-        const phoneInput = document.getElementById('phoneInput');
-        const callButton = document.getElementById('callButton');
-        const callStatus = document.getElementById('callStatus');
-        const promptEditor = document.getElementById('promptEditor');
-        const savePromptBtn = document.getElementById('savePromptBtn');
-        const promptStatus = document.getElementById('promptStatus');
+                socket.on('newCall', (callData) => {
+                    calls.unshift(callData);
+                    renderCallHistory();
+                    showNotification(`${callData.call_type === 'outbound' ? 'Outbound' : 'New'} call ${callData.call_type === 'outbound' ? 'initiated' : 'received'}`);
+                    updateStats();
+                });
+
+                socket.on('updateCall', (callData) => {
+                    const index = calls.findIndex(call => call.id === callData.id);
+                    if (index >= 0) {
+                        calls[index] = callData;
+                        renderCallHistory();
+                        updateStats();
+                    }
+                });
+
+                socket.on('scrapingComplete', (data) => {
+                    updateUrlStatus(data.url, data.success ? 'success' : 'error');
+                    if (data.success) {
+                        scrapedData.push(data);
+                        updateKnowledgeBase();
+                        showNotification('Website scraped successfully');
+                    }
+                });
+            }
+        }
 
         // Initialize app
         function initializeApp() {
@@ -1058,73 +1471,537 @@ Always ask for the caller's name and reason for calling to provide the best assi
             
             updateStats();
             loadCurrentPrompt();
+            loadSettings();
+            
+            // Initialize knowledge length slider
+            const slider = document.getElementById('maxKnowledgeLength');
+            const valueDisplay = document.getElementById('knowledgeLengthValue');
+            
+            slider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                valueDisplay.textContent = `${Math.round(value/1000)}K characters`;
+            });
+
+            // If Socket.IO is not available, refresh data manually
+            if (!socket) {
+                console.log('🔄 Socket.IO not available, refreshing data manually');
+                refreshData();
+            }
         }
 
-        async function savePrompt() {
-            const prompt = promptEditor.value.trim();
+        // Tab switching functionality
+        function switchTab(tabId, tabButton) {
+            // Remove active class from all tabs and tab contents
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            if (!prompt) {
-                showPromptStatus('Please enter a prompt before saving', 'error');
+            // Add active class to clicked tab and corresponding content
+            tabButton.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // URL management functions
+        function addUrl() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showNotification('Please enter a URL', true);
                 return;
             }
 
-                       try {
-                savePromptBtn.disabled = true;
-                savePromptBtn.textContent = '💾 Saving...';
-                showPromptStatus('Saving prompt...', 'loading');
+            // Basic URL validation
+            try {
+                new URL(url);
+            } catch (e) {
+                showNotification('Please enter a valid URL', true);
+                return;
+            }
 
-                // Extract name and company for first message
-                let firstMessage = '';
-                const nameMatch = prompt.match(/(?:named|name is|you are)\s+(\w+)/i);
-                const companyMatch = prompt.match(/(?:work for|from|at)\s+([A-Za-z\s']+?)(?:\s+and|\.|$)/i);
-                
-                if (nameMatch) {
-                    let agentName = nameMatch[1];
-                    let company = '';
-                    
-                    if (companyMatch) {
-                        company = ` from ${companyMatch[1].trim()}`;
-                    }
-                    
-                    firstMessage = `Hello! This is ${agentName}${company}. How can I help you today?`;
+            // Check if URL already exists
+            if (urlList.some(item => item.url === url)) {
+                showNotification('URL already added', true);
+                return;
+            }
+
+            // Add URL to list
+            urlList.push({
+                id: Date.now().toString(),
+                url: url,
+                status: 'pending',
+                data: null
+            });
+
+            urlInput.value = '';
+            renderUrlList();
+            showNotification('URL added successfully');
+        }
+
+        function removeUrl(urlId) {
+            urlList = urlList.filter(item => item.id !== urlId);
+            scrapedData = scrapedData.filter(item => item.id !== urlId);
+            renderUrlList();
+            updateKnowledgeBase();
+            showNotification('URL removed');
+        }
+
+        function clearAllUrls() {
+            urlList = [];
+            scrapedData = [];
+            renderUrlList();
+            updateKnowledgeBase();
+            showNotification('All URLs cleared');
+        }
+
+        function renderUrlList() {
+            const urlListContainer = document.getElementById('urlList');
+            
+            if (urlList.length === 0) {
+                urlListContainer.innerHTML = '';
+                return;
+            }
+
+            urlListContainer.innerHTML = urlList.map(item => `
+                <div class="url-item">
+                    <div class="url-text">${item.url}</div>
+                    <div class="url-status ${item.status}">${item.status}</div>
+                    <button class="remove-url-btn" onclick="removeUrl('${item.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function updateUrlStatus(url, status) {
+            const urlItem = urlList.find(item => item.url === url);
+            if (urlItem) {
+                urlItem.status = status;
+                renderUrlList();
+            }
+        }
+
+        // Document management functions
+        function uploadDocuments() {
+            const fileInput = document.getElementById('documentInput');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                showNotification('Please select documents to upload', true);
+                return;
+            }
+
+            // Validate file types
+            const allowedTypes = ['.pdf', '.txt', '.doc', '.docx', '.rtf', '.md'];
+            const invalidFiles = [];
+            
+            for (let file of files) {
+                const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                if (!allowedTypes.includes(fileExtension)) {
+                    invalidFiles.push(file.name);
+                }
+            }
+
+            if (invalidFiles.length > 0) {
+                showNotification(`Invalid file types: ${invalidFiles.join(', ')}. Supported: PDF, TXT, DOC, DOCX, RTF, MD`, true);
+                return;
+            }
+
+            // Add files to document list
+            for (let file of files) {
+                // Check if file already exists
+                if (documentList.some(item => item.name === file.name && item.size === file.size)) {
+                    continue; // Skip duplicate files
                 }
 
-                const response = await fetch('/api/prompt', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        system_prompt: prompt, 
-                        first_message: firstMessage 
-                    })
+                documentList.push({
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    file: file,
+                    status: 'pending',
+                    data: null
                 });
+            }
 
-                const result = await response.json();
+            fileInput.value = '';
+            renderDocumentList();
+            showNotification(`${files.length} document(s) added successfully`);
+        }
 
-                if (result.success) {
-                    currentPrompt = prompt;
-                    showPromptStatus('Prompt saved successfully!', 'success');
-                    showNotification('AI agent prompt updated successfully');
-                } else {
-                    showPromptStatus(result.error || 'Failed to save prompt', 'error');
+        function removeDocument(docId) {
+            documentList = documentList.filter(item => item.id !== docId);
+            processedDocuments = processedDocuments.filter(item => item.id !== docId);
+            renderDocumentList();
+            updateKnowledgeBase();
+            showNotification('Document removed');
+        }
+
+        function clearAllDocuments() {
+            documentList = [];
+            processedDocuments = [];
+            renderDocumentList();
+            updateKnowledgeBase();
+            showNotification('All documents cleared');
+        }
+
+        function renderDocumentList() {
+            const documentListContainer = document.getElementById('documentList');
+            
+            if (documentList.length === 0) {
+                documentListContainer.innerHTML = '';
+                return;
+            }
+
+            documentListContainer.innerHTML = documentList.map(item => `
+                <div class="document-item">
+                    <div class="document-info">
+                        <div class="document-name">${item.name}</div>
+                        <div class="document-meta">
+                            <span>${formatFileSize(item.size)}</span>
+                            <span>•</span>
+                            <span>${item.type || 'Unknown type'}</span>
+                        </div>
+                    </div>
+                    <div class="document-status ${item.status}">${item.status}</div>
+                    <button class="remove-url-btn" onclick="removeDocument('${item.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function updateDocumentStatus(docId, status) {
+            const docItem = documentList.find(item => item.id === docId);
+            if (docItem) {
+                docItem.status = status;
+                renderDocumentList();
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Web scraping functions
+        async function scrapeAllUrls() {
+            if (urlList.length === 0) {
+                showNotification('No URLs to scrape', true);
+                return;
+            }
+
+            const scrapeButton = document.getElementById('scrapeAllButton');
+            scrapeButton.disabled = true;
+            scrapeButton.textContent = '🕷️ Scraping...';
+            
+            showScrapingStatus('Starting to scrape websites...', 'loading');
+
+            try {
+                for (const urlItem of urlList) {
+                    if (urlItem.status === 'success') continue; // Skip already scraped URLs
+                    
+                    updateUrlStatus(urlItem.url, 'scraping');
+                    showScrapingStatus(`Scraping ${urlItem.url}...`, 'loading');
+
+                    try {
+                        const response = await fetch('/api/scrape', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ url: urlItem.url })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            urlItem.status = 'success';
+                            urlItem.data = result.data;
+                            
+                            scrapedData.push({
+                                id: urlItem.id,
+                                url: urlItem.url,
+                                data: result.data,
+                                timestamp: new Date().toISOString()
+                            });
+                        } else {
+                            urlItem.status = 'error';
+                        }
+                    } catch (error) {
+                        console.error(`Error scraping ${urlItem.url}:`, error);
+                        urlItem.status = 'error';
+                    }
+
+                    renderUrlList();
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between requests
                 }
+
+                updateKnowledgeBase();
+                showScrapingStatus('All URLs scraped successfully!', 'success');
+                showNotification('Website scraping completed');
+
             } catch (error) {
-                console.error('Error saving prompt:', error);
-                showPromptStatus('Error saving prompt. Please try again.', 'error');
+                console.error('Scraping error:', error);
+                showScrapingStatus('Error during scraping process', 'error');
             } finally {
-                savePromptBtn.disabled = false;
-                savePromptBtn.textContent = '💾 Save Prompt';
+                scrapeButton.disabled = false;
+                scrapeButton.textContent = '🕷️ Scrape All URLs';
                 
                 setTimeout(() => {
-                    hidePromptStatus();
+                    hideScrapingStatus();
                 }, 5000);
+            }
+        }
+
+        // Document processing functions
+        async function processAllDocuments() {
+            if (documentList.length === 0) {
+                showNotification('No documents to process', true);
+                return;
+            }
+
+            const processButton = document.getElementById('processAllButton');
+            processButton.disabled = true;
+            processButton.textContent = '🔍 Processing...';
+            
+            showProcessingStatus('Starting to process documents...', 'loading');
+
+            try {
+                for (const docItem of documentList) {
+                    if (docItem.status === 'success') continue; // Skip already processed documents
+                    
+                    updateDocumentStatus(docItem.id, 'processing');
+                    showProcessingStatus(`Processing ${docItem.name}...`, 'loading');
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('document', docItem.file);
+
+                        const response = await fetch('/api/parse-document', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            docItem.status = 'success';
+                            docItem.data = result.data;
+                            
+                            processedDocuments.push({
+                                id: docItem.id,
+                                name: docItem.name,
+                                data: result.data,
+                                timestamp: new Date().toISOString()
+                            });
+                        } else {
+                            docItem.status = 'error';
+                        }
+                    } catch (error) {
+                        console.error(`Error processing ${docItem.name}:`, error);
+                        docItem.status = 'error';
+                    }
+
+                    renderDocumentList();
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between processing
+                }
+
+                updateKnowledgeBase();
+                showProcessingStatus('All documents processed successfully!', 'success');
+                showNotification('Document processing completed');
+
+            } catch (error) {
+                console.error('Document processing error:', error);
+                showProcessingStatus('Error during document processing', 'error');
+            } finally {
+                processButton.disabled = false;
+                processButton.textContent = '🔍 Process All Documents';
+                
+                setTimeout(() => {
+                    hideProcessingStatus();
+                }, 5000);
+            }
+        }
+
+        function showProcessingStatus(message, type) {
+            const processingStatus = document.getElementById('processingStatus');
+            processingStatus.textContent = message;
+            processingStatus.className = `scraping-status ${type}`;
+        }
+
+        function hideProcessingStatus() {
+            const processingStatus = document.getElementById('processingStatus');
+            processingStatus.className = 'scraping-status';
+        }
+
+        // Knowledge base functions
+        function updateKnowledgeBase() {
+            const knowledgeContent = document.getElementById('knowledgeBaseContent');
+            const allKnowledgeData = [...scrapedData, ...processedDocuments];
+            
+            if (allKnowledgeData.length === 0) {
+                knowledgeContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📚</div>
+                        <div class="empty-title">No Knowledge Data</div>
+                        <div class="empty-subtitle">Scrape websites or upload documents to build your agent's knowledge base</div>
+                    </div>
+                `;
+                return;
+            }
+
+            knowledgeContent.innerHTML = allKnowledgeData.map(item => {
+                const isDocument = item.name; // Documents have a name property
+                const source = isDocument ? item.name : item.url;
+                const sourceType = isDocument ? 'Document' : 'Website';
+                const timestamp = item.timestamp;
+                
+                return `
+                    <div class="url-item" style="margin-bottom: 16px;">
+                        <div>
+                            <div class="url-text" style="font-weight: 600; color: #009AEE;">
+                                ${isDocument ? '📄' : '🌐'} ${source}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">
+                                ${sourceType} • ${new Date(timestamp).toLocaleString()}
+                            </div>
+                            <div style="margin-top: 8px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 0.875rem; line-height: 1.4; max-height: 120px; overflow-y: auto;">
+                                ${item.data.substring(0, 300)}${item.data.length > 300 ? '...' : ''}
+                            </div>
+                        </div>
+                        <button class="remove-url-btn" onclick="removeFromKnowledgeBase('${item.id}')">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeFromKnowledgeBase(itemId) {
+            // Remove from scraped data
+            scrapedData = scrapedData.filter(item => item.id !== itemId);
+            urlList = urlList.filter(item => item.id !== itemId);
+            
+            // Remove from processed documents
+            processedDocuments = processedDocuments.filter(item => item.id !== itemId);
+            documentList = documentList.filter(item => item.id !== itemId);
+            
+            updateKnowledgeBase();
+            renderUrlList();
+            renderDocumentList();
+            showNotification('Item removed from knowledge base');
+        }
+
+        function clearKnowledgeBase() {
+            if (confirm('Are you sure you want to clear all knowledge base data?')) {
+                scrapedData = [];
+                processedDocuments = [];
+                updateKnowledgeBase();
+                showNotification('Knowledge base cleared');
+            }
+        }
+
+        function exportKnowledgeBase() {
+            const allKnowledgeData = [...scrapedData, ...processedDocuments];
+            if (allKnowledgeData.length === 0) {
+                showNotification('No data to export', true);
+                return;
+            }
+
+            const dataStr = JSON.stringify(allKnowledgeData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `skyiq-knowledge-base-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('Knowledge base exported');
+        }
+
+        function insertScrapedData() {
+            const allKnowledgeData = [...scrapedData, ...processedDocuments];
+            if (allKnowledgeData.length === 0) {
+                showNotification('No knowledge data available', true);
+                return;
+            }
+
+            const promptEditor = document.getElementById('promptEditor');
+            const maxLength = settings.maxKnowledgeLength;
+            
+            let knowledgeText = '\n\n--- KNOWLEDGE BASE ---\n';
+            let totalLength = 0;
+
+            for (const item of allKnowledgeData) {
+                const isDocument = item.name; // Documents have a name property
+                const source = isDocument ? item.name : item.url;
+                const sourceType = isDocument ? 'Document' : 'Website';
+                
+                const itemText = `\n[${sourceType}: ${source}]\n${item.data}\n`;
+                if (totalLength + itemText.length > maxLength) {
+                    const remainingLength = maxLength - totalLength;
+                    if (remainingLength > 100) { // Only add if we have substantial space left
+                        knowledgeText += itemText.substring(0, remainingLength) + '...\n';
+                    }
+                    break;
+                }
+                knowledgeText += itemText;
+                totalLength += itemText.length;
+            }
+
+            knowledgeText += '--- END KNOWLEDGE BASE ---\n';
+
+            promptEditor.value += knowledgeText;
+            showNotification('Knowledge data inserted into prompt');
+        }
+
+        // Settings functions
+        function loadSettings() {
+            document.getElementById('responseSpeed').value = settings.responseSpeed;
+            document.getElementById('conversationStyle').value = settings.conversationStyle;
+            document.getElementById('autoUpdateKnowledge').checked = settings.autoUpdateKnowledge;
+            document.getElementById('maxKnowledgeLength').value = settings.maxKnowledgeLength;
+            
+            const valueDisplay = document.getElementById('knowledgeLengthValue');
+            valueDisplay.textContent = `${Math.round(settings.maxKnowledgeLength/1000)}K characters`;
+        }
+
+        function saveSettings() {
+            settings.responseSpeed = document.getElementById('responseSpeed').value;
+            settings.conversationStyle = document.getElementById('conversationStyle').value;
+            settings.autoUpdateKnowledge = document.getElementById('autoUpdateKnowledge').checked;
+            settings.maxKnowledgeLength = parseInt(document.getElementById('maxKnowledgeLength').value);
+            
+            // Save to localStorage
+            localStorage.setItem('skyiq-settings', JSON.stringify(settings));
+            showNotification('Settings saved successfully');
+        }
+
+        function resetSettings() {
+            settings = {
+                responseSpeed: 'balanced',
+                conversationStyle: 'friendly',
+                autoUpdateKnowledge: true,
+                maxKnowledgeLength: 5000
+            };
+            loadSettings();
+            localStorage.removeItem('skyiq-settings');
+            showNotification('Settings reset to default');
+        }
+
+        // Load settings from localStorage on startup
+        function loadStoredSettings() {
+            const stored = localStorage.getItem('skyiq-settings');
+            if (stored) {
+                try {
+                    settings = {...settings, ...JSON.parse(stored)};
+                } catch (e) {
+                    console.error('Error loading settings:', e);
+                }
             }
         }
 
         // Single call functionality
         async function initiateCall() {
-            const phoneNumber = phoneInput.value.trim();
+            const phoneNumber = document.getElementById('phoneInput').value.trim();
             
             if (!phoneNumber) {
                 showCallStatus('Please enter a phone number', 'error');
@@ -1138,6 +2015,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
             }
 
             try {
+                const callButton = document.getElementById('callButton');
                 callButton.disabled = true;
                 callButton.textContent = '📞 Initiating...';
                 showCallStatus('Initiating call...', 'loading');
@@ -1154,7 +2032,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
 
                 if (result.success) {
                     showCallStatus(`Call initiated successfully to ${phoneNumber}`, 'success');
-                    phoneInput.value = '';
+                    document.getElementById('phoneInput').value = '';
                     showNotification('Outbound call initiated successfully');
                     
                     setTimeout(() => {
@@ -1167,6 +2045,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 console.error('Error initiating call:', error);
                 showCallStatus('Error initiating call. Please try again.', 'error');
             } finally {
+                const callButton = document.getElementById('callButton');
                 callButton.disabled = false;
                 callButton.textContent = '📞 Start Call';
                 
@@ -1184,7 +2063,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 
                 if (response.ok) {
                     const data = await response.json();
-                    promptEditor.value = data.system_prompt || '';
+                    document.getElementById('promptEditor').value = data.system_prompt || '';
                     currentPrompt = data.system_prompt || '';
                     showPromptStatus('Prompt loaded successfully', 'success');
                 } else {
@@ -1200,59 +2079,150 @@ Always ask for the caller's name and reason for calling to provide the best assi
             }
         }
 
+        async function savePrompt() {
+            const prompt = document.getElementById('promptEditor').value.trim();
+            
+            if (!prompt) {
+                showPromptStatus('Please enter a prompt before saving', 'error');
+                return;
+            }
+
+            try {
+                const savePromptBtn = document.getElementById('savePromptBtn');
+                savePromptBtn.disabled = true;
+                savePromptBtn.textContent = '💾 Saving...';
+                showPromptStatus('Saving prompt...', 'loading');
+
+                console.log('Settings object:', settings);
+                console.log('Saving prompt with auto_include_scraped_data:', settings.autoUpdateKnowledge);
+
+                const response = await fetch('/api/prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        system_prompt: prompt, 
+                        first_message: '',
+                        auto_include_scraped_data: settings.autoUpdateKnowledge || false
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (result.success) {
+                    currentPrompt = prompt;
+                    showPromptStatus('Prompt saved successfully!', 'success');
+                    showNotification('AI agent prompt updated successfully');
+                } else {
+                    showPromptStatus(result.error || 'Failed to save prompt', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving prompt:', error);
+                showPromptStatus(`Error saving prompt: ${error.message}`, 'error');
+            } finally {
+                const savePromptBtn = document.getElementById('savePromptBtn');
+                savePromptBtn.disabled = false;
+                savePromptBtn.textContent = '💾 Save Prompt';
+                
+                setTimeout(() => {
+                    hidePromptStatus();
+                }, 5000);
+            }
+        }
+
         function loadTemplate(templateName) {
             if (promptTemplates[templateName]) {
-                promptEditor.value = promptTemplates[templateName];
+                document.getElementById('promptEditor').value = promptTemplates[templateName];
                 showNotification(`${templateName.charAt(0).toUpperCase() + templateName.slice(1)} template loaded`);
             }
         }
 
         // Phone input formatting
-        phoneInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
+        document.addEventListener('DOMContentLoaded', () => {
+            const phoneInput = document.getElementById('phoneInput');
+            const urlInput = document.getElementById('urlInput');
             
-            if (value.length >= 10) {
-                if (value.length === 10) {
-                    value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
-                } else if (value.length === 11 && value.charAt(0) === '1') {
-                    value = `+1 (${value.substr(1, 3)}) ${value.substr(4, 3)}-${value.substr(7, 4)}`;
+            phoneInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                if (value.length >= 10) {
+                    if (value.length === 10) {
+                        value = `(${value.substr(0, 3)}) ${value.substr(3, 3)}-${value.substr(6, 4)}`;
+                    } else if (value.length === 11 && value.charAt(0) === '1') {
+                        value = `+1 (${value.substr(1, 3)}) ${value.substr(4, 3)}-${value.substr(7, 4)}`;
+                    }
                 }
-            }
-            
-            e.target.value = value;
-        });
+                
+                e.target.value = value;
+            });
 
-        phoneInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                initiateCall();
-            }
+            phoneInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    initiateCall();
+                }
+            });
+
+            urlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addUrl();
+                }
+            });
         });
 
         // Utility functions
         function showCallStatus(message, type) {
+            const callStatus = document.getElementById('callStatus');
             callStatus.textContent = message;
             callStatus.className = `call-status ${type}`;
         }
 
         function hideCallStatus() {
+            const callStatus = document.getElementById('callStatus');
             callStatus.className = 'call-status';
         }
 
         function showPromptStatus(message, type) {
+            const promptStatus = document.getElementById('promptStatus');
             promptStatus.textContent = message;
             promptStatus.className = `prompt-status ${type}`;
         }
 
         function hidePromptStatus() {
+            const promptStatus = document.getElementById('promptStatus');
             promptStatus.className = 'prompt-status';
         }
 
+        function showScrapingStatus(message, type) {
+            const scrapingStatus = document.getElementById('scrapingStatus');
+            scrapingStatus.textContent = message;
+            scrapingStatus.className = `scraping-status ${type}`;
+        }
+
+        function hideScrapingStatus() {
+            const scrapingStatus = document.getElementById('scrapingStatus');
+            scrapingStatus.className = 'scraping-status';
+        }
+
         function updateConnectionStatus(status, color) {
+            const connectionStatus = document.getElementById('connectionStatus');
             connectionStatus.textContent = status;
             connectionStatus.style.color = color;
         }
 
         function renderCallHistory() {
+            const callHistory = document.getElementById('callHistory');
+            
             if (calls.length === 0) {
                 callHistory.innerHTML = `
                     <div class="empty-state">
@@ -1271,6 +2241,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
         }
 
         function renderCardView(callsToShow) {
+            const callHistory = document.getElementById('callHistory');
             const cardsHTML = `
                 <div class="call-cards">
                     ${callsToShow.map(call => `
@@ -1328,6 +2299,11 @@ Always ask for the caller's name and reason for calling to provide the best assi
         }
 
         function updateStats() {
+            const totalCalls = document.getElementById('totalCalls');
+            const inboundCalls = document.getElementById('inboundCalls');
+            const transcriptCount = document.getElementById('transcriptCount');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
             totalCalls.textContent = calls.length;
             
             const inboundCallCount = calls.filter(call => call.call_type !== 'outbound').length;
@@ -1382,6 +2358,7 @@ Always ask for the caller's name and reason for calling to provide the best assi
         }
 
         function showNotification(message = 'New call received', isError = false) {
+            const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.className = `notification ${isError ? 'error' : ''}`;
             notification.classList.add('show');
@@ -1396,6 +2373,10 @@ Always ask for the caller's name and reason for calling to provide the best assi
                 const phoneNumber = formatPhoneNumber(call.caller_number || call.phone || 'Unknown');
                 const callDate = formatDate(call.timestamp);
                 const callTime = formatTime(call.timestamp);
+                
+                const modalTitle = document.getElementById('modalTitle');
+                const modalTranscript = document.getElementById('modalTranscript');
+                const transcriptModal = document.getElementById('transcriptModal');
                 
                 modalTitle.textContent = `Transcript - ${phoneNumber}`;
                 
@@ -1415,6 +2396,7 @@ ${call.transcript}`;
         }
 
         function closeTranscriptModal() {
+            const transcriptModal = document.getElementById('transcriptModal');
             transcriptModal.style.display = 'none';
         }
 
@@ -1463,26 +2445,30 @@ ${call.transcript}`;
             }
         }
 
-        // Close modal when clicking outside
-        transcriptModal.addEventListener('click', (e) => {
-            if (e.target === transcriptModal) {
-                closeTranscriptModal();
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && transcriptModal.style.display === 'flex') {
-                closeTranscriptModal();
-            }
-            if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                refreshData();
-            }
-        });
-
-        // Initialize the app
+        // Modal event listeners
         document.addEventListener('DOMContentLoaded', () => {
+            const transcriptModal = document.getElementById('transcriptModal');
+            
+            // Close modal when clicking outside
+            transcriptModal.addEventListener('click', (e) => {
+                if (e.target === transcriptModal) {
+                    closeTranscriptModal();
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && transcriptModal.style.display === 'flex') {
+                    closeTranscriptModal();
+                }
+                if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    refreshData();
+                }
+            });
+
+            // Initialize the app
+            loadStoredSettings();
             initializeApp();
             refreshData();
         });
